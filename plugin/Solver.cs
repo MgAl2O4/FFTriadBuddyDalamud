@@ -1,5 +1,6 @@
 ﻿using FFTriadBuddy;
 using MgAl2O4.Utils;
+using System;
 
 namespace TriadBuddyPlugin
 {
@@ -14,6 +15,8 @@ namespace TriadBuddyPlugin
         public TriadGameResultChance moveWinChance;
         public bool hasMove;
 
+        public event Action<bool> OnMoveChanged;
+
         public Solver()
         {
             TriadGameSession.StaticInitialize();
@@ -24,7 +27,12 @@ namespace TriadBuddyPlugin
             if (gameUI == null || gameUI.currentState == null)
             {
                 currentNpc = null;
-                hasMove = false;
+                if (hasMove)
+                {
+                    hasMove = false;
+                    OnMoveChanged?.Invoke(hasMove);
+                }
+
                 return;
             }
 
@@ -46,14 +54,13 @@ namespace TriadBuddyPlugin
                         solverTriadCard != null ? solverTriadCard.Name.GetCodeName() : "??",
                         moveWinChance.expectedResult);
 
-                    // TODO: notify plugin's ui
+                    OnMoveChanged?.Invoke(hasMove);
                 }
             }
-            else
+            else if (hasMove)
             {
                 hasMove = false;
-
-                // TODO: notify plugin's ui
+                OnMoveChanged?.Invoke(hasMove);
             }
         }
     }

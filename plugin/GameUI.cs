@@ -2,6 +2,7 @@
 using FFTriadBuddy;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace TriadBuddyPlugin
 {
@@ -177,8 +178,6 @@ namespace TriadBuddyPlugin
             SetCurrentState(status == Status.NoErrors ? newState : null);
         }
 
-        // TODO: draw overlay for move suggestion, check Dalamud's hover in inspector
-
         public bool HasErrors()
         {
             return status != Status.NoErrors &&
@@ -326,6 +325,63 @@ namespace TriadBuddyPlugin
             }
 
             return resultOb;
+        }
+
+        public unsafe (Vector2, Vector2) GetCardPosAndSize(AddonTripleTriadCard addonCard)
+        {
+            if (addonCard.CardDropControl != null && addonCard.CardDropControl->OwnerNode != null)
+            {
+                var resNode = &addonCard.CardDropControl->OwnerNode->AtkResNode;
+                var cardPos = GUINodeUtils.GetNodePosition(resNode);
+                var cardScale = GUINodeUtils.GetNodeScale(resNode);
+                var cardSize = new Vector2(resNode->Width * cardScale.X, resNode->Height * cardScale.Y);
+
+                return (cardPos, cardSize);
+            }
+
+            return (Vector2.Zero, Vector2.Zero);
+        }
+
+        public unsafe (Vector2, Vector2) GetBlueCardPosAndSize(int idx)
+        {
+            if (addonPtr != IntPtr.Zero)
+            {
+                var addon = (AddonTripleTriad*)addonPtr;
+                switch (idx)
+                {
+                    case 0: return GetCardPosAndSize(addon->BlueDeck0);
+                    case 1: return GetCardPosAndSize(addon->BlueDeck1);
+                    case 2: return GetCardPosAndSize(addon->BlueDeck2);
+                    case 3: return GetCardPosAndSize(addon->BlueDeck3);
+                    case 4: return GetCardPosAndSize(addon->BlueDeck4);
+                    default: break;
+                }
+            }
+
+            return (Vector2.Zero, Vector2.Zero);
+        }
+
+        public unsafe (Vector2, Vector2) GetBoardCardPosAndSize(int idx)
+        {
+            if (addonPtr != IntPtr.Zero)
+            {
+                var addon = (AddonTripleTriad*)addonPtr;
+                switch (idx)
+                {
+                    case 0: return GetCardPosAndSize(addon->Board0);
+                    case 1: return GetCardPosAndSize(addon->Board1);
+                    case 2: return GetCardPosAndSize(addon->Board2);
+                    case 3: return GetCardPosAndSize(addon->Board3);
+                    case 4: return GetCardPosAndSize(addon->Board4);
+                    case 5: return GetCardPosAndSize(addon->Board5);
+                    case 6: return GetCardPosAndSize(addon->Board6);
+                    case 7: return GetCardPosAndSize(addon->Board7);
+                    case 8: return GetCardPosAndSize(addon->Board8);
+                    default: break;
+                }
+            }
+
+            return (Vector2.Zero, Vector2.Zero);
         }
 
         public TriadCard ConvertToTriadCard(State.Card card)

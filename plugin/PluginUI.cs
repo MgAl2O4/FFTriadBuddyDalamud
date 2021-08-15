@@ -1,10 +1,7 @@
-﻿using Dalamud.Plugin;
+﻿using Dalamud.Interface;
 using ImGuiNET;
 using System;
-using System.Drawing;
-using System.IO;
 using System.Numerics;
-using System.Runtime.InteropServices;
 
 namespace TriadBuddyPlugin
 {
@@ -16,21 +13,46 @@ namespace TriadBuddyPlugin
         private Solver solver;
         private string pluginName;
 
-        private bool isDebugVisible = true;
-
         private bool isVisible = false;
         public bool IsVisible { get => isVisible; set { isVisible = value; } }
 
+        private uint cachedCardColor;
+        private Vector2 cachedCardPos;
+        private Vector2 cachedCardSize;
+        private Vector2 cachedBoardPos;
+        private Vector2 cachedBoardSize;
+        private bool hasCachedOverlay;
 
         public PluginUI(string pluginName, GameUI gameUI, Solver solver)
         {
             this.gameUI = gameUI;
             this.solver = solver;
             this.pluginName = pluginName;
+
+            if (solver != null && gameUI != null)
+            {
+                solver.OnMoveChanged += Solver_OnMoveChanged;
+            }
+        }
+
+        private void Solver_OnMoveChanged(bool hasMove)
+        {
+            hasCachedOverlay = hasMove;
+            if (hasMove)
+            {
+                cachedCardColor =
+                    (solver.moveWinChance.expectedResult == FFTriadBuddy.ETriadGameState.BlueWins) ? 0xFF00FF00 :
+                    (solver.moveWinChance.expectedResult == FFTriadBuddy.ETriadGameState.BlueDraw) ? 0xFF00D7FF :
+                    0xFF0000FF;
+
+                (cachedCardPos, cachedCardSize) = gameUI.GetBlueCardPosAndSize(solver.moveCardIdx);
+                (cachedBoardPos, cachedBoardSize) = gameUI.GetBoardCardPosAndSize(solver.moveBoardIdx);
+            }
         }
 
         public void Dispose()
         {
+            // meh, keep it for now
         }
 
         public void Draw()
@@ -42,10 +64,20 @@ namespace TriadBuddyPlugin
             // There are other ways to do this, but it is generally best to keep the number of
             // draw delegates as low as possible.
 
+            DrawOverlay();
             DrawStatusWindow();
-#if DEBUG
-            DrawDebugWindow();
-#endif // DEBUG
+        }
+
+        public void DrawOverlay()
+        {
+            if (hasCachedOverlay)
+            {
+                var useCardPos = cachedCardPos + ImGuiHelpers.MainViewport.Pos;
+                var useBoardPos = cachedBoardPos + ImGuiHelpers.MainViewport.Pos;
+
+                ImGui.GetForegroundDrawList(ImGuiHelpers.MainViewport).AddRect(useCardPos, useCardPos + cachedCardSize, cachedCardColor, 5.0f, ImDrawFlags.RoundCornersAll, 5.0f);
+                ImGui.GetForegroundDrawList(ImGuiHelpers.MainViewport).AddRect(useBoardPos, useBoardPos + cachedBoardSize, 0xFFFFFF00, 5.0f, ImDrawFlags.RoundCornersAll, 5.0f);
+            }
         }
 
         public void DrawStatusWindow()
@@ -117,106 +149,5 @@ namespace TriadBuddyPlugin
             }
             ImGui.End();
         }
-
-#if DEBUG
-        public void DrawDebugWindow()
-        {
-            ImGui.SetNextWindowSize(new Vector2(375, 100), ImGuiCond.FirstUseEver);
-            ImGui.SetNextWindowSizeConstraints(new Vector2(375, 100), new Vector2(float.MaxValue, float.MaxValue));
-            if (ImGui.Begin("Debug me", ref isDebugVisible, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
-            {
-                if (gameUI.currentState != null)
-                {
-                    ImGui.Text($"Move: {gameUI.currentState.move}");
-                    ImGui.Text($"Rules: {string.Join(", ", gameUI.currentState.rules)}, red:{string.Join(",", gameUI.currentState.redPlayerDesc)}");
-
-                    ImGui.Separator();
-                    DrawCardArray(gameUI.currentState.blueDeck, "Blue");
-
-                    ImGui.Separator();
-                    DrawCardArray(gameUI.currentState.redDeck, "Red");
-
-                    ImGui.Separator();
-                    DrawCardArray(gameUI.currentState.board, "Board");
-                }
-                else
-                {
-                    ImGui.TextColored(new Vector4(0.9f, 0.2f, 0.2f, 1), "Game is not active");
-                }
-
-                if (ImGui.Button("Memory snapshot"))
-                {
-                    DebugSnapshot();
-                }
-            }
-            ImGui.End();
-        }
-
-        private string GetCardDesc(GameUI.State.Card card)
-        {
-            if (card.numU == 0)
-                return "hidden";
-
-            string lockDesc = card.isLocked ? " [LOCKED] " : "";
-            return $"[{card.numU:X}-{card.numL:X}-{card.numD:X}-{card.numR:X}]{lockDesc}, o:{card.owner}, t:{card.type}, r:{card.rarity}, tex:{card.texturePath}";
-        }
-
-        private void DrawCardArray(GameUI.State.Card[] cards, string prefix)
-        {
-            for (int idx = 0; idx < cards.Length; idx++)
-            {
-                if (cards[idx].isPresent)
-                {
-                    ImGui.Text($"{prefix}[{idx}]: {GetCardDesc(cards[idx])}");
-                }
-            }
-        }
-
-        private void DebugSnapshot()
-        {
-            try
-            {
-                string fname = string.Format(@"D:\temp\snap\{0:00}{1:00}{2:00}", DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second);
-                string fnameLog = fname + ".log";
-                string fnameJpg = fname + ".jpg";
-
-                if (File.Exists(fnameLog)) { File.Delete(fnameLog); }
-                if (File.Exists(fnameJpg)) { File.Delete(fnameJpg); }
-
-                if (gameUI.addonPtr != IntPtr.Zero)
-                {
-                    using (var file = File.Create(fnameLog))
-                    {
-                        int size = Marshal.SizeOf(typeof(AddonTripleTriad));
-                        byte[] memoryBlock = new byte[size];
-                        Marshal.Copy(gameUI.addonPtr, memoryBlock, 0, memoryBlock.Length);
-                        file.Write(memoryBlock, 0, memoryBlock.Length);
-                        file.Close();
-                    }
-
-                    PluginLog.Log("saved: {0}", fname);
-                }
-
-                var screen1Size = new Size(2560, 1440);
-                var screen2Size = new Size(1920, 1080);
-                var bitmap = new Bitmap(screen2Size.Width, screen2Size.Height);
-
-                using (var g = Graphics.FromImage(bitmap))
-                {
-                    g.CopyFromScreen(screen1Size.Width, screen1Size.Height - screen2Size.Height, 0, 0, screen2Size);
-                }
-
-                var resizedBitmap = new Bitmap(bitmap, new Size(screen2Size.Width / 2, screen2Size.Height / 2));
-                resizedBitmap.Save(fnameJpg);
-
-                bitmap.Dispose();
-                resizedBitmap.Dispose();
-            }
-            catch (Exception ex)
-            {
-                PluginLog.LogError(ex, "oops!");
-            }
-        }
-#endif // DEBUG
     }
 }
