@@ -41,10 +41,12 @@ namespace TriadBuddyPlugin
         private bool ParseRules(DalamudPluginInterface pluginInterface)
         {
             // update rule names to match current client language
-            // modifier locIds are already matching order in game data sheet
+            // hardcoded mapping, good for now, it's almost never changes anyway
 
             var modDB = TriadGameModifierDB.Get();
             var locDB = LocalizationDB.Get();
+
+            var mapIds = new uint[] { 0, 1, 2, 3, 5, 10, 11, 4, 6, 12, 13, 8, 9, 14, 7, 15 };
 
             var rulesSheet = pluginInterface.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadRule>();
             if (rulesSheet == null || rulesSheet.RowCount != modDB.mods.Count)
@@ -58,7 +60,7 @@ namespace TriadBuddyPlugin
                 var mod = modDB.mods[idx];
                 var locStr = locDB.LocRuleNames[mod.GetLocalizationId()];
 
-                locStr.Text = rulesSheet.GetRow((uint)idx).Name;
+                locStr.Text = rulesSheet.GetRow(mapIds[idx]).Name;
             }
 
             return true;
