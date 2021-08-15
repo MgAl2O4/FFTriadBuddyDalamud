@@ -55,7 +55,7 @@ namespace FFTriadBuddy
                     cardId -= 100;
                     if (cardId >= 0 && cardId < cards.Count)
                     {
-                        return cards[cardId];
+                        return cards.Find(x => (x != null) && x.Id == cardId);
                     }
                 }
             }

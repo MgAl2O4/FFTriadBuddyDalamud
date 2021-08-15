@@ -102,7 +102,8 @@ namespace TriadBuddyPlugin
                         var cardType = (rowTypeId < cardTypeMap.Length) ? cardTypeMap[rowTypeId] : ETriadCardType.None;
                         var cardRarity = (rowRarityId < cardRarityMap.Length) ? cardRarityMap[rowRarityId] : ETriadCardRarity.Common;
 
-                        var cardOb = new TriadCard((int)idx, null, cardRarity, cardType, rowData.Top, rowData.Bottom, rowData.Left, rowData.Right, rowData.SortKey, rowData.UIPriority);
+                        // i got left & right mixed up at some point...
+                        var cardOb = new TriadCard((int)idx, null, cardRarity, cardType, rowData.Top, rowData.Bottom, rowData.Right, rowData.Left, rowData.SortKey, rowData.UIPriority);
                         cardOb.Name.Text = rowName.Name.RawString;
 
                         cardDB.cards.Add(cardOb);
