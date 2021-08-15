@@ -73,11 +73,13 @@
     <Compile Include="plugin\Plugin.cs" />
     <Compile Include="plugin\PluginUI.cs" />
     <Compile Include="plugin\GameUI.cs" />
+    <Compile Include="plugin\Solver.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="triad-shared\sources\gamelogic\TriadCard.cs" />
     <Compile Include="triad-shared\sources\gamelogic\TriadDeck.cs" />
     <Compile Include="triad-shared\sources\gamelogic\TriadGame.cs" />
     <Compile Include="triad-shared\sources\gamelogic\TriadGameModifier.cs" />
+    <Compile Include="triad-shared\sources\gamelogic\TriadGameScreenMemory.cs" />
     <Compile Include="utils\AddonTripleTriad.cs" />
     <Compile Include="utils\GameLogicStubs.cs" />
     <Compile Include="utils\GUINodeUtils.cs" />

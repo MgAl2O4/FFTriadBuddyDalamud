@@ -7,9 +7,9 @@ namespace TriadBuddyPlugin
 {
     public class GameUI
     {
-        public class State
+        public class State : IEquatable<State>
         {
-            public class Card
+            public class Card : IEquatable<Card>
             {
                 public byte numU;
                 public byte numL;
@@ -23,6 +23,14 @@ namespace TriadBuddyPlugin
                 public string texturePath;
 
                 public bool IsHidden => isPresent && (numU == 0);
+
+                public bool Equals(Card other)
+                {
+                    return (isPresent == other.isPresent) &&
+                        (isLocked == other.isLocked) &&
+                        (owner == other.owner) &&
+                        (texturePath == other.texturePath);
+                }
             }
 
             public List<string> rules;
@@ -31,6 +39,53 @@ namespace TriadBuddyPlugin
             public Card[] redDeck = new Card[5];
             public Card[] board = new Card[9];
             public byte move;
+
+            public bool Equals(State other)
+            {
+                if (move != other.move)
+                {
+                    return false;
+                }
+
+                // not real list comparison, but will be enough here
+                if (rules.Count != other.rules.Count || !rules.TrueForAll(x => other.rules.Contains(x)))
+                {
+                    return false;
+                }
+
+                if (redPlayerDesc.Count != other.redPlayerDesc.Count || !redPlayerDesc.TrueForAll(x => other.redPlayerDesc.Contains(x)))
+                {
+                    return false;
+                }
+
+                Func<Card, Card, bool> HasCardDiffs = (a, b) =>
+                {
+                    if ((a == null) != (b == null))
+                    {
+                        return true;
+                    }
+
+                    return (a != null && b != null) ? !a.Equals(b) : false;
+                };
+
+                for (int idx = 0; idx < board.Length; idx++)
+                {
+                    if (HasCardDiffs(board[idx], other.board[idx]))
+                    {
+                        return false;
+                    }
+                }
+
+                for (int idx = 0; idx < blueDeck.Length; idx++)
+                {
+                    if (HasCardDiffs(blueDeck[idx], other.blueDeck[idx]) || HasCardDiffs(redDeck[idx], other.redDeck[idx]))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
         }
 
         public enum Status
@@ -50,6 +105,7 @@ namespace TriadBuddyPlugin
         public IntPtr addonPtr;
         public State currentState;
         public Status status;
+        public event Action<GameUI> OnChanged;
 
         private DalamudPluginInterface pluginInterface;
 
@@ -64,7 +120,7 @@ namespace TriadBuddyPlugin
             if (addonPtr == IntPtr.Zero)
             {
                 SetStatus(Status.AddonNotFound);
-                currentState = null;
+                SetCurrentState(null);
                 return;
             }
 
@@ -74,20 +130,20 @@ namespace TriadBuddyPlugin
             if (!isVisible)
             {
                 SetStatus(Status.AddonNotVisible);
-                currentState = null;
+                SetCurrentState(null);
                 return;
             }
 
             // set directly, function is for reporting errors
             status = Status.NoErrors;
-            currentState = new State();
+            var newState = new State();
 
-            (currentState.rules, currentState.redPlayerDesc) = GetUIDescriptions(addon);
+            (newState.rules, newState.redPlayerDesc) = GetUIDescriptions(addon);
 
             if (status == Status.NoErrors)
             {
-                currentState.move = addon->TurnState;
-                if (currentState.move > 2)
+                newState.move = addon->TurnState;
+                if (newState.move > 2)
                 {
                     SetStatus(Status.FailedToReadMove);
                 }
@@ -95,36 +151,40 @@ namespace TriadBuddyPlugin
 
             if (status == Status.NoErrors)
             {
-                currentState.blueDeck[0] = GetCardData(addon->BlueDeck0);
-                currentState.blueDeck[1] = GetCardData(addon->BlueDeck1);
-                currentState.blueDeck[2] = GetCardData(addon->BlueDeck2);
-                currentState.blueDeck[3] = GetCardData(addon->BlueDeck3);
-                currentState.blueDeck[4] = GetCardData(addon->BlueDeck4);
+                newState.blueDeck[0] = GetCardData(addon->BlueDeck0);
+                newState.blueDeck[1] = GetCardData(addon->BlueDeck1);
+                newState.blueDeck[2] = GetCardData(addon->BlueDeck2);
+                newState.blueDeck[3] = GetCardData(addon->BlueDeck3);
+                newState.blueDeck[4] = GetCardData(addon->BlueDeck4);
 
-                currentState.redDeck[0] = GetCardData(addon->RedDeck0);
-                currentState.redDeck[1] = GetCardData(addon->RedDeck1);
-                currentState.redDeck[2] = GetCardData(addon->RedDeck2);
-                currentState.redDeck[3] = GetCardData(addon->RedDeck3);
-                currentState.redDeck[4] = GetCardData(addon->RedDeck4);
+                newState.redDeck[0] = GetCardData(addon->RedDeck0);
+                newState.redDeck[1] = GetCardData(addon->RedDeck1);
+                newState.redDeck[2] = GetCardData(addon->RedDeck2);
+                newState.redDeck[3] = GetCardData(addon->RedDeck3);
+                newState.redDeck[4] = GetCardData(addon->RedDeck4);
 
-                currentState.board[0] = GetCardData(addon->Board0);
-                currentState.board[1] = GetCardData(addon->Board1);
-                currentState.board[2] = GetCardData(addon->Board2);
-                currentState.board[3] = GetCardData(addon->Board3);
-                currentState.board[4] = GetCardData(addon->Board4);
-                currentState.board[5] = GetCardData(addon->Board5);
-                currentState.board[6] = GetCardData(addon->Board6);
-                currentState.board[7] = GetCardData(addon->Board7);
-                currentState.board[8] = GetCardData(addon->Board8);
+                newState.board[0] = GetCardData(addon->Board0);
+                newState.board[1] = GetCardData(addon->Board1);
+                newState.board[2] = GetCardData(addon->Board2);
+                newState.board[3] = GetCardData(addon->Board3);
+                newState.board[4] = GetCardData(addon->Board4);
+                newState.board[5] = GetCardData(addon->Board5);
+                newState.board[6] = GetCardData(addon->Board6);
+                newState.board[7] = GetCardData(addon->Board7);
+                newState.board[8] = GetCardData(addon->Board8);
             }
 
-            if (status != Status.NoErrors)
-            {
-                currentState = null;
-            }
+            SetCurrentState(status == Status.NoErrors ? newState : null);
         }
 
         // TODO: draw overlay for move suggestion, check Dalamud's hover in inspector
+
+        public bool HasErrors()
+        {
+            return status != Status.NoErrors &&
+                status != Status.AddonNotFound &&
+                status != Status.AddonNotVisible;
+        }
 
         private bool SetStatus(Status newStatus)
         {
@@ -134,15 +194,36 @@ namespace TriadBuddyPlugin
                 status = newStatus;
                 changed = true;
 
-                if (newStatus != Status.NoErrors &&
-                    newStatus != Status.AddonNotFound &&
-                    newStatus != Status.AddonNotVisible)
+                if (HasErrors())
                 {
                     PluginLog.Error("error: " + newStatus);
                 }
             }
 
             return changed;
+        }
+
+        private void SetCurrentState(State newState)
+        {
+            bool isEmpty = newState == null;
+            bool wasEmpty = currentState == null;
+
+            if (isEmpty && wasEmpty)
+            {
+                return;
+            }
+
+            bool changed = (isEmpty != wasEmpty);
+            if (!changed && !isEmpty && !wasEmpty)
+            {
+                changed = !currentState.Equals(newState);
+            }
+
+            if (changed)
+            {
+                currentState = newState;
+                OnChanged?.Invoke(this);
+            }
         }
 
         private unsafe (List<string>, List<string>) GetUIDescriptions(AddonTripleTriad* addon)
@@ -299,7 +380,7 @@ namespace TriadBuddyPlugin
             foreach (var name in names)
             {
                 // some names will be truncated in UI, e.g. 'Guhtwint of the Three...'
-                // limit match to first 20 characters and hope that SE wil keep it unique
+                // limit match to first 20 characters and hope that SE will keep it unique
                 string matchPattern = (name.Length > 20) ? name.Substring(0, 20) : name;
 
                 var matchOb = npcsDB.FindByNameStart(matchPattern);
@@ -347,6 +428,34 @@ namespace TriadBuddyPlugin
             }
 
             return list;
+        }
+
+        public (ScannerTriad.GameState, TriadNpc) ConvertToTriadScreen()
+        {
+            var screenOb = new ScannerTriad.GameState();
+            screenOb.mods = ConvertToTriadModifiers(currentState.rules);
+            screenOb.turnState = (currentState.move == 0) ? ScannerTriad.ETurnState.Waiting : ScannerTriad.ETurnState.Active;
+
+            for (int idx = 0; idx < currentState.board.Length; idx++)
+            {
+                screenOb.board[idx] = ConvertToTriadCard(currentState.board[idx]);
+                screenOb.boardOwner[idx] = ConvertToTriadCardOwner(currentState.board[idx].owner);
+            }
+
+            bool hasForcedMove = (currentState.move == 2);
+            for (int idx = 0; idx < currentState.blueDeck.Length; idx++)
+            {
+                screenOb.blueDeck[idx] = ConvertToTriadCard(currentState.blueDeck[idx]);
+                screenOb.redDeck[idx] = ConvertToTriadCard(currentState.redDeck[idx]);
+
+                if (hasForcedMove && currentState.blueDeck[idx].isPresent && !currentState.blueDeck[idx].isLocked)
+                {
+                    screenOb.forcedBlueCard = screenOb.blueDeck[idx];
+                }
+            }
+
+            var screenNpc = ConvertToTriadNpc(currentState.redPlayerDesc);
+            return (screenOb, screenNpc);
         }
     }
 }

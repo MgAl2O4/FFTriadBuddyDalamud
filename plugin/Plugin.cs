@@ -14,6 +14,7 @@ namespace TriadBuddyPlugin
         private PluginUI pluginUI;
         private GameUI gameUI;
         private GameDataLoader dataLoader;
+        private Solver solver;
 
         // When loaded by LivePluginLoader, the executing assembly will be wrong.
         // Supplying this property allows LivePluginLoader to supply the correct location, so that
@@ -23,25 +24,26 @@ namespace TriadBuddyPlugin
 
         public void Initialize(DalamudPluginInterface pluginInterface)
         {
-            FFTriadBuddy.TriadGameSession.StaticInitialize();
+            this.pluginInterface = pluginInterface;
 
             dataLoader = new GameDataLoader();
             dataLoader.StartAsyncWork(pluginInterface);
 
-            this.pluginInterface = pluginInterface;
+            solver = new Solver();
+
             gameUI = new GameUI(pluginInterface);
+            gameUI.OnChanged += (o) => solver.Update(o);
 
             // you might normally want to embed resources and load them from the manifest stream
-            pluginUI = new PluginUI(gameUI);
+            pluginUI = new PluginUI(Name, gameUI, solver);
 
             this.pluginInterface.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
-                HelpMessage = "Shows state of plugin's data"
+                HelpMessage = "Show current state of plugin"
             });
 
             pluginInterface.UiBuilder.OnBuildUi += DrawUI;
             pluginInterface.Framework.OnUpdateEvent += OnUpdateState;
-            pluginUI.Visible = true;
         }
 
         private void OnUpdateState(Dalamud.Game.Internal.Framework framework)
@@ -71,7 +73,7 @@ namespace TriadBuddyPlugin
 
         private void OnCommand(string command, string args)
         {
-            // leaving for now, probably will end up displaying database stats
+            pluginUI.IsVisible = true;
         }
 
         private void DrawUI()

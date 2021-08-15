@@ -12,7 +12,9 @@ namespace MgAl2O4.Utils
     {
         public static void WriteLine(string fmt, params object[] args)
         {
+#if DEBUG
             PluginLog.Log(string.Format(fmt, args));
+#endif // DEBUG
         }
     }
 }
@@ -126,6 +128,27 @@ namespace FFTriadBuddy
         public static PlayerSettingsDB Get()
         {
             return instance;
+        }
+    }
+
+    public class ScannerTriad
+    {
+        public enum ETurnState
+        {
+            MissingTimer,
+            Waiting,
+            Active,
+        }
+
+        public class GameState
+        {
+            public TriadCard[] board = new TriadCard[9];
+            public ETriadCardOwner[] boardOwner = new ETriadCardOwner[9];
+            public TriadCard[] blueDeck = new TriadCard[5];
+            public TriadCard[] redDeck = new TriadCard[5];
+            public TriadCard forcedBlueCard = null;
+            public List<TriadGameModifier> mods = new List<TriadGameModifier>();
+            public ETurnState turnState = ETurnState.MissingTimer;
         }
     }
 }
