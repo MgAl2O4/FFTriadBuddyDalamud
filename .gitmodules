@@ -1,0 +1,4 @@
+[submodule "triad-shared"]
+	path = triad-shared
+	url = https://github.com/MgAl2O4/FFTriadBuddy.git
+	branch = gamelogic-shared

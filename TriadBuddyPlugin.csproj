@@ -67,27 +67,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\sources\gamelogic\TriadCard.cs">
-      <Link>gamelogic\TriadCard.cs</Link>
-    </Compile>
-    <Compile Include="..\sources\gamelogic\TriadDeck.cs">
-      <Link>gamelogic\TriadDeck.cs</Link>
-    </Compile>
-    <Compile Include="..\sources\gamelogic\TriadGame.cs">
-      <Link>gamelogic\TriadGame.cs</Link>
-    </Compile>
-    <Compile Include="..\sources\gamelogic\TriadGameModifier.cs">
-      <Link>gamelogic\TriadGameModifier.cs</Link>
-    </Compile>
     <Compile Include="data\GameDataLoader.cs" />
     <Compile Include="data\TriadCardDB.cs" />
     <Compile Include="data\TriadNpcDB.cs" />
-    <Compile Include="gamelogic\NothingToSeeHere.cs" />
     <Compile Include="plugin\Plugin.cs" />
     <Compile Include="plugin\PluginUI.cs" />
     <Compile Include="plugin\GameUI.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="triad-shared\sources\gamelogic\TriadCard.cs" />
+    <Compile Include="triad-shared\sources\gamelogic\TriadDeck.cs" />
+    <Compile Include="triad-shared\sources\gamelogic\TriadGame.cs" />
+    <Compile Include="triad-shared\sources\gamelogic\TriadGameModifier.cs" />
     <Compile Include="utils\AddonTripleTriad.cs" />
+    <Compile Include="utils\GameLogicStubs.cs" />
     <Compile Include="utils\GUINodeUtils.cs" />
   </ItemGroup>
   <ItemGroup>
