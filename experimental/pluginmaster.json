@@ -1,0 +1,19 @@
+[
+    {
+        "Author": "MgAl2O4",
+        "Name": "TriadBuddy",
+        "Description": "Triple triad solver, NPC matches only.",
+        "InternalName": "TriadBuddy",
+        "AssemblyVersion": "1.0.0.0",
+        "RepoUrl": "https://github.com/MgAl2O4/FFTriadBuddyDalamud",
+        "ApplicableVersion": "any",
+        "DalamudApiLevel": 3,
+        "DownloadLinkInstall": "https://github.com/MgAl2O4/FFTriadBuddyDalamud/raw/master/experimental/latest.zip",
+        "IsHide": false,
+        "IsTestingExclusive": false,
+        "DownloadLinkTesting": "https://github.com/MgAl2O4/FFTriadBuddyDalamud/raw/master/experimental/latest.zip",
+        "DownloadLinkUpdate": "https://github.com/MgAl2O4/FFTriadBuddyDalamud/raw/master/experimental/latest.zip",
+        "DownloadCount": 0,
+        "LastUpdated": "1629063546"
+    }
+]
