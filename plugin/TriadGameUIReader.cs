@@ -7,89 +7,8 @@ using System.Numerics;
 
 namespace TriadBuddyPlugin
 {
-    public class GameUI
+    public partial class TriadGameUIReader
     {
-        public class State : IEquatable<State>
-        {
-            public class Card : IEquatable<Card>
-            {
-                public byte numU;
-                public byte numL;
-                public byte numD;
-                public byte numR;
-                public byte rarity;
-                public byte type;
-                public byte owner;
-                public bool isPresent;
-                public bool isLocked;
-                public string texturePath;
-
-                public bool IsHidden => isPresent && (numU == 0);
-
-                public bool Equals(Card other)
-                {
-                    return (isPresent == other.isPresent) &&
-                        (isLocked == other.isLocked) &&
-                        (owner == other.owner) &&
-                        (texturePath == other.texturePath);
-                }
-            }
-
-            public List<string> rules;
-            public List<string> redPlayerDesc;
-            public Card[] blueDeck = new Card[5];
-            public Card[] redDeck = new Card[5];
-            public Card[] board = new Card[9];
-            public byte move;
-
-            public bool Equals(State other)
-            {
-                if (move != other.move)
-                {
-                    return false;
-                }
-
-                // not real list comparison, but will be enough here
-                if (rules.Count != other.rules.Count || !rules.TrueForAll(x => other.rules.Contains(x)))
-                {
-                    return false;
-                }
-
-                if (redPlayerDesc.Count != other.redPlayerDesc.Count || !redPlayerDesc.TrueForAll(x => other.redPlayerDesc.Contains(x)))
-                {
-                    return false;
-                }
-
-                Func<Card, Card, bool> HasCardDiffs = (a, b) =>
-                {
-                    if ((a == null) != (b == null))
-                    {
-                        return true;
-                    }
-
-                    return (a != null && b != null) ? !a.Equals(b) : false;
-                };
-
-                for (int idx = 0; idx < board.Length; idx++)
-                {
-                    if (HasCardDiffs(board[idx], other.board[idx]))
-                    {
-                        return false;
-                    }
-                }
-
-                for (int idx = 0; idx < blueDeck.Length; idx++)
-                {
-                    if (HasCardDiffs(blueDeck[idx], other.blueDeck[idx]) || HasCardDiffs(redDeck[idx], other.redDeck[idx]))
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-        }
-
         public enum Status
         {
             NoErrors,
@@ -99,19 +18,18 @@ namespace TriadBuddyPlugin
             FailedToReadRules,
             FailedToReadRedPlayer,
             FailedToReadCards,
-            FailedToParseCards,
-            FailedToParseRules,
-            FailedToParseNpc,
         }
 
-        public IntPtr addonPtr;
-        public State currentState;
+        public TriadGameUIState currentState;
         public Status status;
-        public event Action<GameUI> OnChanged;
+        public bool HasErrors => status >= Status.FailedToReadMove;
+
+        public event Action<TriadGameUIState> OnChanged;
 
         private GameGui gameGui;
+        private IntPtr addonPtr;
 
-        public GameUI(GameGui gameGui)
+        public TriadGameUIReader(GameGui gameGui)
         {
             this.gameGui = gameGui;
         }
@@ -136,10 +54,9 @@ namespace TriadBuddyPlugin
                 return;
             }
 
-            // set directly, function is for reporting errors
             status = Status.NoErrors;
-            var newState = new State();
-
+            var newState = new TriadGameUIState();
+            
             (newState.rules, newState.redPlayerDesc) = GetUIDescriptions(addon);
 
             if (status == Status.NoErrors)
@@ -179,31 +96,19 @@ namespace TriadBuddyPlugin
             SetCurrentState(status == Status.NoErrors ? newState : null);
         }
 
-        public bool HasErrors()
+        private void SetStatus(Status newStatus)
         {
-            return status != Status.NoErrors &&
-                status != Status.AddonNotFound &&
-                status != Status.AddonNotVisible;
-        }
-
-        private bool SetStatus(Status newStatus)
-        {
-            bool changed = false;
             if (status != newStatus)
             {
                 status = newStatus;
-                changed = true;
-
-                if (HasErrors())
+                if (HasErrors)
                 {
-                    PluginLog.Error("error: " + newStatus);
+                    PluginLog.Error("ui reader error: " + newStatus);
                 }
             }
-
-            return changed;
         }
 
-        private void SetCurrentState(State newState)
+        private void SetCurrentState(TriadGameUIState newState)
         {
             bool isEmpty = newState == null;
             bool wasEmpty = currentState == null;
@@ -222,7 +127,7 @@ namespace TriadBuddyPlugin
             if (changed)
             {
                 currentState = newState;
-                OnChanged?.Invoke(this);
+                OnChanged?.Invoke(newState);
             }
         }
 
@@ -303,9 +208,9 @@ namespace TriadBuddyPlugin
             return (texPath, isLocked);
         }
 
-        private unsafe State.Card GetCardData(AddonTripleTriadCard addonCard)
+        private unsafe TriadCardUIState GetCardData(AddonTripleTriadCard addonCard)
         {
-            var resultOb = new State.Card();
+            var resultOb = new TriadCardUIState();
             if (addonCard.HasCard)
             {
                 resultOb.isPresent = true;
@@ -383,136 +288,6 @@ namespace TriadBuddyPlugin
             }
 
             return (Vector2.Zero, Vector2.Zero);
-        }
-
-        public TriadCard ConvertToTriadCard(State.Card card)
-        {
-            TriadCard resultOb = null;
-            if (card.isPresent)
-            {
-                var cardsDB = TriadCardDB.Get();
-                if (!card.IsHidden)
-                {
-                    // there's hardly any point in doing side comparison since plugin can access card id directly, but i still like it :<
-                    var matchOb = cardsDB.Find(card.numU, card.numL, card.numD, card.numR);
-                    if (matchOb != null)
-                    {
-                        if (matchOb.SameNumberId < 0)
-                        {
-                            resultOb = matchOb;
-                        }
-                        else
-                        {
-                            // ambiguous match, use texture for exact Id
-                            resultOb = cardsDB.FindByTexture(card.texturePath);
-                        }
-                    }
-
-                    if (resultOb == null && SetStatus(Status.FailedToParseCards))
-                    {
-                        PluginLog.Error($"failed to match card [{card.numU:X}-{card.numL:X}-{card.numD:X}-{card.numR:X}], tex:{card.texturePath}");
-                    }
-                }
-                else
-                {
-                    resultOb = cardsDB.hiddenCard;
-                }
-            }
-
-            return resultOb;
-        }
-
-        public ETriadCardOwner ConvertToTriadCardOwner(byte ownerValue)
-        {
-            return (ownerValue == 1) ? ETriadCardOwner.Blue :
-                (ownerValue == 2) ? ETriadCardOwner.Red :
-                ETriadCardOwner.Unknown;
-        }
-
-        public TriadNpc ConvertToTriadNpc(List<string> names)
-        {
-            TriadNpc resultOb = null;
-
-            var npcsDB = TriadNpcDB.Get();
-            foreach (var name in names)
-            {
-                // some names will be truncated in UI, e.g. 'Guhtwint of the Three...'
-                // limit match to first 20 characters and hope that SE will keep it unique
-                string matchPattern = (name.Length > 20) ? name.Substring(0, 20) : name;
-
-                var matchOb = npcsDB.FindByNameStart(matchPattern);
-                if (matchOb != null)
-                {
-                    if (resultOb == null || resultOb == matchOb)
-                    {
-                        resultOb = matchOb;
-                    }
-                    else
-                    {
-                        if (SetStatus(Status.FailedToParseNpc))
-                        {
-                            PluginLog.Error($"failed to match npc: {string.Join(", ", names)}");
-                        }
-
-                        // um.. names matched two different npc, fail 
-                        return null;
-                    }
-                }
-            }
-
-            return resultOb;
-        }
-
-        public List<TriadGameModifier> ConvertToTriadModifiers(List<string> rules)
-        {
-            var list = new List<TriadGameModifier>();
-
-            var modsDB = TriadGameModifierDB.Get();
-            foreach (var rule in rules)
-            {
-                var matchOb = modsDB.mods.Find(x => x.GetLocalizedName().Equals(rule, StringComparison.OrdinalIgnoreCase));
-                if (matchOb != null)
-                {
-                    list.Add(matchOb);
-                }
-                else
-                {
-                    if (SetStatus(Status.FailedToParseRules))
-                    {
-                        PluginLog.Error($"failed to match rule: {rule}");
-                    }
-                }
-            }
-
-            return list;
-        }
-
-        public (ScannerTriad.GameState, TriadNpc) ConvertToTriadScreen()
-        {
-            var screenOb = new ScannerTriad.GameState();
-            screenOb.mods = ConvertToTriadModifiers(currentState.rules);
-            screenOb.turnState = (currentState.move == 0) ? ScannerTriad.ETurnState.Waiting : ScannerTriad.ETurnState.Active;
-
-            for (int idx = 0; idx < currentState.board.Length; idx++)
-            {
-                screenOb.board[idx] = ConvertToTriadCard(currentState.board[idx]);
-                screenOb.boardOwner[idx] = ConvertToTriadCardOwner(currentState.board[idx].owner);
-            }
-
-            bool hasForcedMove = (currentState.move == 2);
-            for (int idx = 0; idx < currentState.blueDeck.Length; idx++)
-            {
-                screenOb.blueDeck[idx] = ConvertToTriadCard(currentState.blueDeck[idx]);
-                screenOb.redDeck[idx] = ConvertToTriadCard(currentState.redDeck[idx]);
-
-                if (hasForcedMove && currentState.blueDeck[idx].isPresent && !currentState.blueDeck[idx].isLocked)
-                {
-                    screenOb.forcedBlueCard = screenOb.blueDeck[idx];
-                }
-            }
-
-            var screenNpc = ConvertToTriadNpc(currentState.redPlayerDesc);
-            return (screenOb, screenNpc);
         }
     }
 }

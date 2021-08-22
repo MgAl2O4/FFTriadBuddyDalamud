@@ -22,7 +22,7 @@ namespace TriadBuddyPlugin
         private readonly WindowSystem windowSystem = new("TriadBuddy");
         private readonly Window windowStatus;
 
-        public readonly GameUI gameUI;
+        public readonly TriadGameUIReader uiReader;
         public readonly Solver solver;
         public readonly GameDataLoader dataLoader;
 
@@ -42,8 +42,8 @@ namespace TriadBuddyPlugin
             solver = new Solver();
             solver.OnMoveChanged += Solver_OnMoveChanged;
 
-            gameUI = new GameUI(gameGui);
-            gameUI.OnChanged += (o) => solver.Update(o);
+            uiReader = new TriadGameUIReader(gameGui);
+            uiReader.OnChanged += (state) => solver.Update(state);
 
             dataLoader = new GameDataLoader();
             dataLoader.StartAsyncWork(dataManager);
@@ -51,7 +51,7 @@ namespace TriadBuddyPlugin
             pluginInterface.UiBuilder.Draw += OnDraw;
             commandManager.AddHandler("/triadbuddy", new(OnCommand) { HelpMessage = $"Show state of {Name} plugin." });
 
-            windowStatus = new PluginStatusWindow() { solver = solver, gameUI = gameUI };
+            windowStatus = new PluginStatusWindow() { solver = solver, uiReader = uiReader };
             windowSystem.AddWindow(windowStatus);
 
             framework.OnUpdateEvent += Framework_OnUpdateEvent;
@@ -95,8 +95,8 @@ namespace TriadBuddyPlugin
                     (solver.moveWinChance.expectedResult == FFTriadBuddy.ETriadGameState.BlueDraw) ? 0xFF00D7FF :
                     0xFF0000FF;
 
-                (cachedCardPos, cachedCardSize) = gameUI.GetBlueCardPosAndSize(solver.moveCardIdx);
-                (cachedBoardPos, cachedBoardSize) = gameUI.GetBoardCardPosAndSize(solver.moveBoardIdx);
+                (cachedCardPos, cachedCardSize) = uiReader.GetBlueCardPosAndSize(solver.moveCardIdx);
+                (cachedBoardPos, cachedBoardSize) = uiReader.GetBoardCardPosAndSize(solver.moveBoardIdx);
             }
         }
 
@@ -107,7 +107,7 @@ namespace TriadBuddyPlugin
                 // TODO: async? run every X ms? - check low spec perf, seems to be negligible
                 if (dataLoader.IsDataReady)
                 {
-                    gameUI.Update();
+                    uiReader.Update();
                 }
             }
             catch (Exception ex)

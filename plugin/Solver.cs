@@ -6,6 +6,14 @@ namespace TriadBuddyPlugin
 {
     public class Solver
     {
+        public enum Status
+        {
+            NoErrors,
+            FailedToParseCards,
+            FailedToParseRules,
+            FailedToParseNpc,
+        }
+
         private TriadGameScreenMemory screenMemory = new TriadGameScreenMemory();
 
         public TriadNpc currentNpc;
@@ -14,6 +22,9 @@ namespace TriadBuddyPlugin
         public int moveBoardIdx;
         public TriadGameResultChance moveWinChance;
         public bool hasMove;
+        
+        public Status status;
+        public bool HasErrors => status != Status.NoErrors;
 
         public event Action<bool> OnMoveChanged;
 
@@ -22,24 +33,34 @@ namespace TriadBuddyPlugin
             TriadGameSession.StaticInitialize();
         }
 
-        public void Update(GameUI gameUI)
+        public void Update(TriadGameUIState stateOb)
         {
-            if (gameUI == null || gameUI.currentState == null)
-            {
-                currentNpc = null;
-                if (hasMove)
-                {
-                    hasMove = false;
-                    OnMoveChanged?.Invoke(hasMove);
-                }
+            status = Status.NoErrors;
 
-                return;
+            ScannerTriad.GameState screenOb = null;
+            if (stateOb != null)
+            {
+                var parseCtx = new UIStateParseContext();
+                screenOb = stateOb.ToTriadScreenState(parseCtx);
+                currentNpc = stateOb.ToTriadNpc(parseCtx);
+                
+                if (parseCtx.HasErrors)
+                {
+                    currentNpc = null;
+                    status =
+                        parseCtx.hasFailedCard ? Status.FailedToParseCards :
+                        parseCtx.hasFailedModifier ? Status.FailedToParseRules :
+                        parseCtx.hasFailedNpc ? Status.FailedToParseNpc :
+                        Status.NoErrors;
+                }
+            }
+            else
+            {
+                // not really an error state, ui reader will push null state when game is finished
+                currentNpc = null;
             }
 
-            var (screenOb, screenNpc) = gameUI.ConvertToTriadScreen();
-            currentNpc = screenNpc;
-
-            if (screenOb.turnState == ScannerTriad.ETurnState.Active)
+            if (currentNpc != null && screenOb.turnState == ScannerTriad.ETurnState.Active)
             {
                 var updateFlags = screenMemory.OnNewScan(screenOb, currentNpc);
                 if (updateFlags != TriadGameScreenMemory.EUpdateFlags.None)
