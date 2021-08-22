@@ -12,7 +12,7 @@ namespace TriadBuddyPlugin
 
         public PluginStatusWindow() : base("Triad Buddy")
         {
-            IsOpen = true;
+            IsOpen = false;
 
             Size = new Vector2(350, 120);
             SizeCondition = ImGuiCond.FirstUseEver;
