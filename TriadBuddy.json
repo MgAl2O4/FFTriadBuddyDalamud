@@ -5,6 +5,7 @@
   "Description": "Triple triad solver, NPC matches only.\n\nWill highlight next move during mini game, use /triadbuddy for details.",
   "InternalName": "TriadBuddy",
   "AssemblyVersion": "1.0.0.1",
+  "IconUrl": "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/assets/icon.png"
   "RepoUrl": "https://github.com/MgAl2O4/FFTriadBuddyDalamud",
   "ApplicableVersion": "any",
   "Tags": [ "solver", "triad", "triple triad" ],
