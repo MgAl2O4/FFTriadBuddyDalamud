@@ -22,7 +22,7 @@ namespace TriadBuddyPlugin
         public int moveBoardIdx;
         public TriadGameResultChance moveWinChance;
         public bool hasMove;
-        
+
         public Status status;
         public bool HasErrors => status != Status.NoErrors;
 
@@ -43,7 +43,7 @@ namespace TriadBuddyPlugin
                 var parseCtx = new UIStateParseContext();
                 screenOb = stateOb.ToTriadScreenState(parseCtx);
                 currentNpc = stateOb.ToTriadNpc(parseCtx);
-                
+
                 if (parseCtx.HasErrors)
                 {
                     currentNpc = null;

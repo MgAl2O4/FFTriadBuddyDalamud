@@ -1,6 +1,5 @@
 ﻿using Dalamud.Game.Gui;
 using Dalamud.Logging;
-using FFTriadBuddy;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -56,7 +55,7 @@ namespace TriadBuddyPlugin
 
             status = Status.NoErrors;
             var newState = new TriadGameUIState();
-            
+
             (newState.rules, newState.redPlayerDesc) = GetUIDescriptions(addon);
 
             if (status == Status.NoErrors)

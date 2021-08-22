@@ -226,7 +226,7 @@ namespace TriadBuddyPlugin
             for (int idx = 0; idx < board.Length; idx++)
             {
                 screenOb.board[idx] = board[idx].ToTriadCard(ctx);
-                screenOb.boardOwner[idx] = 
+                screenOb.boardOwner[idx] =
                     (board[idx].owner == 1) ? ETriadCardOwner.Blue :
                     (board[idx].owner == 2) ? ETriadCardOwner.Red :
                      ETriadCardOwner.Unknown;
