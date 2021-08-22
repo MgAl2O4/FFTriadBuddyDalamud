@@ -1,6 +1,14 @@
-﻿using Dalamud.Game.Command;
+﻿using Dalamud.Data;
+using Dalamud.Game;
+using Dalamud.Game.Command;
+using Dalamud.Game.Gui;
+using Dalamud.Interface;
+using Dalamud.Interface.Windowing;
+using Dalamud.Logging;
 using Dalamud.Plugin;
+using ImGuiNET;
 using System;
+using System.Numerics;
 
 namespace TriadBuddyPlugin
 {
@@ -8,45 +16,91 @@ namespace TriadBuddyPlugin
     {
         public string Name => "Triad Buddy";
 
-        private const string commandName = "/triadbuddy";
+        private readonly DalamudPluginInterface pluginInterface;
+        private readonly CommandManager commandManager;
+        private readonly Framework framework;
+        private readonly WindowSystem windowSystem = new("TriadBuddy");
+        private readonly Window windowStatus;
 
-        private DalamudPluginInterface pluginInterface;
-        private PluginUI pluginUI;
-        private GameUI gameUI;
-        private GameDataLoader dataLoader;
-        private Solver solver;
+        public readonly GameUI gameUI;
+        public readonly Solver solver;
+        public readonly GameDataLoader dataLoader;
 
-        // When loaded by LivePluginLoader, the executing assembly will be wrong.
-        // Supplying this property allows LivePluginLoader to supply the correct location, so that
-        // you have full compatibility when loaded normally and through LPL.
-        public string AssemblyLocation { get => assemblyLocation; set => assemblyLocation = value; }
-        private string assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
+        private uint cachedCardColor;
+        private Vector2 cachedCardPos;
+        private Vector2 cachedCardSize;
+        private Vector2 cachedBoardPos;
+        private Vector2 cachedBoardSize;
+        private bool hasCachedOverlay;
 
-        public void Initialize(DalamudPluginInterface pluginInterface)
+        public Plugin(DalamudPluginInterface pluginInterface, Framework framework, CommandManager commandManager, GameGui gameGui, DataManager dataManager)
         {
             this.pluginInterface = pluginInterface;
-
-            dataLoader = new GameDataLoader();
-            dataLoader.StartAsyncWork(pluginInterface);
+            this.commandManager = commandManager;
+            this.framework = framework;
 
             solver = new Solver();
+            solver.OnMoveChanged += Solver_OnMoveChanged;
 
-            gameUI = new GameUI(pluginInterface);
+            gameUI = new GameUI(gameGui);
             gameUI.OnChanged += (o) => solver.Update(o);
 
-            // you might normally want to embed resources and load them from the manifest stream
-            pluginUI = new PluginUI(Name, gameUI, solver);
+            dataLoader = new GameDataLoader();
+            dataLoader.StartAsyncWork(dataManager);
 
-            this.pluginInterface.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
-            {
-                HelpMessage = "Show current state of plugin"
-            });
+            pluginInterface.UiBuilder.Draw += OnDraw;
+            commandManager.AddHandler("/triadbuddy", new(OnCommand) { HelpMessage = $"Show state of {Name} plugin." });
 
-            pluginInterface.UiBuilder.OnBuildUi += DrawUI;
-            pluginInterface.Framework.OnUpdateEvent += OnUpdateState;
+            windowStatus = new PluginStatusWindow() { solver = solver, gameUI = gameUI };
+            windowSystem.AddWindow(windowStatus);
+
+            framework.OnUpdateEvent += Framework_OnUpdateEvent;
         }
 
-        private void OnUpdateState(Dalamud.Game.Internal.Framework framework)
+        public void Dispose()
+        {
+            commandManager.RemoveHandler("/triadbuddy");
+            windowSystem.RemoveAllWindows();
+            framework.OnUpdateEvent -= Framework_OnUpdateEvent;
+            pluginInterface.Dispose();
+        }
+
+        private void OnCommand(string command, string args)
+        {
+            windowStatus.IsOpen = true;
+        }
+
+        private void OnDraw()
+        {
+            windowSystem.Draw();
+
+            if (hasCachedOverlay)
+            {
+                var useCardPos = cachedCardPos + ImGuiHelpers.MainViewport.Pos;
+                var useBoardPos = cachedBoardPos + ImGuiHelpers.MainViewport.Pos;
+
+                var drawList = ImGui.GetForegroundDrawList(ImGuiHelpers.MainViewport);
+                drawList.AddRect(useCardPos, useCardPos + cachedCardSize, cachedCardColor, 5.0f, ImDrawFlags.RoundCornersAll, 5.0f);
+                drawList.AddRect(useBoardPos, useBoardPos + cachedBoardSize, 0xFFFFFF00, 5.0f, ImDrawFlags.RoundCornersAll, 5.0f);
+            }
+        }
+
+        private void Solver_OnMoveChanged(bool hasMove)
+        {
+            hasCachedOverlay = hasMove;
+            if (hasMove)
+            {
+                cachedCardColor =
+                    (solver.moveWinChance.expectedResult == FFTriadBuddy.ETriadGameState.BlueWins) ? 0xFF00FF00 :
+                    (solver.moveWinChance.expectedResult == FFTriadBuddy.ETriadGameState.BlueDraw) ? 0xFF00D7FF :
+                    0xFF0000FF;
+
+                (cachedCardPos, cachedCardSize) = gameUI.GetBlueCardPosAndSize(solver.moveCardIdx);
+                (cachedBoardPos, cachedBoardSize) = gameUI.GetBoardCardPosAndSize(solver.moveBoardIdx);
+            }
+        }
+
+        private void Framework_OnUpdateEvent(Framework framework)
         {
             try
             {
@@ -60,25 +114,6 @@ namespace TriadBuddyPlugin
             {
                 PluginLog.Error(ex, "state update failed");
             }
-        }
-
-        public void Dispose()
-        {
-            pluginUI.Dispose();
-
-            pluginInterface.Framework.OnUpdateEvent -= OnUpdateState;
-            pluginInterface.CommandManager.RemoveHandler(commandName);
-            pluginInterface.Dispose();
-        }
-
-        private void OnCommand(string command, string args)
-        {
-            pluginUI.IsVisible = true;
-        }
-
-        private void DrawUI()
-        {
-            pluginUI.Draw();
         }
     }
 }

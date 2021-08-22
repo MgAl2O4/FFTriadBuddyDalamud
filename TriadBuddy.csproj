@@ -1,53 +1,28 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="packages\DalamudPackager.1.2.2\build\DalamudPackager.props" Condition="Exists('packages\DalamudPackager.1.2.2\build\DalamudPackager.props')" />
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{62DB4DE9-25F8-4523-B008-417EF61088E4}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>TriadBuddy</RootNamespace>
-    <AssemblyName>TriadBuddy</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Deterministic>true</Deterministic>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+	<AssemblyName>TriadBuddy</AssemblyName>
+    <TargetFramework>net5.0-windows</TargetFramework>
+    <Platforms>x64</Platforms>
+    <LangVersion>9.0</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DalamudPackager" Version="1.2.2" />
+  </ItemGroup>
+
   <ItemGroup>
     <Reference Include="Dalamud">
       <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Dalamud.dll</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="ImGui.NET">
       <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\ImGui.NET.dll</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="ImGuiScene">
       <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\ImGuiScene.dll</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="FFXIVClientStructs">
       <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\FFXIVClientStructs.dll</HintPath>
@@ -58,50 +33,6 @@
     <Reference Include="Lumina.Excel">
       <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Lumina.Excel.dll</HintPath>
     </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="data\GameDataLoader.cs" />
-    <Compile Include="data\TriadCardDB.cs" />
-    <Compile Include="data\TriadNpcDB.cs" />
-    <Compile Include="plugin\Plugin.cs" />
-    <Compile Include="plugin\PluginUI.cs" />
-    <Compile Include="plugin\GameUI.cs" />
-    <Compile Include="plugin\Solver.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="triad-shared\sources\gamelogic\TriadCard.cs" />
-    <Compile Include="triad-shared\sources\gamelogic\TriadDeck.cs" />
-    <Compile Include="triad-shared\sources\gamelogic\TriadGame.cs" />
-    <Compile Include="triad-shared\sources\gamelogic\TriadGameModifier.cs" />
-    <Compile Include="triad-shared\sources\gamelogic\TriadGameScreenMemory.cs" />
-    <Compile Include="utils\AddonTripleTriad.cs" />
-    <Compile Include="utils\GameLogicStubs.cs" />
-    <Compile Include="utils\GUINodeUtils.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="TriadBuddy.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('packages\DalamudPackager.1.2.2\build\DalamudPackager.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\DalamudPackager.1.2.2\build\DalamudPackager.props'))" />
-    <Error Condition="!Exists('packages\DalamudPackager.1.2.2\build\DalamudPackager.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\DalamudPackager.1.2.2\build\DalamudPackager.targets'))" />
-  </Target>
-  <Import Project="packages\DalamudPackager.1.2.2\build\DalamudPackager.targets" Condition="Exists('packages\DalamudPackager.1.2.2\build\DalamudPackager.targets')" />
+
 </Project>

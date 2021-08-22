@@ -130,8 +130,10 @@ namespace TriadBuddyPlugin
                     var texType = textureInfo->AtkTexture.TextureType;
                     if (texType == TextureType.Resource)
                     {
-                        var texFileNamePtr = textureInfo->AtkTexture.Resource->TexFileResourceHandle->ResourceHandle.FileName;
-                        var texString = Marshal.PtrToStringAnsi(new IntPtr(texFileNamePtr));
+                        var texFileNameStdString = &textureInfo->AtkTexture.Resource->TexFileResourceHandle->ResourceHandle.FileName;
+                        var texString = texFileNameStdString->Length < 16
+                            ? Marshal.PtrToStringAnsi((IntPtr)texFileNameStdString->Buffer)
+                            : Marshal.PtrToStringAnsi((IntPtr)texFileNameStdString->BufferPtr);
 
                         return texString;
                     }

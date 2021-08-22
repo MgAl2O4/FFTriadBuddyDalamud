@@ -1,4 +1,5 @@
-﻿using Dalamud.Plugin;
+﻿using Dalamud.Data;
+using Dalamud.Logging;
 using FFTriadBuddy;
 using System;
 using System.Collections.Generic;
@@ -10,14 +11,14 @@ namespace TriadBuddyPlugin
     {
         public bool IsDataReady { get; private set; } = false;
 
-        public void StartAsyncWork(DalamudPluginInterface pluginInterface)
+        public void StartAsyncWork(DataManager dataManager)
         {
             Task.Run(() =>
             {
                 bool result = true;
-                result = result && ParseRules(pluginInterface);
-                result = result && ParseCards(pluginInterface);
-                result = result && ParseNpcs(pluginInterface);
+                result = result && ParseRules(dataManager);
+                result = result && ParseCards(dataManager);
+                result = result && ParseNpcs(dataManager);
 
                 var cardDB = TriadCardDB.Get();
                 var npcDB = TriadNpcDB.Get();
@@ -38,7 +39,7 @@ namespace TriadBuddyPlugin
             });
         }
 
-        private bool ParseRules(DalamudPluginInterface pluginInterface)
+        private bool ParseRules(DataManager dataManager)
         {
             // update rule names to match current client language
             // hardcoded mapping, good for now, it's almost never changes anyway
@@ -48,7 +49,7 @@ namespace TriadBuddyPlugin
 
             var mapIds = new uint[] { 0, 1, 2, 3, 5, 10, 11, 4, 6, 12, 13, 8, 9, 14, 7, 15 };
 
-            var rulesSheet = pluginInterface.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadRule>();
+            var rulesSheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadRule>();
             if (rulesSheet == null || rulesSheet.RowCount != modDB.mods.Count)
             {
                 PluginLog.Fatal($"Failed to parse rules (got:{rulesSheet?.RowCount ?? 0}, expected:{modDB.mods.Count})");
@@ -66,12 +67,12 @@ namespace TriadBuddyPlugin
             return true;
         }
 
-        private bool ParseCards(DalamudPluginInterface pluginInterface)
+        private bool ParseCards(DataManager dataManager)
         {
             var cardDB = TriadCardDB.Get();
 
-            var cardDataSheet = pluginInterface.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCardResident>();
-            var cardNameSheet = pluginInterface.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCard>();
+            var cardDataSheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCardResident>();
+            var cardNameSheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCard>();
 
             if (cardDataSheet != null && cardNameSheet != null && cardDataSheet.RowCount == cardNameSheet.RowCount)
             {
@@ -79,8 +80,8 @@ namespace TriadBuddyPlugin
                 ETriadCardType[] cardTypeMap = { ETriadCardType.None, ETriadCardType.Primal, ETriadCardType.Scion, ETriadCardType.Beastman, ETriadCardType.Garlean };
                 ETriadCardRarity[] cardRarityMap = { ETriadCardRarity.Common, ETriadCardRarity.Common, ETriadCardRarity.Uncommon, ETriadCardRarity.Rare, ETriadCardRarity.Epic, ETriadCardRarity.Legendary };
 
-                var cardTypesSheet = pluginInterface.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCardType>();
-                var cardRaritySheet = pluginInterface.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCardRarity>();
+                var cardTypesSheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCardType>();
+                var cardRaritySheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCardRarity>();
                 if (cardTypesSheet == null || cardTypesSheet.RowCount != cardTypeMap.Length)
                 {
                     PluginLog.Fatal($"Failed to parse card types (got:{cardTypesSheet?.RowCount ?? 0}, expected:{cardTypeMap.Length})");
@@ -122,7 +123,7 @@ namespace TriadBuddyPlugin
             return true;
         }
 
-        private bool ParseNpcs(DalamudPluginInterface pluginInterface)
+        private bool ParseNpcs(DataManager dataManager)
         {
             var npcDB = TriadNpcDB.Get();
 
@@ -133,7 +134,7 @@ namespace TriadBuddyPlugin
             // name is a bit more annoying to get
             var listTriadIds = new List<uint>();
 
-            var npcDataSheet = pluginInterface.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriad>();
+            var npcDataSheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriad>();
             if (npcDataSheet != null)
             {
                 // rowIds are not going from 0 here!
@@ -151,8 +152,8 @@ namespace TriadBuddyPlugin
             }
 
             var mapTriadNpcNames = new Dictionary<uint, string>();
-            var sheetNpcNames = pluginInterface.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.ENpcResident>();
-            var sheetENpcBase = pluginInterface.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.ENpcBase>();
+            var sheetNpcNames = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.ENpcResident>();
+            var sheetENpcBase = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.ENpcBase>();
             if (sheetNpcNames != null && sheetENpcBase != null)
             {
                 foreach (var rowData in sheetENpcBase)

@@ -1,11 +1,12 @@
 {
   "Author": "MgAl2O4",
   "Name": "TriadBuddy",
-  "Description": "Triple triad solver, NPC matches only. Use: /triadbuddy for details",
+  "Punchline": "Triple triad solver",
+  "Description": "Triple triad solver, NPC matches only.\n\nWill highlight next move during mini game, use /triadbuddy for details.",
   "InternalName": "TriadBuddy",
-  "AssemblyVersion": "1.0.0.0",
+  "AssemblyVersion": "1.0.0.1",
   "RepoUrl": "https://github.com/MgAl2O4/FFTriadBuddyDalamud",
   "ApplicableVersion": "any",
-  "Tags": [ "solver", "triple triad" ],
-  "DalamudApiLevel": 3
+  "Tags": [ "solver", "triad", "triple triad" ],
+  "DalamudApiLevel": 4,
 }

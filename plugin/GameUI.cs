@@ -1,4 +1,5 @@
-﻿using Dalamud.Plugin;
+﻿using Dalamud.Game.Gui;
+using Dalamud.Logging;
 using FFTriadBuddy;
 using System;
 using System.Collections.Generic;
@@ -108,16 +109,16 @@ namespace TriadBuddyPlugin
         public Status status;
         public event Action<GameUI> OnChanged;
 
-        private DalamudPluginInterface pluginInterface;
+        private GameGui gameGui;
 
-        public GameUI(DalamudPluginInterface pluginInterface)
+        public GameUI(GameGui gameGui)
         {
-            this.pluginInterface = pluginInterface;
+            this.gameGui = gameGui;
         }
 
         public unsafe void Update()
         {
-            addonPtr = pluginInterface.Framework.Gui.GetUiObjectByName("TripleTriad", 1);
+            addonPtr = gameGui.GetAddonByName("TripleTriad", 1);
             if (addonPtr == IntPtr.Zero)
             {
                 SetStatus(Status.AddonNotFound);
