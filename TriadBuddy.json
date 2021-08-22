@@ -9,5 +9,5 @@
   "RepoUrl": "https://github.com/MgAl2O4/FFTriadBuddyDalamud",
   "ApplicableVersion": "any",
   "Tags": [ "solver", "triad", "triple triad" ],
-  "DalamudApiLevel": 4,
+  "DalamudApiLevel": 4
 }
