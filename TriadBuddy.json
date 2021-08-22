@@ -2,7 +2,7 @@
   "Author": "MgAl2O4",
   "Name": "TriadBuddy",
   "Punchline": "Triple triad solver",
-  "Description": "Triple triad solver, NPC matches only.\n\nHighlights next move during mini game, use /triadbuddy for details.",
+  "Description": "Triple triad solver, NPC matches only.\nHighlights next move during mini game, win chance is indicated by color (green: good, red: bad)",
   "InternalName": "TriadBuddy",
   "AssemblyVersion": "1.0.0.1",
   "IconUrl": "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/assets/icon.png",
