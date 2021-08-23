@@ -27,6 +27,8 @@
         "Tags": ["solver", "triad", "triple triad"],
         "DalamudApiLevel": 4,
         "LoadPriority": 0,
+        "IconUrl": "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/assets/icon.png",
+        "Punchline": "Triple triad solver",
         "DownloadLinkInstall": "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/experimental/api4/latest.zip",
         "IsHide": false,
         "IsTestingExclusive": false,
