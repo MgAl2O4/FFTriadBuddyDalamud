@@ -41,9 +41,11 @@ namespace FFTriadBuddy
         public TriadCard FindByTexture(string texPath)
         {
             // map image ids: 082100+ directly to card id: 0+
+            // map image ids: 082500+ directly to card id: 0+
             // path example: ui/icon/082000/082145.tex
 
-            if (texPath.EndsWith(".tex") && texPath.Length > 11 &&
+            if (texPath != null &&
+                texPath.EndsWith(".tex") && texPath.Length > 11 &&
                 texPath[texPath.Length - 11] == '/' &&
                 texPath[texPath.Length - 10] == '0' &&
                 texPath[texPath.Length - 9] == '8' &&
@@ -52,7 +54,10 @@ namespace FFTriadBuddy
                 string idStr = texPath.Substring(texPath.Length - 7, 3);
                 if (int.TryParse(idStr, out int cardId))
                 {
-                    cardId -= 100;
+                    if (cardId >= 500) { cardId -= 500; }
+                    else if (cardId >= 100) { cardId -= 100; }
+                    else { cardId = -1; }
+
                     if (cardId >= 0 && cardId < cards.Count)
                     {
                         return cards.Find(x => (x != null) && x.Id == cardId);

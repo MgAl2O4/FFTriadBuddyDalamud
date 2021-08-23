@@ -44,9 +44,10 @@ namespace TriadBuddyPlugin
             solver.OnMoveChanged += Solver_OnMoveChanged;
 
             uiReaderGame = new TriadGameUIReader(gameGui);
-            uiReaderGame.OnChanged += (state) => solver.Update(state);
+            uiReaderGame.OnChanged += (state) => solver.UpdateGame(state);
 
             uiReaderPrep = new TriadPrepUIReader(gameGui);
+            uiReaderPrep.OnChanged += (state) => solver.UpdateDecks(state);
 
             dataLoader = new GameDataLoader();
             dataLoader.StartAsyncWork(dataManager);
@@ -86,6 +87,8 @@ namespace TriadBuddyPlugin
                 drawList.AddRect(useCardPos, useCardPos + cachedCardSize, cachedCardColor, 5.0f, ImDrawFlags.RoundCornersAll, 5.0f);
                 drawList.AddRect(useBoardPos, useBoardPos + cachedBoardSize, 0xFFFFFF00, 5.0f, ImDrawFlags.RoundCornersAll, 5.0f);
             }
+
+            // TODO: deck selection overlay
         }
 
         private void Solver_OnMoveChanged(bool hasMove)

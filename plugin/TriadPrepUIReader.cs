@@ -1,5 +1,4 @@
 ﻿using Dalamud.Game.Gui;
-using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
 using System.Collections.Generic;
@@ -11,10 +10,13 @@ namespace TriadBuddyPlugin
     {
         public TriadPrepUIState cachedState = new TriadPrepUIState();
         public bool isActive;
+        public bool IsDeckSelection => hasDeckSelection;
 
-        private bool logOnceDeck;
+        public Action<TriadPrepUIState> OnChanged;
 
         private GameGui gameGui;
+        private bool hasRequest;
+        private bool hasDeckSelection;
 
         public TriadPrepUIReader(GameGui gameGui)
         {
@@ -31,7 +33,11 @@ namespace TriadBuddyPlugin
                 var baseNode = (AtkUnitBase*)addonReqPtr;
                 if (baseNode != null && baseNode->RootNode != null && baseNode->RootNode->IsVisible)
                 {
-                    UpdateRequest(baseNode);
+                    if (!hasRequest)
+                    {
+                        UpdateRequest(baseNode);
+                        hasRequest = true;
+                    }
                     newActive = true;
                 }
             }
@@ -43,7 +49,16 @@ namespace TriadBuddyPlugin
                     var baseNode = (AtkUnitBase*)addonDeckPtr;
                     if (baseNode != null && baseNode->RootNode != null && baseNode->RootNode->IsVisible)
                     {
-                        UpdateDeckSelect(baseNode);
+                        if (!hasDeckSelection)
+                        {
+                            UpdateDeckSelect(baseNode);
+
+                            hasDeckSelection = cachedState.decks.Count > 0;
+                            if (hasDeckSelection)
+                            {
+                                OnChanged?.Invoke(cachedState);
+                            }
+                        }
                         newActive = true;
                     }
                 }
@@ -52,10 +67,8 @@ namespace TriadBuddyPlugin
             if (isActive != newActive)
             {
                 isActive = newActive;
-                if (!newActive)
-                {
-                    logOnceDeck = false;
-                }
+                hasRequest = false;
+                hasDeckSelection = false;
             }
         }
 
@@ -129,7 +142,7 @@ namespace TriadBuddyPlugin
                                 var nodeD = GUINodeUtils.PickChildNode(nodeArrC1[idxC], 1, 2);
                                 var nodeE = GUINodeUtils.PickChildNode(nodeD, 0, 4);
                                 var texPath = GUINodeUtils.GetNodeTexturePath(nodeE);
-                                if (!string.IsNullOrEmpty(texPath))
+                                if (string.IsNullOrEmpty(texPath))
                                 {
                                     break;
                                 }
@@ -145,16 +158,6 @@ namespace TriadBuddyPlugin
                             cachedState.decks.Add(deckOb);
                         }
                     }
-                }
-            }
-
-            if (cachedState.decks.Count > 0 && !logOnceDeck)
-            {
-                logOnceDeck = true;
-
-                foreach (var deckOb in cachedState.decks)
-                {
-                    PluginLog.Log($"Deck with cards:\n{string.Join("\n", deckOb.cardTexPaths)}");
                 }
             }
         }

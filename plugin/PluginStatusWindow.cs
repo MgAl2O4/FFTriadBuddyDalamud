@@ -57,14 +57,37 @@ namespace TriadBuddyPlugin
             // context sensitive part
             if (uiReaderPrep.isActive)
             {
+                var npcDesc = "--";
+                var rulesDesc = "--";
+
+                if (uiReaderPrep.IsDeckSelection)
+                {
+                    if (solver.preGameNpc != null) { npcDesc = solver.preGameNpc.Name.GetLocalized(); }
+
+                    if (solver.preGameMods.Count > 0)
+                    {
+                        rulesDesc = "";
+                        foreach (var ruleOb in solver.preGameMods)
+                        {
+                            if (rulesDesc.Length > 0) { rulesDesc += ", "; }
+                            rulesDesc += ruleOb.GetLocalizedName();
+                        }
+                    }
+                }
+                else
+                {
+                    npcDesc = uiReaderPrep.cachedState.npc;
+                    rulesDesc = string.Join(", ", uiReaderPrep.cachedState.rules);
+                }
+
                 ImGui.Separator();
                 ImGui.Text("Prep.NPC:");
                 ImGui.SameLine();
-                ImGui.TextColored(colorYellow, uiReaderPrep.cachedState.npc);
+                ImGui.TextColored(colorYellow, npcDesc);
 
                 ImGui.Text("Prep.Rules:");
                 ImGui.SameLine();
-                ImGui.TextColored(colorYellow, string.Join(", ", uiReaderPrep.cachedState.rules));
+                ImGui.TextColored(colorYellow, rulesDesc);
             }
             else
             {

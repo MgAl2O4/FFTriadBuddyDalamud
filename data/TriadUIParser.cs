@@ -15,6 +15,13 @@ namespace TriadBuddyPlugin
         public bool hasFailedNpc = false;
         public bool HasErrors => hasFailedCard || hasFailedModifier || hasFailedNpc;
 
+        public void Reset()
+        {
+            hasFailedCard = false;
+            hasFailedModifier = false;
+            hasFailedNpc = false;
+        }
+
         public TriadCard ParseCard(int numU, int numL, int numD, int numR, string texPath, bool markFailed = true)
         {
             // there's hardly any point in doing side comparison since plugin can access card id directly, but i still like it :<
