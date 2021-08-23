@@ -59,14 +59,14 @@ namespace TriadBuddyPlugin
             windowStatus = new PluginStatusWindow() { solver = solver, uiReaderGame = uiReaderGame, uiReaderPrep = uiReaderPrep };
             windowSystem.AddWindow(windowStatus);
 
-            framework.OnUpdateEvent += Framework_OnUpdateEvent;
+            framework.Update += Framework_OnUpdateEvent;
         }
 
         public void Dispose()
         {
             commandManager.RemoveHandler("/triadbuddy");
             windowSystem.RemoveAllWindows();
-            framework.OnUpdateEvent -= Framework_OnUpdateEvent;
+            framework.Update -= Framework_OnUpdateEvent;
             pluginInterface.Dispose();
         }
 
