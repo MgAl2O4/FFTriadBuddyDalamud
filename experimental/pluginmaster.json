@@ -20,7 +20,7 @@
         "Author": "MgAl2O4",
         "Name": "TriadBuddy",
         "InternalName": "TriadBuddy",
-        "AssemblyVersion": "1.0.0.1",
+        "AssemblyVersion": "1.0.0.2",
         "Description": "Triple triad solver, NPC matches only.\nHighlights next move during mini game, win chance is indicated by color (green: good, red: bad)",
         "ApplicableVersion": "any",
         "RepoUrl": "https://github.com/MgAl2O4/FFTriadBuddyDalamud",
@@ -35,6 +35,6 @@
         "DownloadLinkTesting": "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/experimental/api4/latest.zip",
         "DownloadLinkUpdate": "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/experimental/api4/latest.zip",
         "DownloadCount": 0,
-        "LastUpdated": "1629748336"
+        "LastUpdated": "1629756058"
     }
 ]
