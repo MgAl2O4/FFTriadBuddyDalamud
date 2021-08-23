@@ -237,11 +237,7 @@ namespace TriadBuddyPlugin
             if (addonCard.CardDropControl != null && addonCard.CardDropControl->OwnerNode != null)
             {
                 var resNode = &addonCard.CardDropControl->OwnerNode->AtkResNode;
-                var cardPos = GUINodeUtils.GetNodePosition(resNode);
-                var cardScale = GUINodeUtils.GetNodeScale(resNode);
-                var cardSize = new Vector2(resNode->Width * cardScale.X, resNode->Height * cardScale.Y);
-
-                return (cardPos, cardSize);
+                return GUINodeUtils.GetNodePosAndSize(resNode);
             }
 
             return (Vector2.Zero, Vector2.Zero);

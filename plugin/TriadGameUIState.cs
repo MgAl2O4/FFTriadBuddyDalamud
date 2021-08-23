@@ -1,40 +1,9 @@
-﻿using Dalamud.Logging;
-using FFTriadBuddy;
+﻿using FFTriadBuddy;
 using System;
 using System.Collections.Generic;
 
 namespace TriadBuddyPlugin
 {
-    public class UIStateParseContext
-    {
-        public TriadCardDB cards = TriadCardDB.Get();
-        public TriadNpcDB npcs = TriadNpcDB.Get();
-        public TriadGameModifierDB mods = TriadGameModifierDB.Get();
-
-        public bool hasFailedCard = false;
-        public bool hasFailedModifier = false;
-        public bool hasFailedNpc = false;
-        public bool HasErrors => hasFailedCard || hasFailedModifier || hasFailedNpc;
-
-        public void OnFailedCard(object cardOb)
-        {
-            PluginLog.Error($"failed to match card: {cardOb}");
-            hasFailedCard = true;
-        }
-
-        public void OnFailedModifier(string modStr)
-        {
-            PluginLog.Error($"failed to match rule: {modStr}");
-            hasFailedModifier = true;
-        }
-
-        public void OnFailedNpc(List<string> desc)
-        {
-            PluginLog.Error($"failed to match npc: {string.Join(", ", desc)}");
-            hasFailedNpc = true;
-        }
-    }
-
     public class TriadCardUIState : IEquatable<TriadCardUIState>
     {
         public byte numU;
@@ -71,40 +40,11 @@ namespace TriadBuddyPlugin
             return desc;
         }
 
-        public TriadCard ToTriadCard(UIStateParseContext ctx)
+        public TriadCard ToTriadCard(TriadUIParser ctx)
         {
-            TriadCard resultOb = null;
-            if (isPresent)
-            {
-                if (!IsHidden)
-                {
-                    // there's hardly any point in doing side comparison since plugin can access card id directly, but i still like it :<
-                    var matchOb = ctx.cards.Find(numU, numL, numD, numR);
-                    if (matchOb != null)
-                    {
-                        if (matchOb.SameNumberId < 0)
-                        {
-                            resultOb = matchOb;
-                        }
-                        else
-                        {
-                            // ambiguous match, use texture for exact Id
-                            resultOb = ctx.cards.FindByTexture(texturePath);
-                        }
-                    }
-
-                    if (resultOb == null)
-                    {
-                        ctx.OnFailedCard(this);
-                    }
-                }
-                else
-                {
-                    resultOb = ctx.cards.hiddenCard;
-                }
-            }
-
-            return resultOb;
+            return !isPresent ? null :
+                IsHidden ? ctx.cards.hiddenCard :
+                ctx.ParseCard(numU, numL, numD, numR, texturePath);
         }
     }
 
@@ -164,17 +104,12 @@ namespace TriadBuddyPlugin
             return true;
         }
 
-        public TriadNpc ToTriadNpc(UIStateParseContext ctx)
+        public TriadNpc ToTriadNpc(TriadUIParser ctx)
         {
             TriadNpc resultOb = null;
-
             foreach (var name in redPlayerDesc)
             {
-                // some names will be truncated in UI, e.g. 'Guhtwint of the Three...'
-                // limit match to first 20 characters and hope that SE will keep it unique
-                string matchPattern = (name.Length > 20) ? name.Substring(0, 20) : name;
-
-                var matchOb = ctx.npcs.FindByNameStart(matchPattern);
+                var matchOb = ctx.ParseNpcNameStart(name, false);
                 if (matchOb != null)
                 {
                     if (resultOb == null || resultOb == matchOb)
@@ -192,32 +127,28 @@ namespace TriadBuddyPlugin
 
             if (redPlayerDesc.Count > 0 && resultOb == null)
             {
-                ctx.OnFailedNpc(redPlayerDesc);
+                ctx.OnFailedNpc(string.Join(',', redPlayerDesc));
             }
 
             return resultOb;
         }
 
-        public List<TriadGameModifier> ToTriadModifier(UIStateParseContext ctx)
+        public List<TriadGameModifier> ToTriadModifier(TriadUIParser ctx)
         {
             var list = new List<TriadGameModifier>();
             foreach (var rule in rules)
             {
-                var matchOb = ctx.mods.mods.Find(x => x.GetLocalizedName().Equals(rule, StringComparison.OrdinalIgnoreCase));
+                var matchOb = ctx.ParseModifier(rule);
                 if (matchOb != null)
                 {
                     list.Add(matchOb);
-                }
-                else
-                {
-                    ctx.OnFailedModifier(rule);
                 }
             }
 
             return list;
         }
 
-        public ScannerTriad.GameState ToTriadScreenState(UIStateParseContext ctx)
+        public ScannerTriad.GameState ToTriadScreenState(TriadUIParser ctx)
         {
             var screenOb = new ScannerTriad.GameState();
             screenOb.mods = ToTriadModifier(ctx);

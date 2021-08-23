@@ -1,4 +1,5 @@
-﻿using FFXIVClientStructs.FFXIV.Component.GUI;
+﻿using Dalamud.Logging;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -181,5 +182,99 @@ namespace TriadBuddyPlugin
 
             return scale;
         }
+
+        public static unsafe (Vector2, Vector2) GetNodePosAndSize(AtkResNode* node)
+        {
+            if (node != null)
+            {
+                var pos = GetNodePosition(node);
+                var scale = GetNodeScale(node);
+                var size = new Vector2(node->Width * scale.X, node->Height * scale.Y);
+
+                return (pos, size);
+            }
+
+            return (Vector2.Zero, Vector2.Zero);
+        }
+
+#if DEBUG
+        private class ParsableNode
+        {
+            public ulong nodeAddr;
+            public string content;
+            public int childIdx;
+            public int numChildren;
+            public int depth;
+            public NodeType type;
+            public string debugPath;
+        }
+
+        private static unsafe bool RecursiveAppendParsableChildNodes(AtkResNode* node, int depth, int childIdx, List<ParsableNode> list, string debugPath)
+        {
+            bool hasParsableChildNodes = false;
+            bool hasContent = false;
+
+            if (node != null)
+            {
+                // check if this node is interesting for parser (empty string is still interesting)
+                string content = GetNodeText(node);
+                content = (content != null) ? content : GetNodeTexturePath(node);
+                hasContent = (content != null);
+
+                int numChildNodes = 0;
+                int insertIdx = list.Count;
+
+                if ((int)node->Type < 1000)
+                {
+                    // step inside
+                    if (node->ChildNode != null)
+                    {
+                        hasParsableChildNodes = RecursiveAppendParsableChildNodes(node->ChildNode, depth + 1, numChildNodes, list, debugPath + "," + numChildNodes);
+                        numChildNodes++;
+
+                        AtkResNode* linkNode = node->ChildNode;
+
+                        while (linkNode->PrevSiblingNode != null)
+                        {
+                            var hasParsableSibling = RecursiveAppendParsableChildNodes(linkNode->PrevSiblingNode, depth + 1, numChildNodes, list, debugPath + "," + numChildNodes);
+                            hasParsableChildNodes = hasParsableChildNodes || hasParsableSibling;
+                            linkNode = linkNode->PrevSiblingNode;
+                            numChildNodes++;
+                        }
+
+                        // no need to check next siblings here?
+                    }
+                }
+                else
+                {
+                    var compNode = (AtkComponentNode*)node;
+                    for (int idx = 0; idx < compNode->Component->UldManager.NodeListCount; idx++)
+                    {
+                        hasParsableChildNodes = RecursiveAppendParsableChildNodes(compNode->Component->UldManager.NodeList[idx], depth + 1, numChildNodes, list, debugPath + "," + numChildNodes);
+                        numChildNodes++;
+                    }
+                }
+
+                if (hasParsableChildNodes || hasContent)
+                {
+                    list.Insert(insertIdx, new ParsableNode() { nodeAddr = (ulong)node, content = content, childIdx = childIdx, numChildren = numChildNodes, depth = depth, debugPath = debugPath, type = node->Type });
+                }
+            }
+
+            return hasParsableChildNodes || hasContent;
+        }
+
+        public static unsafe void LogParsableNodes(AtkResNode* node)
+        {
+            var list = new List<ParsableNode>();
+            RecursiveAppendParsableChildNodes(node, 0, 0, list, "");
+
+            foreach (var entry in list)
+            {
+                var prefix = entry.depth > 0 ? new string(' ', entry.depth * 2) : "";
+                PluginLog.Log($"{prefix}> '{entry.content}' idx:{entry.childIdx}, children:{entry.numChildren}, type:{entry.type}, addr:{entry.nodeAddr:X}, path:{entry.debugPath}");
+            }
+        }
+#endif // DEBUG
     }
 }

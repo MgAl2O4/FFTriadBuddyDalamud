@@ -22,7 +22,8 @@ namespace TriadBuddyPlugin
         private readonly WindowSystem windowSystem = new("TriadBuddy");
         private readonly Window windowStatus;
 
-        public readonly TriadGameUIReader uiReader;
+        public readonly TriadGameUIReader uiReaderGame;
+        public readonly TriadPrepUIReader uiReaderPrep;
         public readonly Solver solver;
         public readonly GameDataLoader dataLoader;
 
@@ -42,8 +43,10 @@ namespace TriadBuddyPlugin
             solver = new Solver();
             solver.OnMoveChanged += Solver_OnMoveChanged;
 
-            uiReader = new TriadGameUIReader(gameGui);
-            uiReader.OnChanged += (state) => solver.Update(state);
+            uiReaderGame = new TriadGameUIReader(gameGui);
+            uiReaderGame.OnChanged += (state) => solver.Update(state);
+
+            uiReaderPrep = new TriadPrepUIReader(gameGui);
 
             dataLoader = new GameDataLoader();
             dataLoader.StartAsyncWork(dataManager);
@@ -51,7 +54,7 @@ namespace TriadBuddyPlugin
             pluginInterface.UiBuilder.Draw += OnDraw;
             commandManager.AddHandler("/triadbuddy", new(OnCommand) { HelpMessage = $"Show state of {Name} plugin." });
 
-            windowStatus = new PluginStatusWindow() { solver = solver, uiReader = uiReader };
+            windowStatus = new PluginStatusWindow() { solver = solver, uiReaderGame = uiReaderGame, uiReaderPrep = uiReaderPrep };
             windowSystem.AddWindow(windowStatus);
 
             framework.OnUpdateEvent += Framework_OnUpdateEvent;
@@ -95,8 +98,8 @@ namespace TriadBuddyPlugin
                     (solver.moveWinChance.expectedResult == FFTriadBuddy.ETriadGameState.BlueDraw) ? 0xFF00D7FF :
                     0xFF0000FF;
 
-                (cachedCardPos, cachedCardSize) = uiReader.GetBlueCardPosAndSize(solver.moveCardIdx);
-                (cachedBoardPos, cachedBoardSize) = uiReader.GetBoardCardPosAndSize(solver.moveBoardIdx);
+                (cachedCardPos, cachedCardSize) = uiReaderGame.GetBlueCardPosAndSize(solver.moveCardIdx);
+                (cachedBoardPos, cachedBoardSize) = uiReaderGame.GetBoardCardPosAndSize(solver.moveBoardIdx);
             }
         }
 
@@ -107,7 +110,8 @@ namespace TriadBuddyPlugin
                 // TODO: async? run every X ms? - check low spec perf, seems to be negligible
                 if (dataLoader.IsDataReady)
                 {
-                    uiReader.Update();
+                    uiReaderGame.Update();
+                    uiReaderPrep.Update();
                 }
             }
             catch (Exception ex)

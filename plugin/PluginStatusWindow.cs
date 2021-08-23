@@ -7,7 +7,8 @@ namespace TriadBuddyPlugin
 {
     public class PluginStatusWindow : Window, IDisposable
     {
-        public TriadGameUIReader uiReader;
+        public TriadGameUIReader uiReaderGame;
+        public TriadPrepUIReader uiReaderPrep;
         public Solver solver;
 
         public PluginStatusWindow() : base("Triad Buddy")
@@ -32,13 +33,13 @@ namespace TriadBuddyPlugin
             ImGui.Text("Status: ");
             ImGui.SameLine();
             var statusDesc =
-                uiReader.HasErrors ? uiReader.status.ToString() :
+                uiReaderGame.HasErrors ? uiReaderGame.status.ToString() :
                 solver.HasErrors ? solver.status.ToString() :
-                (uiReader.status == TriadGameUIReader.Status.AddonNotFound) ? "Minigame not active" :
-                (uiReader.status == TriadGameUIReader.Status.AddonNotVisible) ? "Minigame not visible" :
+                (uiReaderGame.status == TriadGameUIReader.Status.AddonNotFound) ? "Minigame not active" :
+                (uiReaderGame.status == TriadGameUIReader.Status.AddonNotVisible) ? "Minigame not visible" :
                 "Active";
 
-            ImGui.TextColored(uiReader.HasErrors || solver.HasErrors ? colorErr : colorOk, statusDesc);
+            ImGui.TextColored(uiReaderGame.HasErrors || solver.HasErrors ? colorErr : colorOk, statusDesc);
 
             ImGui.Text("Game data: ");
             ImGui.SameLine();
@@ -53,33 +54,48 @@ namespace TriadBuddyPlugin
                 ImGui.Text($"cards: {numCards}, NPCs: {numNpcs}");
             }
 
-            ImGui.Separator();
-            ImGui.Text("Solver.NPC:");
-            ImGui.SameLine();
-            ImGui.TextColored(colorYellow, (solver.currentNpc != null) ? solver.currentNpc.Name.GetLocalized() : "--");
-
-            ImGui.Text("Solver.Move:");
-            ImGui.SameLine();
-            if (solver.hasMove)
+            // context sensitive part
+            if (uiReaderPrep.isActive)
             {
-                var useColor =
-                    (solver.moveWinChance.expectedResult == FFTriadBuddy.ETriadGameState.BlueWins) ? colorOk :
-                    (solver.moveWinChance.expectedResult == FFTriadBuddy.ETriadGameState.BlueDraw) ? colorYellow :
-                    colorErr;
+                ImGui.Separator();
+                ImGui.Text("Prep.NPC:");
+                ImGui.SameLine();
+                ImGui.TextColored(colorYellow, uiReaderPrep.cachedState.npc);
 
-                string humanCard = (solver.moveCard != null) ? solver.moveCard.Name.GetLocalized() : "??";
-                int boardX = solver.moveBoardIdx % 3;
-                int boardY = solver.moveBoardIdx / 3;
-                string humanBoardX = boardX == 0 ? "left" : (boardX == 1) ? "center" : "right";
-                string humanBoardY = boardY == 0 ? "top" : (boardY == 1) ? "center" : "bottom";
-                string humanBoard = (solver.moveBoardIdx == 4) ? "center" : $"{humanBoardY}, {humanBoardX}";
-
-                // 1 based indexing for humans, disgusting
-                ImGui.TextColored(useColor, $"[{solver.moveCardIdx + 1}] {humanCard} => {humanBoard}");
+                ImGui.Text("Prep.Rules:");
+                ImGui.SameLine();
+                ImGui.TextColored(colorYellow, string.Join(", ", uiReaderPrep.cachedState.rules));
             }
             else
             {
-                ImGui.TextColored(colorYellow, "--");
+                ImGui.Separator();
+                ImGui.Text("Solver.NPC:");
+                ImGui.SameLine();
+                ImGui.TextColored(colorYellow, (solver.currentNpc != null) ? solver.currentNpc.Name.GetLocalized() : "--");
+
+                ImGui.Text("Solver.Move:");
+                ImGui.SameLine();
+                if (solver.hasMove)
+                {
+                    var useColor =
+                        (solver.moveWinChance.expectedResult == FFTriadBuddy.ETriadGameState.BlueWins) ? colorOk :
+                        (solver.moveWinChance.expectedResult == FFTriadBuddy.ETriadGameState.BlueDraw) ? colorYellow :
+                        colorErr;
+
+                    string humanCard = (solver.moveCard != null) ? solver.moveCard.Name.GetLocalized() : "??";
+                    int boardX = solver.moveBoardIdx % 3;
+                    int boardY = solver.moveBoardIdx / 3;
+                    string humanBoardX = boardX == 0 ? "left" : (boardX == 1) ? "center" : "right";
+                    string humanBoardY = boardY == 0 ? "top" : (boardY == 1) ? "center" : "bottom";
+                    string humanBoard = (solver.moveBoardIdx == 4) ? "center" : $"{humanBoardY}, {humanBoardX}";
+
+                    // 1 based indexing for humans, disgusting
+                    ImGui.TextColored(useColor, $"[{solver.moveCardIdx + 1}] {humanCard} => {humanBoard}");
+                }
+                else
+                {
+                    ImGui.TextColored(colorYellow, "--");
+                }
             }
         }
     }

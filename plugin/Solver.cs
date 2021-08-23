@@ -40,7 +40,7 @@ namespace TriadBuddyPlugin
             ScannerTriad.GameState screenOb = null;
             if (stateOb != null)
             {
-                var parseCtx = new UIStateParseContext();
+                var parseCtx = new TriadUIParser();
                 screenOb = stateOb.ToTriadScreenState(parseCtx);
                 currentNpc = stateOb.ToTriadNpc(parseCtx);
 
