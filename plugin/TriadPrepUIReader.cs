@@ -17,6 +17,7 @@ namespace TriadBuddyPlugin
         private GameGui gameGui;
         private bool hasRequest;
         private bool hasDeckSelection;
+        private IntPtr cachedDeckSelAddon;
 
         public TriadPrepUIReader(GameGui gameGui)
         {
@@ -46,6 +47,16 @@ namespace TriadBuddyPlugin
                 IntPtr addonDeckPtr = gameGui.GetAddonByName("TripleTriadSelDeck", 1);
                 if (addonDeckPtr != IntPtr.Zero)
                 {
+                    // addon ptr changed? reset cached node ptrs
+                    if (cachedDeckSelAddon != addonDeckPtr)
+                    {
+                        cachedDeckSelAddon = addonDeckPtr;
+                        foreach (var deckOb in cachedState.decks)
+                        {
+                            deckOb.screenUpdateAddr = 0;
+                        }
+                    }
+
                     var baseNode = (AtkUnitBase*)addonDeckPtr;
                     if (baseNode != null && baseNode->RootNode != null && baseNode->RootNode->IsVisible)
                     {
@@ -59,6 +70,18 @@ namespace TriadBuddyPlugin
                                 OnChanged?.Invoke(cachedState);
                             }
                         }
+                        else
+                        {
+                            foreach (var deckOb in cachedState.decks)
+                            {
+                                var updateNode = (AtkResNode*)deckOb.screenUpdateAddr;
+                                if (updateNode != null)
+                                {
+                                    (deckOb.screenPos, deckOb.screenSize) = GUINodeUtils.GetNodePosAndSize(updateNode);
+                                }
+                            }
+                        }
+
                         newActive = true;
                     }
                 }
@@ -118,8 +141,6 @@ namespace TriadBuddyPlugin
 
             cachedState.decks.Clear();
 
-            (cachedState.deckSelectPos, cachedState.deckSelectSize) = GUINodeUtils.GetNodePosAndSize(baseNode->RootNode);
-
             var nodeA = (baseNode->UldManager.NodeListCount == 5) ? baseNode->UldManager.NodeList[4] : null;
             if (nodeA != null && (int)nodeA->Type > 1000)
             {
@@ -155,6 +176,7 @@ namespace TriadBuddyPlugin
                         if (numValidCards == deckOb.cardTexPaths.Length)
                         {
                             (deckOb.screenPos, deckOb.screenSize) = GUINodeUtils.GetNodePosAndSize(nodeB);
+                            deckOb.screenUpdateAddr = (ulong)nodeB;
                             cachedState.decks.Add(deckOb);
                         }
                     }
@@ -168,6 +190,7 @@ namespace TriadBuddyPlugin
         public string[] cardTexPaths = new string[5];
         public Vector2 screenPos;
         public Vector2 screenSize;
+        public ulong screenUpdateAddr;
     }
 
     public class TriadPrepUIState
@@ -176,7 +199,5 @@ namespace TriadBuddyPlugin
         public string npc;
 
         public List<TriadPrepDeckUIState> decks = new List<TriadPrepDeckUIState>();
-        public Vector2 deckSelectPos;
-        public Vector2 deckSelectSize;
     }
 }

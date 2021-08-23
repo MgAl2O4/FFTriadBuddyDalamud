@@ -27,6 +27,7 @@ namespace TriadBuddyPlugin
         public readonly Solver solver;
         public readonly GameDataLoader dataLoader;
 
+        // overlay: solver
         private uint cachedCardColor;
         private Vector2 cachedCardPos;
         private Vector2 cachedCardSize;
@@ -87,8 +88,10 @@ namespace TriadBuddyPlugin
                 drawList.AddRect(useCardPos, useCardPos + cachedCardSize, cachedCardColor, 5.0f, ImDrawFlags.RoundCornersAll, 5.0f);
                 drawList.AddRect(useBoardPos, useBoardPos + cachedBoardSize, 0xFFFFFF00, 5.0f, ImDrawFlags.RoundCornersAll, 5.0f);
             }
-
-            // TODO: deck selection overlay
+            else if (uiReaderPrep.IsDeckSelection)
+            {
+                DrawDeckSolverOverlay();
+            }
         }
 
         private void Solver_OnMoveChanged(bool hasMove)
@@ -120,6 +123,45 @@ namespace TriadBuddyPlugin
             catch (Exception ex)
             {
                 PluginLog.Error(ex, "state update failed");
+            }
+        }
+
+        private void DrawDeckSolverOverlay()
+        {
+            if (solver.preGameDeckChance.Count == uiReaderPrep.cachedState.decks.Count)
+            {
+                var drawList = ImGui.GetForegroundDrawList(ImGuiHelpers.MainViewport);
+                const int padding = 5;
+
+                const uint hintColorWin = 0xFF00FF00;
+                const uint hintColorDraw = 0xFFFFFF00;
+                const uint hintColorLose = 0xFFFF0000;
+                var hintTextOffset = new Vector2(padding, padding);
+
+                for (int idx = 0; idx < uiReaderPrep.cachedState.decks.Count; idx++)
+                {
+                    var deckState = uiReaderPrep.cachedState.decks[idx];
+                    var deckChance = solver.preGameDeckChance[idx];
+
+                    bool isSolverReady = deckChance.compScore > 0;
+                    var hintText = !isSolverReady ? "..." : deckChance.winChance.ToString("P0");
+                    uint hintColor = !isSolverReady ? 0xFFFFFFFF :
+                        deckChance.expectedResult == FFTriadBuddy.ETriadGameState.BlueWins ? hintColorWin :
+                        deckChance.expectedResult == FFTriadBuddy.ETriadGameState.BlueDraw ? hintColorDraw :
+                        hintColorLose;
+
+                    var hintTextSize = ImGui.CalcTextSize(hintText);
+                    var hintRectSize = hintTextSize;
+                    hintRectSize.X += padding * 2;
+                    hintRectSize.Y += padding * 2;
+
+                    var hintPos = deckState.screenPos + ImGuiHelpers.MainViewport.Pos;
+                    hintPos.X += padding;
+                    hintPos.Y += (deckState.screenSize.Y - hintTextSize.Y) / 2;
+
+                    drawList.AddRectFilled(hintPos, hintPos + hintRectSize, 0x80000000, 5.0f, ImDrawFlags.RoundCornersAll);
+                    drawList.AddText(hintPos + hintTextOffset, hintColor, hintText);
+                }
             }
         }
     }

@@ -1,5 +1,4 @@
-﻿using Dalamud.Logging;
-using FFTriadBuddy;
+﻿using FFTriadBuddy;
 using MgAl2O4.Utils;
 using System;
 using System.Collections.Generic;
@@ -181,7 +180,7 @@ namespace TriadBuddyPlugin
                 {
                     preGameDeckChance[deckIdx] = winChance;
                     // TODO: broadcast? (this is still worker thread!)
-                    PluginLog.Log($"deck: {deckIdx}, result:{winChance.expectedResult}, win%:{winChance.winChance:P0}, draw%:{winChance.drawChance:P0}");
+                    Logger.WriteLine($"deck: {deckIdx}, result:{winChance.expectedResult}, win%:{winChance.winChance:P0}, draw%:{winChance.drawChance:P0}");
                 }
             }
         }
