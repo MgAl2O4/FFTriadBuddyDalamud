@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
 	<AssemblyName>TriadBuddy</AssemblyName>
@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DalamudPackager" Version="1.2.3" />
+    <PackageReference Include="DalamudPackager" Version="2.1.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -47,5 +47,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <Target Name="CopyAssets" BeforeTargets="Build">
+    <Copy SourceFiles="$(ProjectDir)\assets\icon.png" DestinationFolder="$(OutDir)" />
+  </Target>
 
 </Project>
