@@ -18,7 +18,7 @@
     },
     {
         "Author": "MgAl2O4",
-        "Name": "TriadBuddy",
+        "Name": "TriadBuddy - DALAMUD TEST ONLY (API 4)",
         "InternalName": "TriadBuddy",
         "AssemblyVersion": "1.0.0.2",
         "Description": "Triple triad solver, NPC matches only.\nHighlights next move during mini game, win chance is indicated by color (green: good, red: bad)",
