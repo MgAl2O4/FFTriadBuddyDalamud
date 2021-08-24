@@ -18,10 +18,10 @@
     },
     {
         "Author": "MgAl2O4",
-        "Name": "TriadBuddy - DALAMUD TEST ONLY (API 4)",
+        "Name": "TriadBuddy",
         "InternalName": "TriadBuddy",
         "AssemblyVersion": "1.0.0.2",
-        "Description": "Triple triad solver, NPC matches only.\nHighlights next move during mini game, win chance is indicated by color (green: good, red: bad)",
+        "Description": "Triple triad solver, NPC matches only.\nHighlights next move during mini game, win chance is indicated by color (green: good, red: bad)\n\nDALAMUD TESTING BUILD ONLY!",
         "ApplicableVersion": "any",
         "RepoUrl": "https://github.com/MgAl2O4/FFTriadBuddyDalamud",
         "Tags": ["solver", "triad", "triple triad"],
