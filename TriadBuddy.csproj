@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DalamudPackager" Version="2.1.0" />
+    <PackageReference Include="DalamudPackager" Version="2.1.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -49,7 +49,7 @@
   </ItemGroup>
 
   <Target Name="CopyAssets" BeforeTargets="Build">
-    <Copy SourceFiles="$(ProjectDir)\assets\icon.png" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="$(ProjectDir)\assets\icon.png" DestinationFolder="$(OutDir)\images" />
   </Target>
 
 </Project>
