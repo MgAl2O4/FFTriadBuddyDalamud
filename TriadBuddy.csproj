@@ -38,25 +38,28 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Dalamud">
-      <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Dalamud.dll</HintPath>
+      <HintPath>$(AppData)\XIVLauncher\addon\Hooks\5.2.7.0\Dalamud.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="ImGui.NET">
-      <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\ImGui.NET.dll</HintPath>
+      <HintPath>$(AppData)\XIVLauncher\addon\Hooks\5.2.7.0\ImGui.NET.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="ImGuiScene">
-      <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\ImGuiScene.dll</HintPath>
+      <HintPath>$(AppData)\XIVLauncher\addon\Hooks\5.2.7.0\ImGuiScene.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="FFXIVClientStructs">
-      <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\FFXIVClientStructs.dll</HintPath>
+      <HintPath>$(AppData)\XIVLauncher\addon\Hooks\5.2.7.0\FFXIVClientStructs.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Lumina">
-      <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Lumina.dll</HintPath>
+      <HintPath>$(AppData)\XIVLauncher\addon\Hooks\5.2.7.0\Lumina.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Lumina.Excel">
-      <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Lumina.Excel.dll</HintPath>
+      <HintPath>$(AppData)\XIVLauncher\addon\Hooks\5.2.7.0\Lumina.Excel.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
