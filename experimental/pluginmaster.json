@@ -31,7 +31,7 @@
         "Punchline": "Triple triad solver",
         "DownloadLinkInstall": "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/experimental/api4/latest.zip",
         "IsHide": false,
-        "IsTestingExclusive": false,
+        "IsTestingExclusive": true,
         "DownloadLinkTesting": "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/experimental/api4/latest.zip",
         "DownloadLinkUpdate": "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/experimental/api4/latest.zip",
         "DownloadCount": 0,
