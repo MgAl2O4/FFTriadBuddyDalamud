@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace TriadBuddyPlugin
 {
@@ -146,11 +147,23 @@ namespace TriadBuddyPlugin
             if (maybeTextNode != null && maybeTextNode->Type == NodeType.Text)
             {
                 var textNode = (AtkTextNode*)maybeTextNode;
-                var text = Marshal.PtrToStringAnsi(new IntPtr(textNode->NodeText.StringPtr));
+                var text = MarshalNativeUtf8ToManagedString(new IntPtr(textNode->NodeText.StringPtr));
                 return text;
             }
 
             return null;
+        }
+
+        // https://stackoverflow.com/a/58358514
+        private static unsafe string MarshalNativeUtf8ToManagedString(IntPtr ptr) {
+            var len = 0;
+            var pStringUtf8 = (byte*)ptr;
+            while (pStringUtf8[len] != 0)
+            {
+                len++;
+            }
+
+            return Encoding.UTF8.GetString(pStringUtf8, len);
         }
 
         public static unsafe Vector2 GetNodePosition(AtkResNode* node)
