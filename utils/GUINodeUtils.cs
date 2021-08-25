@@ -149,7 +149,7 @@ namespace TriadBuddyPlugin
             if (maybeTextNode != null && maybeTextNode->Type == NodeType.Text)
             {
                 var textNode = (AtkTextNode*)maybeTextNode;
-                var text = Marshal.PtrToStringAnsi(new IntPtr(textNode->NodeText.StringPtr));
+                var text = Marshal.PtrToStringUTF8(new IntPtr(textNode->NodeText.StringPtr));
                 return text;
             }
 
