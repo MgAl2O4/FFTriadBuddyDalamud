@@ -4,7 +4,7 @@
         "Name": "TriadBuddy",
         "Description": "Triple triad solver, NPC matches only.",
         "InternalName": "TriadBuddy",
-        "AssemblyVersion": "1.0.0.0",
+        "AssemblyVersion": "1.0.0.1",
         "RepoUrl": "https://github.com/MgAl2O4/FFTriadBuddyDalamud",
         "ApplicableVersion": "any",
         "DalamudApiLevel": 3,
@@ -14,14 +14,14 @@
         "DownloadLinkTesting": "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/experimental/api3/latest.zip",
         "DownloadLinkUpdate": "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/experimental/api3/latest.zip",
         "DownloadCount": 0,
-        "LastUpdated": "1629063546"
+        "LastUpdated": "1629906528"
     },
     {
         "Author": "MgAl2O4",
         "Name": "TriadBuddy - API 4 ONLY",
         "InternalName": "TriadBuddy",
-        "AssemblyVersion": "1.0.0.2",
-        "TestingAssemblyVersion": "1.0.0.2",
+        "AssemblyVersion": "1.1.0.0",
+        "TestingAssemblyVersion": "1.1.0.0",
         "Description": "DALAMUD TESTING BUILD ONLY\n\nTriple triad solver, NPC matches only.\nHighlights next move during mini game, win chance is indicated by color (green: good, red: bad)\n\nDALAMUD TESTING BUILD ONLY!",
         "ApplicableVersion": "any",
         "RepoUrl": "https://github.com/MgAl2O4/FFTriadBuddyDalamud",
@@ -36,6 +36,6 @@
         "DownloadLinkTesting": "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/experimental/api4/latest.zip",
         "DownloadLinkUpdate": "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/experimental/api4/latest.zip",
         "DownloadCount": 0,
-        "LastUpdated": "1629756058"
+        "LastUpdated": "1629906528"
     }
 ]
