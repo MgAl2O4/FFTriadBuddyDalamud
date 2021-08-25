@@ -4,7 +4,7 @@
   "Punchline": "Triple triad solver",
   "Description": "Triple triad solver, NPC matches only.\nHighlights next move during mini game, win chance is indicated by color (green: good, red: bad)",
   "InternalName": "TriadBuddy",
-  "AssemblyVersion": "1.0.0.2",
+  "AssemblyVersion": "1.1.0.0",
   "IconUrl": "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/assets/icon.png",
   "RepoUrl": "https://github.com/MgAl2O4/FFTriadBuddyDalamud",
   "ApplicableVersion": "any",
