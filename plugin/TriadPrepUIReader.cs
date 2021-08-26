@@ -8,9 +8,10 @@ namespace TriadBuddyPlugin
 {
     public class TriadPrepUIReader
     {
-        public TriadPrepUIState cachedState = new TriadPrepUIState();
+        public TriadPrepUIState cachedState = new();
         public bool isActive;
         public bool IsDeckSelection => hasDeckSelection;
+        public bool shouldScanDeckData = false;
 
         public Action<TriadPrepUIState> OnChanged;
 
@@ -37,8 +38,13 @@ namespace TriadBuddyPlugin
                     if (!hasRequest)
                     {
                         UpdateRequest(baseNode);
+
+                        // notify always, if deck data depends on UI, it will be ignored by solver
+                        OnChanged?.Invoke(cachedState);
                         hasRequest = true;
                     }
+
+                    (cachedState.screenPos, cachedState.screenSize) = GUINodeUtils.GetNodePosAndSize(baseNode->RootNode);
                     newActive = true;
                 }
             }
@@ -53,7 +59,7 @@ namespace TriadBuddyPlugin
                         cachedDeckSelAddon = addonDeckPtr;
                         foreach (var deckOb in cachedState.decks)
                         {
-                            deckOb.screenUpdateAddr = 0;
+                            deckOb.rootNodeAddr = 0;
                         }
                     }
 
@@ -63,18 +69,20 @@ namespace TriadBuddyPlugin
                         if (!hasDeckSelection)
                         {
                             UpdateDeckSelect(baseNode);
-
                             hasDeckSelection = cachedState.decks.Count > 0;
-                            if (hasDeckSelection)
+                            
+                            // notify only when deck data is coming from UI
+                            if (hasDeckSelection && shouldScanDeckData)
                             {
                                 OnChanged?.Invoke(cachedState);
                             }
                         }
-                        else
+
+                        if (hasDeckSelection)
                         {
                             foreach (var deckOb in cachedState.decks)
                             {
-                                var updateNode = (AtkResNode*)deckOb.screenUpdateAddr;
+                                var updateNode = (AtkResNode*)deckOb.rootNodeAddr;
                                 if (updateNode != null)
                                 {
                                     (deckOb.screenPos, deckOb.screenSize) = GUINodeUtils.GetNodePosAndSize(updateNode);
@@ -153,30 +161,42 @@ namespace TriadBuddyPlugin
                     if (nodeC1 != null)
                     {
                         var deckOb = new TriadPrepDeckUIState();
-                        int numValidCards = 0;
+                        deckOb.id = cachedState.decks.Count;
+                        deckOb.rootNodeAddr = (ulong)nodeB;
 
-                        var nodeArrC1 = GUINodeUtils.GetImmediateChildNodes(nodeC1);
-                        if (nodeArrC1 != null && nodeArrC1.Length == 5)
+                        //PluginLog.Log($"deck[{deckOb.id}], nodeB=root.vis:{nodeB->IsVisible}, nodeC1=name.vis:{nodeC1->IsVisible}");
+
+                        bool canAddDeck = true;
+                        if (shouldScanDeckData)
                         {
-                            for (int idxC = 0; idxC < nodeArrC1.Length; idxC++)
-                            {
-                                var nodeD = GUINodeUtils.PickChildNode(nodeArrC1[idxC], 1, 2);
-                                var nodeE = GUINodeUtils.PickChildNode(nodeD, 0, 4);
-                                var texPath = GUINodeUtils.GetNodeTexturePath(nodeE);
-                                if (string.IsNullOrEmpty(texPath))
-                                {
-                                    break;
-                                }
+                            int numValidCards = 0;
 
-                                deckOb.cardTexPaths[idxC] = texPath;
-                                numValidCards++;
+                            var nodeArrC1 = GUINodeUtils.GetImmediateChildNodes(nodeC1);
+                            if (nodeArrC1 != null && nodeArrC1.Length == 5)
+                            {
+                                for (int idxC = 0; idxC < nodeArrC1.Length; idxC++)
+                                {
+                                    var nodeD = GUINodeUtils.PickChildNode(nodeArrC1[idxC], 1, 2);
+                                    var nodeE = GUINodeUtils.PickChildNode(nodeD, 0, 4);
+                                    var texPath = GUINodeUtils.GetNodeTexturePath(nodeE);
+                                    if (string.IsNullOrEmpty(texPath))
+                                    {
+                                        break;
+                                    }
+
+                                    deckOb.cardTexPaths[idxC] = texPath;
+                                    numValidCards++;
+                                }
                             }
+
+                            canAddDeck = numValidCards == deckOb.cardTexPaths.Length;
+
+                            var nodeC2 = GUINodeUtils.PickChildNode(nodeB, 11, 12);
+                            deckOb.name = GUINodeUtils.GetNodeText(nodeC2);
                         }
 
-                        if (numValidCards == deckOb.cardTexPaths.Length)
+                        if (canAddDeck)
                         {
-                            (deckOb.screenPos, deckOb.screenSize) = GUINodeUtils.GetNodePosAndSize(nodeB);
-                            deckOb.screenUpdateAddr = (ulong)nodeB;
                             cachedState.decks.Add(deckOb);
                         }
                     }
@@ -188,9 +208,13 @@ namespace TriadBuddyPlugin
     public class TriadPrepDeckUIState
     {
         public string[] cardTexPaths = new string[5];
+        public string name;
+
+        public ulong rootNodeAddr;
+        public int id;
+
         public Vector2 screenPos;
         public Vector2 screenSize;
-        public ulong screenUpdateAddr;
     }
 
     public class TriadPrepUIState
@@ -198,6 +222,9 @@ namespace TriadBuddyPlugin
         public string[] rules = new string[4];
         public string npc;
 
-        public List<TriadPrepDeckUIState> decks = new List<TriadPrepDeckUIState>();
+        public Vector2 screenPos;
+        public Vector2 screenSize;
+
+        public List<TriadPrepDeckUIState> decks = new();
     }
 }

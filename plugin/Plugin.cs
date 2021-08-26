@@ -6,6 +6,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
 using Dalamud.Plugin;
+using FFTriadBuddy;
 using ImGuiNET;
 using System;
 using System.Numerics;
@@ -27,6 +28,9 @@ namespace TriadBuddyPlugin
         public readonly Solver solver;
         public readonly GameDataLoader dataLoader;
 
+        // fallback option in case profile reader breaks
+        private bool canUseProfileReader = true;
+
         // overlay: solver
         private uint cachedCardColor;
         private Vector2 cachedCardPos;
@@ -42,12 +46,14 @@ namespace TriadBuddyPlugin
             this.framework = framework;
 
             solver = new Solver();
+            solver.profileReaderGS = canUseProfileReader ? new GoldSaucerProfileReader(gameGui) : null;
             solver.OnMoveChanged += Solver_OnMoveChanged;
 
             uiReaderGame = new TriadGameUIReader(gameGui);
             uiReaderGame.OnChanged += (state) => solver.UpdateGame(state);
 
             uiReaderPrep = new TriadPrepUIReader(gameGui);
+            uiReaderPrep.shouldScanDeckData = !canUseProfileReader;
             uiReaderPrep.OnChanged += (state) => solver.UpdateDecks(state);
 
             dataLoader = new GameDataLoader();
@@ -88,24 +94,9 @@ namespace TriadBuddyPlugin
                 drawList.AddRect(useCardPos, useCardPos + cachedCardSize, cachedCardColor, 5.0f, ImDrawFlags.RoundCornersAll, 5.0f);
                 drawList.AddRect(useBoardPos, useBoardPos + cachedBoardSize, 0xFFFFFF00, 5.0f, ImDrawFlags.RoundCornersAll, 5.0f);
             }
-            else if (uiReaderPrep.IsDeckSelection)
+            else if (uiReaderPrep.isActive)
             {
                 DrawDeckSolverOverlay();
-            }
-        }
-
-        private void Solver_OnMoveChanged(bool hasMove)
-        {
-            hasCachedOverlay = hasMove;
-            if (hasMove)
-            {
-                cachedCardColor =
-                    (solver.moveWinChance.expectedResult == FFTriadBuddy.ETriadGameState.BlueWins) ? 0xFF00FF00 :
-                    (solver.moveWinChance.expectedResult == FFTriadBuddy.ETriadGameState.BlueDraw) ? 0xFF00D7FF :
-                    0xFF0000FF;
-
-                (cachedCardPos, cachedCardSize) = uiReaderGame.GetBlueCardPosAndSize(solver.moveCardIdx);
-                (cachedBoardPos, cachedBoardSize) = uiReaderGame.GetBoardCardPosAndSize(solver.moveBoardIdx);
             }
         }
 
@@ -126,42 +117,92 @@ namespace TriadBuddyPlugin
             }
         }
 
+        private uint GetOverlayChanceColor(TriadGameResultChance chance)
+        {
+            return (chance.expectedResult == ETriadGameState.BlueWins) ? 0xFF00FF00 :
+                (chance.expectedResult == ETriadGameState.BlueDraw) ? 0xFF00D7FF :
+                0xFF0000FF;
+        }
+
+        private void Solver_OnMoveChanged(bool hasMove)
+        {
+            hasCachedOverlay = hasMove;
+            if (hasMove)
+            {
+                cachedCardColor = GetOverlayChanceColor(solver.moveWinChance);
+                (cachedCardPos, cachedCardSize) = uiReaderGame.GetBlueCardPosAndSize(solver.moveCardIdx);
+                (cachedBoardPos, cachedBoardSize) = uiReaderGame.GetBoardCardPosAndSize(solver.moveBoardIdx);
+            }
+        }
+
         private void DrawDeckSolverOverlay()
         {
-            if (solver.preGameDeckChance.Count == uiReaderPrep.cachedState.decks.Count)
+            var drawList = ImGui.GetForegroundDrawList(ImGuiHelpers.MainViewport);
+            const int padding = 5;
+            var hintTextOffset = new Vector2(padding, padding);
+
+            if (uiReaderPrep.IsDeckSelection)
             {
-                var drawList = ImGui.GetForegroundDrawList(ImGuiHelpers.MainViewport);
-                const int padding = 5;
-
-                const uint hintColorWin = 0xFF00FF00;
-                const uint hintColorDraw = 0xFFFFFF00;
-                const uint hintColorLose = 0xFFFF0000;
-                var hintTextOffset = new Vector2(padding, padding);
-
+                // deck select overlay, always available
                 for (int idx = 0; idx < uiReaderPrep.cachedState.decks.Count; idx++)
                 {
                     var deckState = uiReaderPrep.cachedState.decks[idx];
-                    var deckChance = solver.preGameDeckChance[idx];
+                    if (solver.preGameDecks.TryGetValue(deckState.id, out var deckData))
+                    {
+                        bool isSolverReady = deckData.chance.compScore > 0;
+                        var hintText = !isSolverReady ? "..." : deckData.chance.winChance.ToString("P0");
+                        uint hintColor = !isSolverReady ? 0xFFFFFFFF : GetOverlayChanceColor(deckData.chance);
 
-                    bool isSolverReady = deckChance.compScore > 0;
-                    var hintText = !isSolverReady ? "..." : deckChance.winChance.ToString("P0");
-                    uint hintColor = !isSolverReady ? 0xFFFFFFFF :
-                        deckChance.expectedResult == FFTriadBuddy.ETriadGameState.BlueWins ? hintColorWin :
-                        deckChance.expectedResult == FFTriadBuddy.ETriadGameState.BlueDraw ? hintColorDraw :
-                        hintColorLose;
+                        var hintTextSize = ImGui.CalcTextSize(hintText);
+                        var hintRectSize = hintTextSize;
+                        hintRectSize.X += padding * 2;
+                        hintRectSize.Y += padding * 2;
 
-                    var hintTextSize = ImGui.CalcTextSize(hintText);
-                    var hintRectSize = hintTextSize;
-                    hintRectSize.X += padding * 2;
-                    hintRectSize.Y += padding * 2;
+                        var hintPos = deckState.screenPos + ImGuiHelpers.MainViewport.Pos;
+                        hintPos.X += padding;
+                        hintPos.Y += (deckState.screenSize.Y - hintTextSize.Y) / 2;
 
-                    var hintPos = deckState.screenPos + ImGuiHelpers.MainViewport.Pos;
-                    hintPos.X += padding;
-                    hintPos.Y += (deckState.screenSize.Y - hintTextSize.Y) / 2;
-
-                    drawList.AddRectFilled(hintPos, hintPos + hintRectSize, 0x80000000, 5.0f, ImDrawFlags.RoundCornersAll);
-                    drawList.AddText(hintPos + hintTextOffset, hintColor, hintText);
+                        drawList.AddRectFilled(hintPos, hintPos + hintRectSize, 0x80000000, 5.0f, ImDrawFlags.RoundCornersAll);
+                        drawList.AddText(hintPos + hintTextOffset, hintColor, hintText);
+                    }
                 }
+            }
+            else if (solver.preGameDecks.Count > 0)
+            {
+                // request overlay available only when profile reader can access deck preset
+                var hintPos = uiReaderPrep.cachedState.screenPos + ImGuiHelpers.MainViewport.Pos;
+                hintPos.Y += uiReaderPrep.cachedState.screenSize.Y;
+
+                uint hintColor = 0xFFFFFFFF;
+                string hintText = "";
+
+                if (solver.preGameProgress < 1.0f)
+                {
+                    hintColor = 0xFFFFFFFF;
+                    hintText = $"Evaluating decks... {solver.preGameProgress:P0}";
+                }
+                else
+                { 
+                    if (solver.preGameDecks.TryGetValue(solver.preGameBestId, out var bestDeckData))
+                    {
+                        hintColor = GetOverlayChanceColor(bestDeckData.chance);
+                        hintText = $"{bestDeckData.name} -- win: {bestDeckData.chance.winChance:P0}";
+                    }
+                    else
+                    {
+                        hintColor = 0xFF0000FF;
+                        hintText = "Err.. Can't find best deck :<";
+                    }
+                }
+
+                var hintTextSize = ImGui.CalcTextSize(hintText);
+                var hintRectSize = new Vector2(uiReaderPrep.cachedState.screenSize.X, (hintTextSize.Y * 2) + padding);
+                hintRectSize.X += padding * 2;
+                hintRectSize.Y += padding * 2;
+                hintTextOffset = new Vector2((hintRectSize.X - hintTextSize.X) / 2, (hintRectSize.Y - hintTextSize.Y) / 2);
+
+                drawList.AddRectFilled(hintPos, hintPos + hintRectSize, 0xc0000000, 5.0f, ImDrawFlags.RoundCornersAll);
+                drawList.AddText(hintPos + hintTextOffset, hintColor, hintText);
             }
         }
     }

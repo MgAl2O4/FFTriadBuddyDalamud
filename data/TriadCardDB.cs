@@ -38,6 +38,11 @@ namespace FFTriadBuddy
                 (x.Sides[(int)ETriadGameSide.Right] == numRight));
         }
 
+        public TriadCard FindById(int cardId)
+        {
+            return cards.Find(x => (x != null) && x.Id == cardId);
+        }
+
         public TriadCard FindByTexture(string texPath)
         {
             // map image ids: 082100+ directly to card id: 0+
@@ -60,7 +65,7 @@ namespace FFTriadBuddy
 
                     if (cardId >= 0 && cardId < cards.Count)
                     {
-                        return cards.Find(x => (x != null) && x.Id == cardId);
+                        return FindById(cardId);
                     }
                 }
             }

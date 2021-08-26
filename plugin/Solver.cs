@@ -16,6 +16,8 @@ namespace TriadBuddyPlugin
             FailedToParseNpc,
         }
 
+        public GoldSaucerProfileReader profileReaderGS;
+
         // game
         private TriadGameScreenMemory screenMemory = new();
         public TriadNpc currentNpc;
@@ -26,10 +28,21 @@ namespace TriadBuddyPlugin
         public bool hasMove;
 
         // deck selection
+        public class DeckData
+        {
+            public string name;
+            public int id;
+            public TriadDeck solverDeck;
+            public TriadGameResultChance chance;
+        }
+
         public TriadNpc preGameNpc;
         public List<TriadGameModifier> preGameMods = new();
-        public List<TriadGameResultChance> preGameDeckChance = new();
+        public Dictionary<int, DeckData> preGameDecks = new();
+        public float preGameProgress => (preGameDecks.Count > 0) ? (1.0f * preGameSolved / preGameDecks.Count) : 0.0f;
+        public int preGameBestId = -1;
         private int preGameId = 0;
+        private int preGameSolved = 0;
         private object preGameLock = new();
 
         public Status status;
@@ -98,7 +111,7 @@ namespace TriadBuddyPlugin
         {
             public TriadGameSession session;
             public TriadGameData gameData;
-            public int deckIdx;
+            public int deckId;
             public int passId;
         }
 
@@ -117,57 +130,107 @@ namespace TriadBuddyPlugin
                 }
             }
 
-            // bump pass id, pending workers from previous update won't try to write their results
-            preGameId++;
-            preGameDeckChance.Clear();
+            bool canProcessDecks = !parseCtx.HasErrors &&
+                // case 1: it's play request screen, no deck info in ui, proceed only if profile reader is available
+                ((state.decks.Count == 0 && profileReaderGS != null) ||
+                // case 2: it's deck selection screen, ui has deck info, proceed only if solved already (profile reader not available)
+                (state.decks.Count > 0 && profileReaderGS == null));
 
-            if (!parseCtx.HasErrors)
+            if (canProcessDecks)
             {
-                for (int deckIdx = 0; deckIdx < state.decks.Count; deckIdx++)
-                {
-                    preGameDeckChance.Add(new TriadGameResultChance());
-                }
+                // bump pass id, pending workers from previous update won't try to write their results
+                preGameId++;
+                preGameDecks.Clear();
+                preGameBestId = -1;
 
-                for (int deckIdx = 0; deckIdx < state.decks.Count; deckIdx++)
+                var profileDecks = (profileReaderGS != null) ? profileReaderGS.GetPlayerDecks() : null;
+                int numDecks = (profileDecks != null) ? profileDecks.Length : state.decks.Count;
+
+                for (int deckIdx = 0; deckIdx < numDecks; deckIdx++)
                 {
                     parseCtx.Reset();
 
-                    var cards = new TriadCard[5];
-                    for (int cardIdx = 0; cardIdx < 5; cardIdx++)
+                    var deckData = (profileDecks != null) ?
+                        ParseDeckDataFromProfile(profileDecks[deckIdx], parseCtx) :
+                        ParseDeckDataFromUI(state.decks[deckIdx], parseCtx);
+
+                    if (!parseCtx.HasErrors && deckData != null)
                     {
-                        cards[cardIdx] = parseCtx.ParseCard(state.decks[deckIdx].cardTexPaths[cardIdx]);
+                        preGameDecks.Add(deckData.id, deckData);
+                    }
+                }
+
+                foreach (var kvp in preGameDecks)
+                {
+                    var session = new TriadGameSession();
+                    foreach (var mod in preGameMods)
+                    {
+                        var modCopy = (TriadGameModifier)Activator.CreateInstance(mod.GetType());
+                        modCopy.OnMatchInit();
+
+                        session.modifiers.Add(modCopy);
                     }
 
-                    if (!parseCtx.HasErrors)
+                    session.UpdateSpecialRules();
+
+                    var gameData = session.StartGame(kvp.Value.solverDeck, preGameNpc.Deck, ETriadGameState.InProgressRed);
+                    var calcContext = new DeckSolverContext() { session = session, gameData = gameData, deckId = kvp.Value.id, passId = preGameId };
+
+                    Action<object> solverAction = (ctxOb) =>
                     {
-                        var session = new TriadGameSession();
-                        foreach (var mod in preGameMods)
-                        {
-                            var modCopy = (TriadGameModifier)Activator.CreateInstance(mod.GetType());
-                            modCopy.OnMatchInit();
+                        var ctx = ctxOb as DeckSolverContext;
+                        ctx.session.SolverFindBestMove(ctx.gameData, out int bestNextPos, out TriadCard bestNextCard, out TriadGameResultChance bestChance);
+                        OnSolvedDeck(ctx.passId, ctx.deckId, bestChance);
+                    };
 
-                            session.modifiers.Add(modCopy);
-                        }
-
-                        session.UpdateSpecialRules();
-
-                        var gameData = session.StartGame(new TriadDeck(cards), preGameNpc.Deck, ETriadGameState.InProgressRed);
-                        var calcContext = new DeckSolverContext() { session = session, gameData = gameData, deckIdx = deckIdx, passId = preGameId };
-
-                        Action<object> solverAction = (ctxOb) =>
-                        {
-                            var ctx = ctxOb as DeckSolverContext;
-                            ctx.session.SolverFindBestMove(ctx.gameData, out int bestNextPos, out TriadCard bestNextCard, out TriadGameResultChance bestChance);
-                            OnSolvedDeck(ctx.passId, ctx.deckIdx, bestChance);
-                        };
-
-                        new TaskFactory().StartNew(solverAction, calcContext);
-                    }
+                    new TaskFactory().StartNew(solverAction, calcContext);
                 }
             }
         }
 
-        private void OnSolvedDeck(int passId, int deckIdx, TriadGameResultChance winChance)
+        private DeckData ParseDeckDataFromProfile(GoldSaucerProfileReader.PlayerDeck deckOb, TriadUIParser ctx)
+        {
+            // empty profile decks will result in nulls here
+            if (deckOb == null)
+            {
+                return null;
+            }
+
+            var deckData = new DeckData() { id = deckOb.id, name = deckOb.name };
+            
+            var cards = new TriadCard[5];
+            for (int cardIdx = 0; cardIdx < 5; cardIdx++)
+            {
+                int cardId = deckOb.cardIds[cardIdx];
+                cards[cardIdx] = ctx.cards.FindById(cardId);
+
+                if (cards[cardIdx] == null)
+                {
+                    ctx.OnFailedCard($"id:{cardId}");
+                }
+            }
+
+            deckData.solverDeck = ctx.HasErrors ? null : new TriadDeck(cards);
+            return deckData;
+        }
+
+        private DeckData ParseDeckDataFromUI(TriadPrepDeckUIState deckOb, TriadUIParser ctx)
+        {
+            // empty UI decks are valid objects, but their card data is empty (handled by ctx)
+
+            var deckData = new DeckData() { id = deckOb.id, name = deckOb.name };
+
+            var cards = new TriadCard[5];
+            for (int cardIdx = 0; cardIdx < 5; cardIdx++)
+            {
+                cards[cardIdx] = ctx.ParseCard(deckOb.cardTexPaths[cardIdx]);
+            }
+
+            deckData.solverDeck = ctx.HasErrors ? null : new TriadDeck(cards);
+            return deckData;
+        }
+
+        private void OnSolvedDeck(int passId, int deckId, TriadGameResultChance winChance)
         {
             if (preGameId != passId)
             {
@@ -176,11 +239,27 @@ namespace TriadBuddyPlugin
 
             lock (preGameLock)
             {
-                if (deckIdx >= 0 && deckIdx < preGameDeckChance.Count)
+                if (preGameDecks.TryGetValue(deckId, out var deckData))
                 {
-                    preGameDeckChance[deckIdx] = winChance;
+                    deckData.chance = winChance;
+                    preGameSolved++;
+
                     // TODO: broadcast? (this is still worker thread!)
-                    Logger.WriteLine($"deck: {deckIdx}, result:{winChance.expectedResult}, win%:{winChance.winChance:P0}, draw%:{winChance.drawChance:P0}");
+                    Logger.WriteLine($"deck[{deckId}]:'{deckData.name}', result:{winChance.expectedResult}, win%:{winChance.winChance:P0}, draw%:{winChance.drawChance:P0}");
+
+                    float bestScore = 0;
+                    int bestId = -1;
+                    foreach (var kvp in preGameDecks)
+                    {
+                        float testScore = kvp.Value.chance.compScore;
+                        if (bestId < 0 || testScore > bestScore)
+                        {
+                            bestId = kvp.Key;
+                            bestScore = testScore;
+                        }
+                    }
+
+                    preGameBestId = bestId;
                 }
             }
         }
