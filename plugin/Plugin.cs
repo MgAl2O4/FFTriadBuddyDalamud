@@ -196,9 +196,7 @@ namespace TriadBuddyPlugin
                 }
 
                 var hintTextSize = ImGui.CalcTextSize(hintText);
-                var hintRectSize = new Vector2(uiReaderPrep.cachedState.screenSize.X, (hintTextSize.Y * 2) + padding);
-                hintRectSize.X += padding * 2;
-                hintRectSize.Y += padding * 2;
+                var hintRectSize = new Vector2(uiReaderPrep.cachedState.screenSize.X, (hintTextSize.Y * 2) + (padding * 3));
                 hintTextOffset = new Vector2((hintRectSize.X - hintTextSize.X) / 2, (hintRectSize.Y - hintTextSize.Y) / 2);
 
                 drawList.AddRectFilled(hintPos, hintPos + hintRectSize, 0xc0000000, 5.0f, ImDrawFlags.RoundCornersAll);
