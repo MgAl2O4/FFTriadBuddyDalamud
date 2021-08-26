@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game.Gui;
 using Dalamud.Logging;
+using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using System;
 using System.Runtime.InteropServices;
@@ -17,7 +18,7 @@ namespace TriadBuddyPlugin
         }
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
-        private delegate IntPtr GetGSProfileDataDelegate(IntPtr uiObject);
+        private delegate GSProfileData* GetGSProfileDataDelegate(IntPtr uiObject);
 
         [StructLayout(LayoutKind.Explicit, Size = 0x3A)]
         public unsafe struct GSProfileDeck
@@ -82,8 +83,7 @@ namespace TriadBuddyPlugin
                     var getGSProfileDataPtr = new IntPtr(((UIModule*)uiModulePtr)->vfunc[28]);
                     var getGSProfileData = Marshal.GetDelegateForFunctionPointer<GetGSProfileDataDelegate>(getGSProfileDataPtr);
 
-                    var profileDataPtr = getGSProfileData(uiModulePtr);
-                    var profileData = Marshal.PtrToStructure<GSProfileData>(profileDataPtr);
+                    var profileData = getGSProfileData(uiModulePtr);
 
                     Func<GSProfileDeck, int, PlayerDeck> ConvertToPlayerDeck = (deckMem, deckId) =>
                     {
@@ -91,7 +91,7 @@ namespace TriadBuddyPlugin
                         {
                             PlayerDeck deckOb = new() { id = deckId };
 
-                            deckOb.name = GetStringFromBytes(deckMem.NameBuffer, 32);
+                            deckOb.name = MemoryHelper.ReadStringNullTerminated(new IntPtr(deckMem.NameBuffer));
                             deckOb.cardIds[0] = deckMem.Card0;
                             deckOb.cardIds[1] = deckMem.Card1;
                             deckOb.cardIds[2] = deckMem.Card2;
@@ -107,11 +107,11 @@ namespace TriadBuddyPlugin
                     // just 5 decks, no idea what other 5..9 are used for
                     return new PlayerDeck[]
                     {
-                        ConvertToPlayerDeck(profileData.Deck0, 0),
-                        ConvertToPlayerDeck(profileData.Deck1, 1),
-                        ConvertToPlayerDeck(profileData.Deck2, 2),
-                        ConvertToPlayerDeck(profileData.Deck3, 3),
-                        ConvertToPlayerDeck(profileData.Deck4, 4)
+                        ConvertToPlayerDeck(profileData->Deck0, 0),
+                        ConvertToPlayerDeck(profileData->Deck1, 1),
+                        ConvertToPlayerDeck(profileData->Deck2, 2),
+                        ConvertToPlayerDeck(profileData->Deck3, 3),
+                        ConvertToPlayerDeck(profileData->Deck4, 4)
                     };
                 }
             }
@@ -122,17 +122,6 @@ namespace TriadBuddyPlugin
             }
 
             return null;
-        }
-
-        private string GetStringFromBytes(byte* data, int size)
-        {
-            byte[] buffer = new byte[size];
-            for (int idx = 0; idx < size; idx++)
-            {
-                buffer[idx] = data[idx];
-            }
-
-            return Encoding.UTF8.GetString(buffer).TrimEnd('\0');
         }
     }
 }
