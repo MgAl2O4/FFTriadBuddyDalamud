@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace TriadBuddyPlugin
 {
-    public class TriadCardUIState : IEquatable<TriadCardUIState>
+    public class UIStateTriadCard : IEquatable<UIStateTriadCard>
     {
         public byte numU;
         public byte numL;
@@ -19,7 +19,7 @@ namespace TriadBuddyPlugin
 
         public bool IsHidden => isPresent && (numU == 0);
 
-        public bool Equals(TriadCardUIState other)
+        public bool Equals(UIStateTriadCard other)
         {
             return (isPresent == other.isPresent) &&
                 (isLocked == other.isLocked) &&
@@ -48,16 +48,16 @@ namespace TriadBuddyPlugin
         }
     }
 
-    public class TriadGameUIState : IEquatable<TriadGameUIState>
+    public class UIStateTriadGame : IEquatable<UIStateTriadGame>
     {
         public List<string> rules;
         public List<string> redPlayerDesc;
-        public TriadCardUIState[] blueDeck = new TriadCardUIState[5];
-        public TriadCardUIState[] redDeck = new TriadCardUIState[5];
-        public TriadCardUIState[] board = new TriadCardUIState[9];
+        public UIStateTriadCard[] blueDeck = new UIStateTriadCard[5];
+        public UIStateTriadCard[] redDeck = new UIStateTriadCard[5];
+        public UIStateTriadCard[] board = new UIStateTriadCard[9];
         public byte move;
 
-        public bool Equals(TriadGameUIState other)
+        public bool Equals(UIStateTriadGame other)
         {
             if (move != other.move)
             {
@@ -75,7 +75,7 @@ namespace TriadBuddyPlugin
                 return false;
             }
 
-            Func<TriadCardUIState, TriadCardUIState, bool> HasCardDiffs = (a, b) =>
+            Func<UIStateTriadCard, UIStateTriadCard, bool> HasCardDiffs = (a, b) =>
             {
                 if ((a == null) != (b == null))
                 {

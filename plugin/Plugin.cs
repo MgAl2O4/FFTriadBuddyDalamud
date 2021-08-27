@@ -23,8 +23,8 @@ namespace TriadBuddyPlugin
         private readonly WindowSystem windowSystem = new("TriadBuddy");
         private readonly Window windowStatus;
 
-        public readonly TriadGameUIReader uiReaderGame;
-        public readonly TriadPrepUIReader uiReaderPrep;
+        public readonly UIReaderTriadGame uiReaderGame;
+        public readonly UIReaderTriadPrep uiReaderPrep;
         public readonly Solver solver;
         public readonly GameDataLoader dataLoader;
 
@@ -46,13 +46,13 @@ namespace TriadBuddyPlugin
             this.framework = framework;
 
             solver = new Solver();
-            solver.profileReaderGS = canUseProfileReader ? new GoldSaucerProfileReader(gameGui) : null;
+            solver.profileGS = canUseProfileReader ? new MemoryReaderProfileGS(gameGui) : null;
             solver.OnMoveChanged += Solver_OnMoveChanged;
 
-            uiReaderGame = new TriadGameUIReader(gameGui);
+            uiReaderGame = new UIReaderTriadGame(gameGui);
             uiReaderGame.OnChanged += (state) => solver.UpdateGame(state);
 
-            uiReaderPrep = new TriadPrepUIReader(gameGui);
+            uiReaderPrep = new UIReaderTriadPrep(gameGui);
             uiReaderPrep.shouldScanDeckData = !canUseProfileReader;
             uiReaderPrep.OnChanged += (state) => solver.UpdateDecks(state);
 

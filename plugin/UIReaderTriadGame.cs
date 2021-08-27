@@ -6,7 +6,7 @@ using System.Numerics;
 
 namespace TriadBuddyPlugin
 {
-    public partial class TriadGameUIReader
+    public partial class UIReaderTriadGame
     {
         public enum Status
         {
@@ -19,16 +19,16 @@ namespace TriadBuddyPlugin
             FailedToReadCards,
         }
 
-        public TriadGameUIState currentState;
+        public UIStateTriadGame currentState;
         public Status status;
         public bool HasErrors => status >= Status.FailedToReadMove;
 
-        public event Action<TriadGameUIState> OnChanged;
+        public event Action<UIStateTriadGame> OnChanged;
 
         private GameGui gameGui;
         private IntPtr addonPtr;
 
-        public TriadGameUIReader(GameGui gameGui)
+        public UIReaderTriadGame(GameGui gameGui)
         {
             this.gameGui = gameGui;
         }
@@ -54,7 +54,7 @@ namespace TriadBuddyPlugin
             }
 
             status = Status.NoErrors;
-            var newState = new TriadGameUIState();
+            var newState = new UIStateTriadGame();
 
             (newState.rules, newState.redPlayerDesc) = GetUIDescriptions(addon);
 
@@ -107,7 +107,7 @@ namespace TriadBuddyPlugin
             }
         }
 
-        private void SetCurrentState(TriadGameUIState newState)
+        private void SetCurrentState(UIStateTriadGame newState)
         {
             bool isEmpty = newState == null;
             bool wasEmpty = currentState == null;
@@ -207,9 +207,9 @@ namespace TriadBuddyPlugin
             return (texPath, isLocked);
         }
 
-        private unsafe TriadCardUIState GetCardData(AddonTripleTriadCard addonCard)
+        private unsafe UIStateTriadCard GetCardData(AddonTripleTriadCard addonCard)
         {
-            var resultOb = new TriadCardUIState();
+            var resultOb = new UIStateTriadCard();
             if (addonCard.HasCard)
             {
                 resultOb.isPresent = true;

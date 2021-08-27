@@ -7,8 +7,8 @@ namespace TriadBuddyPlugin
 {
     public class PluginStatusWindow : Window, IDisposable
     {
-        public TriadGameUIReader uiReaderGame;
-        public TriadPrepUIReader uiReaderPrep;
+        public UIReaderTriadGame uiReaderGame;
+        public UIReaderTriadPrep uiReaderPrep;
         public Solver solver;
 
         public PluginStatusWindow() : base("Triad Buddy")
@@ -35,8 +35,8 @@ namespace TriadBuddyPlugin
             var statusDesc =
                 uiReaderGame.HasErrors ? uiReaderGame.status.ToString() :
                 solver.HasErrors ? solver.status.ToString() :
-                (uiReaderGame.status == TriadGameUIReader.Status.AddonNotFound) ? "Minigame not active" :
-                (uiReaderGame.status == TriadGameUIReader.Status.AddonNotVisible) ? "Minigame not visible" :
+                (uiReaderGame.status == UIReaderTriadGame.Status.AddonNotFound) ? "Minigame not active" :
+                (uiReaderGame.status == UIReaderTriadGame.Status.AddonNotVisible) ? "Minigame not visible" :
                 "Active";
 
             ImGui.TextColored(uiReaderGame.HasErrors || solver.HasErrors ? colorErr : colorOk, statusDesc);

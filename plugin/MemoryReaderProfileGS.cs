@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 
 namespace TriadBuddyPlugin
 {
-    public unsafe class GoldSaucerProfileReader
+    public unsafe class MemoryReaderProfileGS
     {
         public class PlayerDeck
         {
@@ -49,16 +49,16 @@ namespace TriadBuddyPlugin
         }
 
         private readonly GameGui gameGui;
-        private bool hasAccessFailures;
+        public bool HasErrors { get; private set; }
 
-        public GoldSaucerProfileReader(GameGui gameGui)
+        public MemoryReaderProfileGS(GameGui gameGui)
         {
             this.gameGui = gameGui;
         }
 
         public PlayerDeck[] GetPlayerDecks()
         {
-            if (hasAccessFailures)
+            if (HasErrors)
             {
                 // hard nope, reverse code again.
                 return null;
@@ -84,7 +84,7 @@ namespace TriadBuddyPlugin
 
                     var profileData = getGSProfileData(uiModulePtr);
 
-                    Func<GSProfileDeck, int, PlayerDeck> ConvertToPlayerDeck = (deckMem, deckId) =>
+                    PlayerDeck ConvertToPlayerDeck(GSProfileDeck deckMem, int deckId)
                     {
                         if (deckMem.Card0 != 0 && deckMem.Card1 != 0 && deckMem.Card2 != 0 && deckMem.Card3 != 0 && deckMem.Card4 != 0)
                         {
@@ -117,7 +117,7 @@ namespace TriadBuddyPlugin
             catch (Exception ex)
             {
                 PluginLog.Error(ex, "Failed to read GS profile data, turning reader off");
-                hasAccessFailures = true;
+                HasErrors = true;
             }
 
             return null;

@@ -6,21 +6,21 @@ using System.Numerics;
 
 namespace TriadBuddyPlugin
 {
-    public class TriadPrepUIReader
+    public class UIReaderTriadPrep
     {
-        public TriadPrepUIState cachedState = new();
+        public UIStateTriadPrep cachedState = new();
         public bool isActive;
         public bool IsDeckSelection => hasDeckSelection;
         public bool shouldScanDeckData = false;
 
-        public Action<TriadPrepUIState> OnChanged;
+        public Action<UIStateTriadPrep> OnChanged;
 
         private GameGui gameGui;
         private bool hasRequest;
         private bool hasDeckSelection;
         private IntPtr cachedDeckSelAddon;
 
-        public TriadPrepUIReader(GameGui gameGui)
+        public UIReaderTriadPrep(GameGui gameGui)
         {
             this.gameGui = gameGui;
         }
@@ -160,7 +160,7 @@ namespace TriadBuddyPlugin
 
                     if (nodeC1 != null)
                     {
-                        var deckOb = new TriadPrepDeckUIState();
+                        var deckOb = new UIStateTriadPrepDeck();
                         deckOb.id = cachedState.decks.Count;
                         deckOb.rootNodeAddr = (ulong)nodeB;
 
@@ -205,7 +205,7 @@ namespace TriadBuddyPlugin
         }
     }
 
-    public class TriadPrepDeckUIState
+    public class UIStateTriadPrepDeck
     {
         public string[] cardTexPaths = new string[5];
         public string name;
@@ -217,7 +217,7 @@ namespace TriadBuddyPlugin
         public Vector2 screenSize;
     }
 
-    public class TriadPrepUIState
+    public class UIStateTriadPrep
     {
         public string[] rules = new string[4];
         public string npc;
@@ -225,6 +225,6 @@ namespace TriadBuddyPlugin
         public Vector2 screenPos;
         public Vector2 screenSize;
 
-        public List<TriadPrepDeckUIState> decks = new();
+        public List<UIStateTriadPrepDeck> decks = new();
     }
 }

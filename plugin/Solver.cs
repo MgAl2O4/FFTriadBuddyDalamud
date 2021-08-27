@@ -16,7 +16,7 @@ namespace TriadBuddyPlugin
             FailedToParseNpc,
         }
 
-        public GoldSaucerProfileReader profileReaderGS;
+        public MemoryReaderProfileGS profileGS;
 
         // game
         private TriadGameScreenMemory screenMemory = new();
@@ -55,7 +55,7 @@ namespace TriadBuddyPlugin
             TriadGameSession.StaticInitialize();
         }
 
-        public void UpdateGame(TriadGameUIState stateOb)
+        public void UpdateGame(UIStateTriadGame stateOb)
         {
             status = Status.NoErrors;
 
@@ -115,7 +115,7 @@ namespace TriadBuddyPlugin
             public int passId;
         }
 
-        public void UpdateDecks(TriadPrepUIState state)
+        public void UpdateDecks(UIStateTriadPrep state)
         {
             // don't report status here, just log stuff out
             var parseCtx = new TriadUIParser();
@@ -130,11 +130,12 @@ namespace TriadBuddyPlugin
                 }
             }
 
+            bool canReadFromProfile = profileGS != null && !profileGS.HasErrors;
             bool canProcessDecks = !parseCtx.HasErrors &&
                 // case 1: it's play request screen, no deck info in ui, proceed only if profile reader is available
-                ((state.decks.Count == 0 && profileReaderGS != null) ||
+                ((state.decks.Count == 0 && canReadFromProfile) ||
                 // case 2: it's deck selection screen, ui has deck info, proceed only if solved already (profile reader not available)
-                (state.decks.Count > 0 && profileReaderGS == null));
+                (state.decks.Count > 0 && !canReadFromProfile));
 
             if (canProcessDecks)
             {
@@ -143,7 +144,7 @@ namespace TriadBuddyPlugin
                 preGameDecks.Clear();
                 preGameBestId = -1;
 
-                var profileDecks = (profileReaderGS != null) ? profileReaderGS.GetPlayerDecks() : null;
+                var profileDecks = canReadFromProfile ? profileGS.GetPlayerDecks() : null;
                 int numDecks = (profileDecks != null) ? profileDecks.Length : state.decks.Count;
 
                 for (int deckIdx = 0; deckIdx < numDecks; deckIdx++)
@@ -188,7 +189,7 @@ namespace TriadBuddyPlugin
             }
         }
 
-        private DeckData ParseDeckDataFromProfile(GoldSaucerProfileReader.PlayerDeck deckOb, TriadUIParser ctx)
+        private DeckData ParseDeckDataFromProfile(MemoryReaderProfileGS.PlayerDeck deckOb, TriadUIParser ctx)
         {
             // empty profile decks will result in nulls here
             if (deckOb == null)
@@ -214,7 +215,7 @@ namespace TriadBuddyPlugin
             return deckData;
         }
 
-        private DeckData ParseDeckDataFromUI(TriadPrepDeckUIState deckOb, TriadUIParser ctx)
+        private DeckData ParseDeckDataFromUI(UIStateTriadPrepDeck deckOb, TriadUIParser ctx)
         {
             // empty UI decks are valid objects, but their card data is empty (handled by ctx)
 
