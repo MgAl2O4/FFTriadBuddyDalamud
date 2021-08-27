@@ -197,7 +197,7 @@ namespace TriadBuddyPlugin
             }
 
             var deckData = new DeckData() { id = deckOb.id, name = deckOb.name };
-            
+
             var cards = new TriadCard[5];
             for (int cardIdx = 0; cardIdx < 5; cardIdx++)
             {

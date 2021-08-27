@@ -182,7 +182,7 @@ namespace TriadBuddyPlugin
                     hintText = $"Evaluating decks... {solver.preGameProgress:P0}";
                 }
                 else
-                { 
+                {
                     if (solver.preGameDecks.TryGetValue(solver.preGameBestId, out var bestDeckData))
                     {
                         hintColor = GetOverlayChanceColor(bestDeckData.chance);

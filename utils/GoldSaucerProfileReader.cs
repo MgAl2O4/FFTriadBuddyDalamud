@@ -4,7 +4,6 @@ using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using System;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace TriadBuddyPlugin
 {

@@ -70,7 +70,7 @@ namespace TriadBuddyPlugin
                         {
                             UpdateDeckSelect(baseNode);
                             hasDeckSelection = cachedState.decks.Count > 0;
-                            
+
                             // notify only when deck data is coming from UI
                             if (hasDeckSelection && shouldScanDeckData)
                             {
