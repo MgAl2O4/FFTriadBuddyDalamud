@@ -7,20 +7,13 @@ using System.Runtime.InteropServices;
 
 namespace TriadBuddyPlugin
 {
-    public unsafe class MemoryReaderProfileGS
+    public unsafe class UnsafeReaderProfileGS
     {
-        public class PlayerDeck
-        {
-            public string name;
-            public int id;
-            public ushort[] cardIds = new ushort[5];
-        }
-
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
         private delegate GSProfileData* GetGSProfileDataDelegate(IntPtr uiObject);
 
         [StructLayout(LayoutKind.Explicit, Size = 0x3A)]
-        public unsafe struct GSProfileDeck
+        private unsafe struct GSProfileDeck
         {
             [FieldOffset(0x0)] public fixed byte NameBuffer[32];    // 15 chars + null, can it be unicode? (JA/KO/ZH)
             [FieldOffset(0x30)] public ushort Card0;
@@ -31,7 +24,7 @@ namespace TriadBuddyPlugin
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 0x284)]           // it's more than that, but i'm not reading anything else so meh, it's good
-        public unsafe struct GSProfileData
+        private unsafe struct GSProfileData
         {
             [FieldOffset(0x30)] public fixed byte NameBuffer[8];    // "GS.DAT"
             [FieldOffset(0x40)] public GSProfileDeck Deck0;
@@ -48,10 +41,17 @@ namespace TriadBuddyPlugin
             // +0x2B4: 8 bytes about card being viewed already?
         }
 
+        public class PlayerDeck
+        {
+            public string name;
+            public int id;
+            public ushort[] cardIds = new ushort[5];
+        }
+
         private readonly GameGui gameGui;
         public bool HasErrors { get; private set; }
 
-        public MemoryReaderProfileGS(GameGui gameGui)
+        public UnsafeReaderProfileGS(GameGui gameGui)
         {
             this.gameGui = gameGui;
         }

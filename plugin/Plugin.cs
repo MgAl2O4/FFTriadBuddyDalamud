@@ -39,14 +39,14 @@ namespace TriadBuddyPlugin
         private Vector2 cachedBoardSize;
         private bool hasCachedOverlay;
 
-        public Plugin(DalamudPluginInterface pluginInterface, Framework framework, CommandManager commandManager, GameGui gameGui, DataManager dataManager)
+        public Plugin(DalamudPluginInterface pluginInterface, Framework framework, CommandManager commandManager, GameGui gameGui, DataManager dataManager, SigScanner sigScanner)
         {
             this.pluginInterface = pluginInterface;
             this.commandManager = commandManager;
             this.framework = framework;
 
             solver = new Solver();
-            solver.profileGS = canUseProfileReader ? new MemoryReaderProfileGS(gameGui) : null;
+            solver.profileGS = canUseProfileReader ? new UnsafeReaderProfileGS(gameGui) : null;
             solver.OnMoveChanged += Solver_OnMoveChanged;
 
             uiReaderGame = new UIReaderTriadGame(gameGui);

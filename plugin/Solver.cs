@@ -16,7 +16,7 @@ namespace TriadBuddyPlugin
             FailedToParseNpc,
         }
 
-        public MemoryReaderProfileGS profileGS;
+        public UnsafeReaderProfileGS profileGS;
 
         // game
         private TriadGameScreenMemory screenMemory = new();
@@ -189,7 +189,7 @@ namespace TriadBuddyPlugin
             }
         }
 
-        private DeckData ParseDeckDataFromProfile(MemoryReaderProfileGS.PlayerDeck deckOb, TriadUIParser ctx)
+        private DeckData ParseDeckDataFromProfile(UnsafeReaderProfileGS.PlayerDeck deckOb, TriadUIParser ctx)
         {
             // empty profile decks will result in nulls here
             if (deckOb == null)
