@@ -9,15 +9,18 @@ namespace TriadBuddyPlugin
     public class UIReaderTriadPrep
     {
         public UIStateTriadPrep cachedState = new();
-        public bool isActive;
-        public bool IsDeckSelection => hasDeckSelection;
         public bool shouldScanDeckData = false;
 
-        public Action<UIStateTriadPrep> OnChanged;
+        public bool HasMatchRequestUI => hasRequestUI;
+        public bool HasDeckSelectionUI => hasDeckSelectionUI;
+
+        public Action<UIStateTriadPrep> OnUIStateChanged;
+        public Action<bool> OnMatchRequestChanged;
+        public Action<bool> OnDeckSelectionChanged;
 
         private GameGui gameGui;
-        private bool hasRequest;
-        private bool hasDeckSelection;
+        private bool hasRequestUI;
+        private bool hasDeckSelectionUI;
         private IntPtr cachedDeckSelAddon;
 
         public UIReaderTriadPrep(GameGui gameGui)
@@ -27,7 +30,12 @@ namespace TriadBuddyPlugin
 
         public unsafe void Update()
         {
-            bool newActive = false;
+            bool foundActiveUI = false;
+            bool newHasRequestUI = false;
+            bool newHasDeckSelectUI = false;
+
+            //////////////////////////////////////////////////////////////////
+            // match request
 
             IntPtr addonReqPtr = gameGui.GetAddonByName("TripleTriadRequest", 1);
             if (addonReqPtr != IntPtr.Zero)
@@ -35,71 +43,79 @@ namespace TriadBuddyPlugin
                 var baseNode = (AtkUnitBase*)addonReqPtr;
                 if (baseNode != null && baseNode->RootNode != null && baseNode->RootNode->IsVisible)
                 {
-                    if (!hasRequest)
+                    if (!hasRequestUI)
                     {
                         UpdateRequest(baseNode);
 
                         // notify always, if deck data depends on UI, it will be ignored by solver
-                        OnChanged?.Invoke(cachedState);
-                        hasRequest = true;
+                        OnUIStateChanged?.Invoke(cachedState);
                     }
 
                     (cachedState.screenPos, cachedState.screenSize) = GUINodeUtils.GetNodePosAndSize(baseNode->RootNode);
-                    newActive = true;
+                    newHasRequestUI = true;
+                    foundActiveUI = true;
                 }
             }
-            else
+
+            if (hasRequestUI != newHasRequestUI)
             {
-                IntPtr addonDeckPtr = gameGui.GetAddonByName("TripleTriadSelDeck", 1);
-                if (addonDeckPtr != IntPtr.Zero)
+                hasRequestUI = newHasRequestUI;
+                OnMatchRequestChanged?.Invoke(hasRequestUI);
+            }
+
+
+            //////////////////////////////////////////////////////////////////
+            // deck selection
+
+            IntPtr addonDeckPtr = foundActiveUI ? IntPtr.Zero : gameGui.GetAddonByName("TripleTriadSelDeck", 1);
+            if (cachedDeckSelAddon != addonDeckPtr)
+            {
+                // addon ptr changed? reset cached node ptrs
+                cachedDeckSelAddon = addonDeckPtr;
+                foreach (var deckOb in cachedState.decks)
                 {
-                    // addon ptr changed? reset cached node ptrs
-                    if (cachedDeckSelAddon != addonDeckPtr)
+                    deckOb.rootNodeAddr = 0;
+                }
+            }
+
+            if (addonDeckPtr != IntPtr.Zero)
+            {
+                var baseNode = (AtkUnitBase*)addonDeckPtr;
+                if (baseNode != null && baseNode->RootNode != null && baseNode->RootNode->IsVisible)
+                {
+                    if (!hasDeckSelectionUI)
                     {
-                        cachedDeckSelAddon = addonDeckPtr;
+                        UpdateDeckSelect(baseNode);
+                    }
+
+                    newHasDeckSelectUI = cachedState.decks.Count > 0;
+
+                    // notify only when deck data is coming from UI
+                    if (!hasDeckSelectionUI && newHasDeckSelectUI && shouldScanDeckData)
+                    {
+                        OnUIStateChanged?.Invoke(cachedState);
+                    }
+
+                    if (newHasDeckSelectUI)
+                    {
+                        foundActiveUI = true;
+
                         foreach (var deckOb in cachedState.decks)
                         {
-                            deckOb.rootNodeAddr = 0;
-                        }
-                    }
-
-                    var baseNode = (AtkUnitBase*)addonDeckPtr;
-                    if (baseNode != null && baseNode->RootNode != null && baseNode->RootNode->IsVisible)
-                    {
-                        if (!hasDeckSelection)
-                        {
-                            UpdateDeckSelect(baseNode);
-                            hasDeckSelection = cachedState.decks.Count > 0;
-
-                            // notify only when deck data is coming from UI
-                            if (hasDeckSelection && shouldScanDeckData)
+                            var updateNode = (AtkResNode*)deckOb.rootNodeAddr;
+                            if (updateNode != null)
                             {
-                                OnChanged?.Invoke(cachedState);
+                                (deckOb.screenPos, deckOb.screenSize) = GUINodeUtils.GetNodePosAndSize(updateNode);
                             }
                         }
-
-                        if (hasDeckSelection)
-                        {
-                            foreach (var deckOb in cachedState.decks)
-                            {
-                                var updateNode = (AtkResNode*)deckOb.rootNodeAddr;
-                                if (updateNode != null)
-                                {
-                                    (deckOb.screenPos, deckOb.screenSize) = GUINodeUtils.GetNodePosAndSize(updateNode);
-                                }
-                            }
-                        }
-
-                        newActive = true;
                     }
                 }
             }
 
-            if (isActive != newActive)
+            if (hasDeckSelectionUI != newHasDeckSelectUI)
             {
-                isActive = newActive;
-                hasRequest = false;
-                hasDeckSelection = false;
+                hasDeckSelectionUI = newHasDeckSelectUI;
+                OnDeckSelectionChanged?.Invoke(hasDeckSelectionUI);
             }
         }
 

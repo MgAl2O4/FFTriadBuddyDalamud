@@ -80,7 +80,7 @@ namespace TriadBuddyPlugin
         public Status status;
         public bool HasErrors => status >= Status.FailedToReadMove;
 
-        public event Action<UIStateTriadGame> OnChanged;
+        public event Action<UIStateTriadGame> OnUIStateChanged;
 
         private GameGui gameGui;
         private IntPtr addonPtr;
@@ -183,7 +183,7 @@ namespace TriadBuddyPlugin
             if (changed)
             {
                 currentState = newState;
-                OnChanged?.Invoke(newState);
+                OnUIStateChanged?.Invoke(newState);
             }
         }
 

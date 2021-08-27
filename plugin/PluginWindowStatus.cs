@@ -5,14 +5,18 @@ using System.Numerics;
 
 namespace TriadBuddyPlugin
 {
-    public class PluginStatusWindow : Window, IDisposable
+    public class PluginWindowStatus : Window, IDisposable
     {
-        public UIReaderTriadGame uiReaderGame;
-        public UIReaderTriadPrep uiReaderPrep;
-        public Solver solver;
+        private readonly UIReaderTriadGame uiReaderGame;
+        private readonly UIReaderTriadPrep uiReaderPrep;
+        private readonly Solver solver;
 
-        public PluginStatusWindow() : base("Triad Buddy")
+        public PluginWindowStatus(Solver solver, UIReaderTriadGame uiReaderGame, UIReaderTriadPrep uiReaderPrep) : base("Triad Buddy")
         {
+            this.solver = solver;
+            this.uiReaderGame = uiReaderGame;
+            this.uiReaderPrep = uiReaderPrep;
+
             IsOpen = false;
 
             Size = new Vector2(350, 120);
@@ -55,7 +59,7 @@ namespace TriadBuddyPlugin
             }
 
             // context sensitive part
-            if (uiReaderPrep.isActive)
+            if (uiReaderPrep.HasDeckSelectionUI || uiReaderPrep.HasMatchRequestUI)
             {
                 var rulesDesc = "--";
 
