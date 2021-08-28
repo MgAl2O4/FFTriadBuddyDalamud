@@ -79,7 +79,7 @@ namespace TriadBuddyPlugin
                     if (solver.preGameDecks.TryGetValue(solver.preGameBestId, out var bestDeckData))
                     {
                         hintColor = GetChanceColor(bestDeckData.chance);
-                        hintText = $"{bestDeckData.name} -- win: {bestDeckData.chance.winChance:P0}";
+                        hintText = $"{bestDeckData.name} -- win: {bestDeckData.chance.winChance:P0}%";
                     }
                     else
                     {
