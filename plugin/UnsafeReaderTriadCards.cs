@@ -50,5 +50,17 @@ namespace TriadBuddyPlugin
 
             return !HasErrors && IsCardOwnedFunc(UIStatePtr, (ushort)cardId) != 0;
         }
+
+        /*public void TestOwnedCardBits()
+        {
+            IntPtr memAddr = UIStatePtr + 0x15ce5;
+
+            byte[] flags = Dalamud.Memory.MemoryHelper.ReadRaw(memAddr, 0x29);
+            flags[70 / 8] |= 1 << (70 % 8);
+            flags[71 / 8] |= 1 << (71 % 8);
+            flags[72 / 8] |= 1 << (72 % 8);
+
+            Dalamud.Memory.MemoryHelper.WriteRaw(memAddr, flags);
+        }*/
     }
 }

@@ -40,7 +40,7 @@ namespace TriadBuddyPlugin
             return desc;
         }
 
-        public TriadCard ToTriadCard(TriadUIParser ctx)
+        public TriadCard ToTriadCard(GameUIParser ctx)
         {
             return !isPresent ? null :
                 IsHidden ? ctx.cards.hiddenCard :
@@ -104,7 +104,7 @@ namespace TriadBuddyPlugin
             return true;
         }
 
-        public TriadNpc ToTriadNpc(TriadUIParser ctx)
+        public TriadNpc ToTriadNpc(GameUIParser ctx)
         {
             TriadNpc resultOb = null;
             foreach (var name in redPlayerDesc)
@@ -133,7 +133,7 @@ namespace TriadBuddyPlugin
             return resultOb;
         }
 
-        public List<TriadGameModifier> ToTriadModifier(TriadUIParser ctx)
+        public List<TriadGameModifier> ToTriadModifier(GameUIParser ctx)
         {
             var list = new List<TriadGameModifier>();
             foreach (var rule in rules)
@@ -148,7 +148,7 @@ namespace TriadBuddyPlugin
             return list;
         }
 
-        public ScannerTriad.GameState ToTriadScreenState(TriadUIParser ctx)
+        public ScannerTriad.GameState ToTriadScreenState(GameUIParser ctx)
         {
             var screenOb = new ScannerTriad.GameState();
             screenOb.mods = ToTriadModifier(ctx);

@@ -21,6 +21,7 @@ namespace TriadBuddyPlugin
 
         private readonly UIReaderTriadGame uiReaderGame;
         private readonly UIReaderTriadPrep uiReaderPrep;
+        private readonly UIReaderTriadCardList uiReaderCardList;
         private readonly Solver solver;
         private readonly GameDataLoader dataLoader;
         private readonly PluginOverlays overlays;
@@ -37,6 +38,8 @@ namespace TriadBuddyPlugin
             dataLoader = new GameDataLoader();
             dataLoader.StartAsyncWork(dataManager);
 
+            GameCardDB.Get().memReader = new UnsafeReaderTriadCards(sigScanner);
+
             solver = new Solver();
             solver.profileGS = canUseProfileReader ? new UnsafeReaderProfileGS(gameGui) : null;
 
@@ -47,12 +50,15 @@ namespace TriadBuddyPlugin
             uiReaderPrep.shouldScanDeckData = (solver.profileGS != null) && !solver.profileGS.HasErrors;
             uiReaderPrep.OnUIStateChanged += (state) => solver.UpdateDecks(state);
 
+            uiReaderCardList = new UIReaderTriadCardList(gameGui);
+
             overlays = new PluginOverlays(solver, uiReaderGame, uiReaderPrep);
             windowStatus = new PluginWindowStatus(solver, uiReaderGame, uiReaderPrep);
             windowSystem.AddWindow(windowStatus);
 
-            var windowDeckEval = new PluginWindowDeckEval(solver, uiReaderPrep);
-            windowSystem.AddWindow(windowDeckEval);
+            windowSystem.AddWindow(new PluginWindowDeckEval(solver, uiReaderPrep));
+            windowSystem.AddWindow(new PluginWindowCardInfo(uiReaderCardList, gameGui));
+            windowSystem.AddWindow(new PluginWindowCardSearch(uiReaderCardList));
 
             pluginInterface.UiBuilder.Draw += OnDraw;
             commandManager.AddHandler("/triadbuddy", new(OnCommand) { HelpMessage = $"Show state of {Name} plugin." });
@@ -82,11 +88,11 @@ namespace TriadBuddyPlugin
         {
             try
             {
-                // TODO: async? run every X ms? - check low spec perf, seems to be negligible
                 if (dataLoader.IsDataReady)
                 {
                     uiReaderGame.Update();
                     uiReaderPrep.Update();
+                    uiReaderCardList.Update();
                 }
             }
             catch (Exception ex)

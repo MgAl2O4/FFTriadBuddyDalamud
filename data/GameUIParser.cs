@@ -4,7 +4,7 @@ using System;
 
 namespace TriadBuddyPlugin
 {
-    public class TriadUIParser
+    public class GameUIParser
     {
         public TriadCardDB cards = TriadCardDB.Get();
         public TriadNpcDB npcs = TriadNpcDB.Get();
@@ -38,6 +38,17 @@ namespace TriadBuddyPlugin
             if (matchOb == null && markFailed)
             {
                 OnFailedCard($"[{numU}-{numL}-{numD}-{numR}], tex:{texPath}");
+            }
+
+            return matchOb;
+        }
+
+        public TriadCard ParseCard(int numU, int numL, int numD, int numR, ETriadCardType type, ETriadCardRarity rarity, bool markFailed = true)
+        {
+            var matchOb = cards.Find(numU, numL, numD, numR, type, rarity);
+            if (matchOb == null && markFailed)
+            {
+                OnFailedCard($"[{numU}-{numL}-{numD}-{numR}], type:{type}, rarity:{rarity}");
             }
 
             return matchOb;

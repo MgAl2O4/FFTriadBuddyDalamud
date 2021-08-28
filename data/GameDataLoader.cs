@@ -11,20 +11,47 @@ namespace TriadBuddyPlugin
     {
         public bool IsDataReady { get; private set; } = false;
 
+        // hardcoded maps between game enums and my own. having own ones was bad idea :<
+        private static readonly ETriadCardType[] cardTypeMap = { ETriadCardType.None, ETriadCardType.Primal, ETriadCardType.Scion, ETriadCardType.Beastman, ETriadCardType.Garlean };
+        private static readonly ETriadCardRarity[] cardRarityMap = { ETriadCardRarity.Common, ETriadCardRarity.Common, ETriadCardRarity.Uncommon, ETriadCardRarity.Rare, ETriadCardRarity.Epic, ETriadCardRarity.Legendary };
+
+        private class ENpcCachedData
+        {
+            public uint triadId;                // TripleTriad sheet
+            public int gameLogicId = -1;        // TriadNpcDB
+
+            public float[] mapRawCoords;
+            public float[] mapCoords;
+            public uint mapId;
+            public uint territoryId;
+
+            public uint[] rewardItems;
+            public List<int> rewardCardIds = new();
+        }
+        private Dictionary<uint, ENpcCachedData> mapENpcCache = new();
+
         public void StartAsyncWork(DataManager dataManager)
         {
             Task.Run(() =>
             {
+                mapENpcCache.Clear();
+
                 bool result = true;
                 result = result && ParseRules(dataManager);
+                result = result && ParseCardTypes(dataManager);
                 result = result && ParseCards(dataManager);
                 result = result && ParseNpcs(dataManager);
+                result = result && ParseNpcLocations(dataManager);
+                result = result && ParseCardRewards(dataManager);
 
+                var cardInfoDB = GameCardDB.Get();
                 var cardDB = TriadCardDB.Get();
                 var npcDB = TriadNpcDB.Get();
 
                 if (result)
                 {
+                    ParseENpcCacheData();
+
                     PluginLog.Log($"Loaded game data for cards:{cardDB.cards.Count}, npcs:{npcDB.npcs.Count}");
                     IsDataReady = true;
                 }
@@ -33,9 +60,12 @@ namespace TriadBuddyPlugin
                     // welp. can't do anything at this point, clear all DBs
                     // UI scraping will fail when data is missing there
 
+                    cardInfoDB.mapCards.Clear();
                     cardDB.cards.Clear();
                     npcDB.npcs.Clear();
                 }
+
+                mapENpcCache.Clear();
             });
         }
 
@@ -67,19 +97,36 @@ namespace TriadBuddyPlugin
             return true;
         }
 
+        private bool ParseCardTypes(DataManager dataManager)
+        {
+            var locDB = LocalizationDB.Get();
+
+            var typesSheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCardType>();
+            if (typesSheet == null || typesSheet.RowCount != locDB.LocCardTypes.Count)
+            {
+                PluginLog.Fatal($"Failed to parse rules (got:{typesSheet?.RowCount ?? 0}, expected:{locDB.LocCardTypes.Count})");
+                return false;
+            }
+
+            foreach (var row in typesSheet)
+            {
+                var cardType = ConvertToTriadType((byte)row.RowId);
+                locDB.mapCardTypes[cardType].Text = row.Name.RawString;
+            }
+
+            return true;
+        }
+
         private bool ParseCards(DataManager dataManager)
         {
             var cardDB = TriadCardDB.Get();
+            var cardInfoDB = GameCardDB.Get();
 
             var cardDataSheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCardResident>();
             var cardNameSheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCard>();
 
             if (cardDataSheet != null && cardNameSheet != null && cardDataSheet.RowCount == cardNameSheet.RowCount)
             {
-                // meh, hardcode mappings, if SE adds new type or rarity more stuff will break anyway
-                ETriadCardType[] cardTypeMap = { ETriadCardType.None, ETriadCardType.Primal, ETriadCardType.Scion, ETriadCardType.Beastman, ETriadCardType.Garlean };
-                ETriadCardRarity[] cardRarityMap = { ETriadCardRarity.Common, ETriadCardRarity.Common, ETriadCardRarity.Uncommon, ETriadCardRarity.Rare, ETriadCardRarity.Epic, ETriadCardRarity.Legendary };
-
                 var cardTypesSheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCardType>();
                 var cardRaritySheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCardRarity>();
                 if (cardTypesSheet == null || cardTypesSheet.RowCount != cardTypeMap.Length)
@@ -106,10 +153,14 @@ namespace TriadBuddyPlugin
                         var cardRarity = (rowRarityId < cardRarityMap.Length) ? cardRarityMap[rowRarityId] : ETriadCardRarity.Common;
 
                         // i got left & right mixed up at some point...
-                        var cardOb = new TriadCard((int)idx, null, cardRarity, cardType, rowData.Top, rowData.Bottom, rowData.Right, rowData.Left, rowData.SortKey, rowData.UIPriority);
+                        var cardOb = new TriadCard((int)idx, null, cardRarity, cardType, rowData.Top, rowData.Bottom, rowData.Right, rowData.Left, rowData.Order, rowData.UIPriority);
                         cardOb.Name.Text = rowName.Name.RawString;
 
                         cardDB.cards.Add(cardOb);
+
+                        // create matching entry in extended card info db
+                        var cardInfo = new GameCardInfo() { CardId = cardOb.Id };
+                        cardInfoDB.mapCards.Add(cardOb.Id, cardInfo);
                     }
                 }
             }
@@ -151,7 +202,7 @@ namespace TriadBuddyPlugin
                 return false;
             }
 
-            var mapTriadNpcNames = new Dictionary<uint, string>();
+            var mapTriadNpcData = new Dictionary<uint, Tuple<uint, uint, string>>();
             var sheetNpcNames = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.ENpcResident>();
             var sheetENpcBase = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.ENpcBase>();
             if (sheetNpcNames != null && sheetENpcBase != null)
@@ -159,12 +210,12 @@ namespace TriadBuddyPlugin
                 foreach (var rowData in sheetENpcBase)
                 {
                     var triadId = Array.Find(rowData.ENpcData, id => listTriadIds.Contains(id));
-                    if (triadId != 0 && !mapTriadNpcNames.ContainsKey(triadId))
+                    if (triadId != 0 && !mapTriadNpcData.ContainsKey(triadId))
                     {
                         var rowName = sheetNpcNames.GetRow(rowData.RowId);
                         if (rowName != null)
                         {
-                            mapTriadNpcNames.Add(triadId, rowName.Singular.RawString);
+                            mapTriadNpcData.Add(triadId, new Tuple<uint, uint, string>(rowData.RowId, triadId, rowName.Singular.RawString));
                         }
                     }
                 }
@@ -177,7 +228,7 @@ namespace TriadBuddyPlugin
 
             foreach (var rowData in npcDataSheet)
             {
-                if (!mapTriadNpcNames.ContainsKey(rowData.RowId))
+                if (!mapTriadNpcData.ContainsKey(rowData.RowId))
                 {
                     // no name = no npc entry, disabled? skip it
                     continue;
@@ -261,12 +312,145 @@ namespace TriadBuddyPlugin
                     continue;
                 }
 
+                var npcIdData = mapTriadNpcData[rowData.RowId];
                 var npcOb = new TriadNpc(npcDB.npcs.Count, listRules, cardsFixed, cardsVariable);
-                npcOb.Name.Text = mapTriadNpcNames[rowData.RowId];
+                npcOb.Name.Text = npcIdData.Item3;
                 npcDB.npcs.Add(npcOb);
+
+                var newCachedData = new ENpcCachedData() { gameLogicId = npcOb.Id, triadId = npcIdData.Item2 };
+                if (rowData.ItemPossibleReward != null && rowData.ItemPossibleReward.Length > 0)
+                {
+                    newCachedData.rewardItems = new uint[rowData.ItemPossibleReward.Length];
+                    for (int rewardIdx = 0; rewardIdx < rowData.ItemPossibleReward.Length; rewardIdx++)
+                    {
+                        newCachedData.rewardItems[rewardIdx] = rowData.ItemPossibleReward[rewardIdx].Row;
+                    }
+                }
+
+                mapENpcCache.Add(npcIdData.Item1, newCachedData);
             }
 
             return true;
+        }
+
+        private bool ParseNpcLocations(DataManager dataManager)
+        {
+            var sheetLevel = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Level>();
+            if (sheetLevel != null)
+            {
+                const byte TypeNpc = 8;
+                foreach (var row in sheetLevel)
+                {
+                    if (row.Type == TypeNpc)
+                    {
+                        if (mapENpcCache.TryGetValue(row.Object, out var npcCache))
+                        {
+                            npcCache.mapRawCoords = new float[] { row.X, row.Y, row.Z };
+                            npcCache.mapId = row.Map.Row;
+                            npcCache.territoryId = row.Territory.Row;
+                        }
+                    }
+                }
+            }
+
+            var sheetMap = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Map>();
+            if (sheetMap != null)
+            {
+                foreach (var kvp in mapENpcCache)
+                {
+                    var mapRow = sheetMap.GetRow(kvp.Value.mapId);
+                    if (mapRow != null && kvp.Value.mapRawCoords != null)
+                    {
+                        kvp.Value.mapCoords = new float[2];
+                        kvp.Value.mapCoords[0] = CovertCoordToHumanReadable(kvp.Value.mapRawCoords[0], mapRow.OffsetX, mapRow.SizeFactor);
+                        kvp.Value.mapCoords[1] = CovertCoordToHumanReadable(kvp.Value.mapRawCoords[2], mapRow.OffsetY, mapRow.SizeFactor);
+                    }
+                }
+            }
+
+            float CovertCoordToHumanReadable(float Coord, float Offset, float Scale)
+            {
+                float useScale = Scale / 100.0f;
+                float useValue = (Coord + Offset) * useScale;
+                return ((41.0f / useScale) * ((useValue + 1024.0f) / 2048.0f)) + 1;
+            }
+
+            return true;
+        }
+
+        public void TestMe(DataManager dataManager)
+        {
+            ParseCardRewards(dataManager);
+        }
+
+        private bool ParseCardRewards(DataManager dataManager)
+        {
+            var sheetItems = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>();
+            if (sheetItems != null)
+            {
+                foreach (var kvp in mapENpcCache)
+                {
+                    if (kvp.Value.rewardItems == null)
+                    {
+                        continue;
+                    }
+
+                    foreach (var itemId in kvp.Value.rewardItems)
+                    {
+                        var itemRow = itemId == 0 ? null : sheetItems.GetRow(itemId);
+                        if (itemRow != null)
+                        {
+                            var cardOb = TriadCardDB.Get().FindById((int)itemRow.AdditionalData);
+                            if (cardOb != null)
+                            {
+                                kvp.Value.rewardCardIds.Add(cardOb.Id);
+                            }
+                            else
+                            {
+                                PluginLog.Error($"Failed to parse npc reward data! npc:{kvp.Value.triadId}, rewardId:{itemId}");
+                            }
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        private void ParseENpcCacheData()
+        {
+            GameCardDB gameCardDB = GameCardDB.Get();
+            TriadNpcDB npcDB = TriadNpcDB.Get();
+
+            // TODO: multiple npcs giving same card?
+            foreach (var kvp in mapENpcCache)
+            {
+                foreach (var cardId in kvp.Value.rewardCardIds)
+                {
+                    var cardInfo = gameCardDB.FindById(cardId);
+                    var npcOb = ((kvp.Value.gameLogicId >= 0) && (kvp.Value.gameLogicId < npcDB.npcs.Count)) ? npcDB.npcs[kvp.Value.gameLogicId] : null;
+
+                    if (npcOb != null)
+                    {
+                        cardInfo.RewardNpcId = kvp.Value.gameLogicId;
+                        cardInfo.RewardNpcLocation = new Dalamud.Game.Text.SeStringHandling.Payloads.MapLinkPayload(kvp.Value.territoryId, kvp.Value.mapId, kvp.Value.mapCoords[0], kvp.Value.mapCoords[1]);
+                    }
+                    else
+                    {
+                        PluginLog.Error($"Failed to match npc reward data! npc:{kvp.Value.gameLogicId}, key:{kvp.Key}");
+                    }
+                }
+            }
+        }
+
+        public static ETriadCardType ConvertToTriadType(byte rawType)
+        {
+            return (rawType < cardTypeMap.Length) ? cardTypeMap[rawType] : ETriadCardType.None;
+        }
+
+        public static ETriadCardRarity ConvertToTriadRarity(byte rawRarity)
+        {
+            return (rawRarity < cardRarityMap.Length) ? cardRarityMap[rawRarity] : ETriadCardRarity.Common;
         }
     }
 }

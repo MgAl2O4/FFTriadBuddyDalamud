@@ -38,6 +38,18 @@ namespace FFTriadBuddy
                 (x.Sides[(int)ETriadGameSide.Right] == numRight));
         }
 
+        public TriadCard Find(int numUp, int numLeft, int numDown, int numRight, ETriadCardType type, ETriadCardRarity rarity)
+        {
+            return cards.Find(x =>
+                (x != null) &&
+                (x.Sides[(int)ETriadGameSide.Up] == numUp) &&
+                (x.Sides[(int)ETriadGameSide.Down] == numDown) &&
+                (x.Sides[(int)ETriadGameSide.Left] == numLeft) &&
+                (x.Sides[(int)ETriadGameSide.Right] == numRight) &&
+                (x.Rarity == rarity) &&
+                (x.Type == type));
+        }
+
         public TriadCard FindById(int cardId)
         {
             return cards.Find(x => (x != null) && x.Id == cardId);

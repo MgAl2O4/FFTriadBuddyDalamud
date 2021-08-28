@@ -16,7 +16,7 @@ namespace TriadBuddyPlugin
         private readonly UIReaderTriadPrep uiReaderPrep;
         private readonly Solver solver;
 
-        public PluginWindowDeckEval(Solver solver, UIReaderTriadPrep uiReaderPrep) : base("")
+        public PluginWindowDeckEval(Solver solver, UIReaderTriadPrep uiReaderPrep) : base("Deck Eval")
         {
             this.solver = solver;
             this.uiReaderPrep = uiReaderPrep;

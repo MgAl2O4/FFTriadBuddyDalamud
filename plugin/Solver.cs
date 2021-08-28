@@ -62,7 +62,7 @@ namespace TriadBuddyPlugin
             ScannerTriad.GameState screenOb = null;
             if (stateOb != null)
             {
-                var parseCtx = new TriadUIParser();
+                var parseCtx = new GameUIParser();
                 screenOb = stateOb.ToTriadScreenState(parseCtx);
                 currentNpc = stateOb.ToTriadNpc(parseCtx);
 
@@ -118,7 +118,7 @@ namespace TriadBuddyPlugin
         public void UpdateDecks(UIStateTriadPrep state)
         {
             // don't report status here, just log stuff out
-            var parseCtx = new TriadUIParser();
+            var parseCtx = new GameUIParser();
             preGameNpc = parseCtx.ParseNpc(state.npc);
             preGameMods.Clear();
             foreach (var rule in state.rules)
@@ -189,7 +189,7 @@ namespace TriadBuddyPlugin
             }
         }
 
-        private DeckData ParseDeckDataFromProfile(UnsafeReaderProfileGS.PlayerDeck deckOb, TriadUIParser ctx)
+        private DeckData ParseDeckDataFromProfile(UnsafeReaderProfileGS.PlayerDeck deckOb, GameUIParser ctx)
         {
             // empty profile decks will result in nulls here
             if (deckOb == null)
@@ -215,7 +215,7 @@ namespace TriadBuddyPlugin
             return deckData;
         }
 
-        private DeckData ParseDeckDataFromUI(UIStateTriadPrepDeck deckOb, TriadUIParser ctx)
+        private DeckData ParseDeckDataFromUI(UIStateTriadPrepDeck deckOb, GameUIParser ctx)
         {
             // empty UI decks are valid objects, but their card data is empty (handled by ctx)
 
