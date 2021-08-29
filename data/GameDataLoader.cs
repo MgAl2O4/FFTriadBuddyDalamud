@@ -14,6 +14,7 @@ namespace TriadBuddyPlugin
         // hardcoded maps between game enums and my own. having own ones was bad idea :<
         private static readonly ETriadCardType[] cardTypeMap = { ETriadCardType.None, ETriadCardType.Primal, ETriadCardType.Scion, ETriadCardType.Beastman, ETriadCardType.Garlean };
         private static readonly ETriadCardRarity[] cardRarityMap = { ETriadCardRarity.Common, ETriadCardRarity.Common, ETriadCardRarity.Uncommon, ETriadCardRarity.Rare, ETriadCardRarity.Epic, ETriadCardRarity.Legendary };
+        private static readonly uint[] ruleLogicToLuminaMap = { 0, 1, 2, 3, 5, 10, 11, 4, 6, 12, 13, 8, 9, 14, 7, 15 };
 
         private class ENpcCachedData
         {
@@ -77,8 +78,6 @@ namespace TriadBuddyPlugin
             var modDB = TriadGameModifierDB.Get();
             var locDB = LocalizationDB.Get();
 
-            var mapIds = new uint[] { 0, 1, 2, 3, 5, 10, 11, 4, 6, 12, 13, 8, 9, 14, 7, 15 };
-
             var rulesSheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadRule>();
             if (rulesSheet == null || rulesSheet.RowCount != modDB.mods.Count)
             {
@@ -91,7 +90,7 @@ namespace TriadBuddyPlugin
                 var mod = modDB.mods[idx];
                 var locStr = locDB.LocRuleNames[mod.GetLocalizationId()];
 
-                locStr.Text = rulesSheet.GetRow(mapIds[idx]).Name;
+                locStr.Text = rulesSheet.GetRow(ruleLogicToLuminaMap[idx]).Name;
             }
 
             return true;
@@ -226,6 +225,13 @@ namespace TriadBuddyPlugin
                 return false;
             }
 
+            // prep rule id mapping :/
+            var ruleLuminaToLogicMap = new int[ruleLogicToLuminaMap.Length];
+            for (int idx = 0; idx < ruleLogicToLuminaMap.Length; idx++)
+            {
+                ruleLuminaToLogicMap[ruleLogicToLuminaMap[idx]] = idx;
+            }
+
             foreach (var rowData in npcDataSheet)
             {
                 if (!mapTriadNpcData.ContainsKey(rowData.RowId))
@@ -247,7 +253,14 @@ namespace TriadBuddyPlugin
                                 return false;
                             }
 
-                            listRules.Add(modDB.mods[(int)ruleRow.Row]);
+                            var logicRule = modDB.mods[ruleLuminaToLogicMap[(int)ruleRow.Row]];
+                            listRules.Add(logicRule);
+
+                            if (ruleRow.Value.Name.RawString != logicRule.GetLocalizedName())
+                            {
+                                PluginLog.Fatal($"Failed to match npc rules! (rule.id:{ruleRow.Row})");
+                                return false;
+                            }
                         }
                     }
                 }
