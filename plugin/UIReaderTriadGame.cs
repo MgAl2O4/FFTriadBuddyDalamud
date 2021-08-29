@@ -79,6 +79,7 @@ namespace TriadBuddyPlugin
         public UIStateTriadGame currentState;
         public Status status = Status.AddonNotFound;
         public bool HasErrors => status >= Status.FailedToReadMove;
+        public bool IsVisible => (status == Status.AddonNotFound) || (status == Status.AddonNotVisible);
 
         public event Action<UIStateTriadGame> OnUIStateChanged;
 

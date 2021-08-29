@@ -1,4 +1,5 @@
-﻿using Dalamud.Interface.Windowing;
+﻿using Dalamud;
+using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System;
 using System.Numerics;
@@ -11,6 +12,24 @@ namespace TriadBuddyPlugin
         private readonly UIReaderTriadPrep uiReaderPrep;
         private readonly Solver solver;
 
+        private string locStatus;
+        private string locStatusNotActive;
+        private string locStatusActive;
+        private string locGameData;
+        private string locGameDataError;
+        private string locGameDataLog;
+        private string locPrepNpc;
+        private string locPrepRule;
+        private string locGameNpc;
+        private string locGameMove;
+        private string locBoardX0;
+        private string locBoardX1;
+        private string locBoardX2;
+        private string locBoardY0;
+        private string locBoardY1;
+        private string locBoardY2;
+        private string locBoardCenter;
+
         public PluginWindowStatus(Solver solver, UIReaderTriadGame uiReaderGame, UIReaderTriadPrep uiReaderPrep) : base("Triad Buddy")
         {
             this.solver = solver;
@@ -21,11 +40,35 @@ namespace TriadBuddyPlugin
 
             Size = new Vector2(350, 120);
             SizeCondition = ImGuiCond.FirstUseEver;
+
+            Plugin.CurrentLocManager.LocalizationChanged += (_) => CacheLocalization();
+            CacheLocalization();
         }
 
         public void Dispose()
         {
             // meh
+        }
+
+        private void CacheLocalization()
+        {
+            locStatus = Localization.Localize("ST_Status", "Status:");
+            locStatusNotActive = Localization.Localize("ST_StatusNotActive", "Minigame not active");
+            locStatusActive = Localization.Localize("ST_StatusActive", "Active");
+            locGameData = Localization.Localize("ST_GameData", "Game data:");
+            locGameDataError = Localization.Localize("ST_GameDataError", "missing! solver disabled");
+            locGameDataLog = Localization.Localize("ST_GameDataLog", "cards: {0}, npcs: {1}");
+            locPrepNpc = Localization.Localize("ST_PrepNpc", "Prep.NPC:");
+            locPrepRule = Localization.Localize("ST_PrepRules", "Prep.Rules:");
+            locGameNpc = Localization.Localize("ST_GameNpc", "Solver.NPC:");
+            locGameMove = Localization.Localize("ST_GameMove", "Solver.Move:");
+            locBoardX0 = Localization.Localize("ST_BoardXLeft", "left");
+            locBoardX1 = Localization.Localize("ST_BoardXCenter", "center");
+            locBoardX2 = Localization.Localize("ST_BoardXRight", "right");
+            locBoardY0 = Localization.Localize("ST_BoardYTop", "top");
+            locBoardY1 = Localization.Localize("ST_BoardYCenter", "center");
+            locBoardY2 = Localization.Localize("ST_BoardYBottom", "bottom");
+            locBoardCenter = Localization.Localize("ST_BoardXYCenter", "center");
         }
 
         public override void Draw()
@@ -34,28 +77,27 @@ namespace TriadBuddyPlugin
             var colorOk = new Vector4(0.2f, 0.9f, 0.2f, 1);
             var colorYellow = new Vector4(0.9f, 0.9f, 0.2f, 1);
 
-            ImGui.Text("Status: ");
+            ImGui.Text(locStatus);
             ImGui.SameLine();
             var statusDesc =
                 uiReaderGame.HasErrors ? uiReaderGame.status.ToString() :
                 solver.HasErrors ? solver.status.ToString() :
-                (uiReaderGame.status == UIReaderTriadGame.Status.AddonNotFound) ? "Minigame not active" :
-                (uiReaderGame.status == UIReaderTriadGame.Status.AddonNotVisible) ? "Minigame not visible" :
-                "Active";
+                !uiReaderGame.IsVisible ? locStatusNotActive :
+                locStatusActive;
 
             ImGui.TextColored(uiReaderGame.HasErrors || solver.HasErrors ? colorErr : colorOk, statusDesc);
 
-            ImGui.Text("Game data: ");
+            ImGui.Text(locGameData);
             ImGui.SameLine();
             int numCards = FFTriadBuddy.TriadCardDB.Get().cards.Count;
             int numNpcs = FFTriadBuddy.TriadNpcDB.Get().npcs.Count;
             if (numCards == 0 || numNpcs == 0)
             {
-                ImGui.TextColored(colorErr, "missing! solver disabled");
+                ImGui.TextColored(colorErr, locGameDataError);
             }
             else
             {
-                ImGui.Text($"cards: {numCards}, NPCs: {numNpcs}");
+                ImGui.Text(string.Format(locGameDataLog, numCards, numNpcs));
             }
 
             // context sensitive part
@@ -79,22 +121,22 @@ namespace TriadBuddyPlugin
                 }
 
                 ImGui.Separator();
-                ImGui.Text("Prep.NPC:");
+                ImGui.Text(locPrepNpc);
                 ImGui.SameLine();
                 ImGui.TextColored(colorYellow, npcDesc);
 
-                ImGui.Text("Prep.Rules:");
+                ImGui.Text(locPrepRule);
                 ImGui.SameLine();
                 ImGui.TextColored(colorYellow, rulesDesc);
             }
             else
             {
                 ImGui.Separator();
-                ImGui.Text("Solver.NPC:");
+                ImGui.Text(locGameNpc);
                 ImGui.SameLine();
                 ImGui.TextColored(colorYellow, (solver.currentNpc != null) ? solver.currentNpc.Name.GetLocalized() : "--");
 
-                ImGui.Text("Solver.Move:");
+                ImGui.Text(locGameMove);
                 ImGui.SameLine();
                 if (solver.hasMove)
                 {
@@ -106,9 +148,9 @@ namespace TriadBuddyPlugin
                     string humanCard = (solver.moveCard != null) ? solver.moveCard.Name.GetLocalized() : "??";
                     int boardX = solver.moveBoardIdx % 3;
                     int boardY = solver.moveBoardIdx / 3;
-                    string humanBoardX = boardX == 0 ? "left" : (boardX == 1) ? "center" : "right";
-                    string humanBoardY = boardY == 0 ? "top" : (boardY == 1) ? "center" : "bottom";
-                    string humanBoard = (solver.moveBoardIdx == 4) ? "center" : $"{humanBoardY}, {humanBoardX}";
+                    string humanBoardX = boardX == 0 ? locBoardX0 : (boardX == 1) ? locBoardX1 : locBoardX2;
+                    string humanBoardY = boardY == 0 ? locBoardY0 : (boardY == 1) ? locBoardY1 : locBoardY2;
+                    string humanBoard = (solver.moveBoardIdx == 4) ? locBoardCenter : $"{humanBoardY}, {humanBoardX}";
 
                     // 1 based indexing for humans, disgusting
                     ImGui.TextColored(useColor, $"[{solver.moveCardIdx + 1}] {humanCard} => {humanBoard}");

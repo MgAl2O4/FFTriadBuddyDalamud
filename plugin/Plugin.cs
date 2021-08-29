@@ -1,4 +1,5 @@
-﻿using Dalamud.Data;
+﻿using Dalamud;
+using Dalamud.Data;
 using Dalamud.Game;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui;
@@ -17,7 +18,9 @@ namespace TriadBuddyPlugin
         private readonly CommandManager commandManager;
         private readonly Framework framework;
         private readonly WindowSystem windowSystem = new("TriadBuddy");
-        private readonly Window windowStatus;
+
+        private readonly Window statusWindow;
+        private readonly CommandInfo statusCommand;
 
         private readonly UIReaderTriadGame uiReaderGame;
         private readonly UIReaderTriadPrep uiReaderPrep;
@@ -25,6 +28,10 @@ namespace TriadBuddyPlugin
         private readonly Solver solver;
         private readonly GameDataLoader dataLoader;
         private readonly PluginOverlays overlays;
+        private readonly Localization locManager;
+
+        public static Localization CurrentLocManager;
+        private string[] supportedLangCodes = { "en" };
 
         // fallback option in case profile reader breaks
         private bool canUseProfileReader = true;
@@ -34,6 +41,10 @@ namespace TriadBuddyPlugin
             this.pluginInterface = pluginInterface;
             this.commandManager = commandManager;
             this.framework = framework;
+
+            locManager = new Localization("assets/loc", "", true);
+            locManager.SetupWithLangCode(pluginInterface.UiLanguage);
+            CurrentLocManager = locManager;
 
             dataLoader = new GameDataLoader();
             dataLoader.StartAsyncWork(dataManager);
@@ -53,16 +64,42 @@ namespace TriadBuddyPlugin
             uiReaderCardList = new UIReaderTriadCardList(gameGui);
 
             overlays = new PluginOverlays(solver, uiReaderGame, uiReaderPrep);
-            windowStatus = new PluginWindowStatus(solver, uiReaderGame, uiReaderPrep);
-            windowSystem.AddWindow(windowStatus);
+            statusWindow = new PluginWindowStatus(solver, uiReaderGame, uiReaderPrep);
+            windowSystem.AddWindow(statusWindow);
 
             windowSystem.AddWindow(new PluginWindowDeckEval(solver, uiReaderPrep));
             windowSystem.AddWindow(new PluginWindowCardInfo(uiReaderCardList, gameGui));
             windowSystem.AddWindow(new PluginWindowCardSearch(uiReaderCardList));
 
+            statusCommand = new(OnCommand);
+            commandManager.AddHandler("/triadbuddy", statusCommand);
+
+            pluginInterface.LanguageChanged += OnLanguageChanged;
             pluginInterface.UiBuilder.Draw += OnDraw;
-            commandManager.AddHandler("/triadbuddy", new(OnCommand) { HelpMessage = $"Show state of {Name} plugin." });
+
             framework.Update += Framework_OnUpdateEvent;
+
+            // keep at the end to update everything created here
+            locManager.LocalizationChanged += (_) => CacheLocalization();
+            CacheLocalization();
+        }
+
+        private void OnLanguageChanged(string langCode)
+        {
+            // check if resource is available, will cause exception if trying to load empty json
+            if (Array.Find(supportedLangCodes, x => x == langCode) != null)
+            {
+                locManager.SetupWithLangCode(langCode);
+            }
+            else
+            {
+                locManager.SetupWithFallbacks();
+            }
+        }
+
+        private void CacheLocalization()
+        {
+            statusCommand.HelpMessage = string.Format(Localization.Localize("Cmd_Status", "Show state of {0} plugin"), Name);
         }
 
         public void Dispose()
@@ -75,7 +112,7 @@ namespace TriadBuddyPlugin
 
         private void OnCommand(string command, string args)
         {
-            windowStatus.IsOpen = true;
+            statusWindow.IsOpen = true;
         }
 
         private void OnDraw()

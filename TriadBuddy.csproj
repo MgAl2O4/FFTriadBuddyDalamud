@@ -12,6 +12,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="assets\loc\en.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="assets\loc\en.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="DalamudPackager" Version="2.1.2" />
   </ItemGroup>
 

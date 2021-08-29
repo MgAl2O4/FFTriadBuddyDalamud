@@ -1,4 +1,5 @@
-﻿using Dalamud.Interface.Windowing;
+﻿using Dalamud;
+using Dalamud.Interface.Windowing;
 using FFTriadBuddy;
 using ImGuiNET;
 using System;
@@ -15,6 +16,10 @@ namespace TriadBuddyPlugin
 
         private readonly UIReaderTriadPrep uiReaderPrep;
         private readonly Solver solver;
+
+        private string locEvaluating;
+        private string locWinChance;
+        private string locCantFind;
 
         public PluginWindowDeckEval(Solver solver, UIReaderTriadPrep uiReaderPrep) : base("Deck Eval")
         {
@@ -36,11 +41,21 @@ namespace TriadBuddyPlugin
                 ImGuiWindowFlags.NoDocking |
                 ImGuiWindowFlags.NoFocusOnAppearing |
                 ImGuiWindowFlags.NoNav;
+
+            Plugin.CurrentLocManager.LocalizationChanged += (_) => CacheLocalization();
+            CacheLocalization();
         }
 
         public void Dispose()
         {
             // meh
+        }
+
+        private void CacheLocalization()
+        {
+            locEvaluating = Localization.Localize("DE_Evaluating", "Evaluating decks...");
+            locWinChance = Localization.Localize("DE_WinChance", "win {0:P0}");
+            locCantFind = Localization.Localize("DE_Failed", "Err.. Can't find best deck :<");
         }
 
         private void OnMatchRequestChanged(bool active)
@@ -72,19 +87,20 @@ namespace TriadBuddyPlugin
                 if (solver.preGameProgress < 1.0f)
                 {
                     hintColor = colorTxt;
-                    hintText = $"Evaluating decks... {solver.preGameProgress:P0}";
+                    hintText = string.Format("{0} {1:P0}", locEvaluating, solver.preGameProgress).Replace("%", "%%");
                 }
                 else
                 {
                     if (solver.preGameDecks.TryGetValue(solver.preGameBestId, out var bestDeckData))
                     {
                         hintColor = GetChanceColor(bestDeckData.chance);
-                        hintText = $"{bestDeckData.name} -- win: {bestDeckData.chance.winChance:P0}%";
+                        hintText = $"{bestDeckData.name} -- ";
+                        hintText += string.Format(locWinChance, bestDeckData.chance.winChance).Replace("%", "%%");
                     }
                     else
                     {
                         hintColor = colorLose;
-                        hintText = "Err.. Can't find best deck :<";
+                        hintText = locCantFind;
                     }
                 }
 

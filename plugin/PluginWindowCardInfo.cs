@@ -1,4 +1,5 @@
-﻿using Dalamud.Game.Gui;
+﻿using Dalamud;
+using Dalamud.Game.Gui;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
 using FFTriadBuddy;
@@ -15,6 +16,10 @@ namespace TriadBuddyPlugin
 
         private TriadCard selectedCard;
         private GameCardInfo selectedCardInfo;
+
+        private string locNpcReward;
+        private string locShowOnMap;
+        private string locNoAvail;
 
         public PluginWindowCardInfo(UIReaderTriadCardList uiReaderCardList, GameGui gameGui) : base("Card Info")
         {
@@ -37,11 +42,21 @@ namespace TriadBuddyPlugin
                 ImGuiWindowFlags.NoDocking |
                 ImGuiWindowFlags.NoFocusOnAppearing |
                 ImGuiWindowFlags.NoNav;
+
+            Plugin.CurrentLocManager.LocalizationChanged += (_) => CacheLocalization();
+            CacheLocalization();
         }
 
         public void Dispose()
         {
             // meh
+        }
+
+        private void CacheLocalization()
+        {
+            locNpcReward = Localization.Localize("CI_NpcReward", "NPC reward:");
+            locShowOnMap = Localization.Localize("CI_ShowMap", "Show on map");
+            locNoAvail = Localization.Localize("CI_NotAvail", "Not available");
         }
 
         private void UpdateWindowData()
@@ -95,7 +110,7 @@ namespace TriadBuddyPlugin
                 }
 
                 ImGui.NewLine();
-                ImGui.Text("NPC reward:");
+                ImGui.Text(locNpcReward);
 
                 TriadNpc rewardNpc = (selectedCardInfo == null) ? null :
                     (selectedCardInfo.RewardNpcId < 0 || selectedCardInfo.RewardNpcId >= TriadNpcDB.Get().npcs.Count) ? null :
@@ -115,7 +130,7 @@ namespace TriadBuddyPlugin
                     }
                     if (ImGui.IsItemHovered())
                     {
-                        ImGui.SetTooltip("Show on map");
+                        ImGui.SetTooltip(locShowOnMap);
                     }
 
                     ImGui.SetCursorPosY(cursorY);
@@ -124,7 +139,7 @@ namespace TriadBuddyPlugin
                 }
                 else
                 {
-                    ImGui.TextColored(colorGray, "Not available");
+                    ImGui.TextColored(colorGray, locNoAvail);
                 }
             }
         }

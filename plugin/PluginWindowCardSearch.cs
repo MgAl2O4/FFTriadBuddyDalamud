@@ -1,4 +1,5 @@
-﻿using Dalamud.Interface.Windowing;
+﻿using Dalamud;
+using Dalamud.Interface.Windowing;
 using FFTriadBuddy;
 using ImGuiNET;
 using System;
@@ -17,6 +18,10 @@ namespace TriadBuddyPlugin
         private ImGuiTextFilterPtr searchFilter;
         private bool showNpcMatchesOnly = false;
         private bool showNotOwnedOnly = false;
+
+        private string locNpcOnly;
+        private string locNotOwnedOnly;
+        private string locFilterActive;
 
         public PluginWindowCardSearch(UIReaderTriadCardList uiReaderCardList) : base("Card Search")
         {
@@ -43,11 +48,21 @@ namespace TriadBuddyPlugin
                 ImGuiWindowFlags.NoDocking |
                 ImGuiWindowFlags.NoFocusOnAppearing |
                 ImGuiWindowFlags.NoNav;
+         
+            Plugin.CurrentLocManager.LocalizationChanged += (_) => CacheLocalization();
+            CacheLocalization();
         }
 
         public void Dispose()
         {
             ImGuiNative.ImGuiTextFilter_destroy(searchFilter.NativePtr);
+        }
+
+        private void CacheLocalization()
+        {
+            locNpcOnly = Localization.Localize("CS_NpcOnly", "NPC matches only");
+            locNotOwnedOnly = Localization.Localize("CS_NotOwnedOnly", "Not owned only");
+            locFilterActive = Localization.Localize("CS_FilterActive", "(Collection filtering is active)");
         }
 
         private void UpdateWindowData()
@@ -147,15 +162,15 @@ namespace TriadBuddyPlugin
             ImGui.EndListBox();
 
             ImGui.NewLine();
-            ImGui.Checkbox("NPC matches only", ref showNpcMatchesOnly);
+            ImGui.Checkbox(locNpcOnly, ref showNpcMatchesOnly);
 
             if (showOwnedCheckbox)
             {
-                ImGui.Checkbox("Not owned only", ref showNotOwnedOnly);
+                ImGui.Checkbox(locNotOwnedOnly, ref showNotOwnedOnly);
             }
             else
             {
-                ImGui.TextColored(new Vector4(0.5f, 0.5f, 0.5f, 1), "(Collection filtering is active)");
+                ImGui.TextColored(new Vector4(0.5f, 0.5f, 0.5f, 1), locFilterActive);
             }
         }
 
