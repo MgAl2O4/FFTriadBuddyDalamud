@@ -2,7 +2,7 @@
   "Author": "MgAl2O4",
   "Name": "TriadBuddy",
   "Punchline": "Triple triad solver",
-  "Description": "Triple triad solver, NPC matches only.\n- highlights next move during mini game\n- evaluates all deck presets before match\n- adds more details to card collection window",
+  "Description": "Triple triad solver, NPC matches only.\n- highlights next move during mini game\n- evaluates all deck presets before match\n- deck optimizer for NPC\n- adds more details to card collection window",
   "InternalName": "TriadBuddy",
   "AssemblyVersion": "1.2.0.0",
   "IconUrl": "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/assets/icon.png",

@@ -25,6 +25,8 @@ namespace TriadBuddyPlugin
 
         private float optimizerProgress;
         private float optimizerElapsedTime;
+        private float optimizerWinChance;
+        private float pendingWinChance;
         private string optimizerTimeRemainingDesc;
         private bool isOptimizerRunning;
         private int[] pendingCardIds;
@@ -76,11 +78,12 @@ namespace TriadBuddyPlugin
             CacheLocalization();
         }
 
-        private void DeckOptimizer_OnFoundDeck(TriadDeck deck)
+        private void DeckOptimizer_OnFoundDeck(TriadDeck deck, float estWinChance)
         {
             if (deck != null && deck.knownCards != null && deck.knownCards.Count == 5)
             {
                 // buffer card changes to catch multiple fast swaps and reduce number of loaded images
+                pendingWinChance = estWinChance;
 
                 pendingCardIds = new int[5];
                 for (int idx = 0; idx < pendingCardIds.Length; idx++)
@@ -150,6 +153,7 @@ namespace TriadBuddyPlugin
                 }
             }
 
+            optimizerWinChance = -1;
             IsOpen = true;
         }
 
@@ -218,8 +222,11 @@ namespace TriadBuddyPlugin
 
             // stat block
             ImGui.SetCursorPos(new Vector2(currentPos.X, currentPos.Y + cardImagePos[3].Y + ImGui.GetTextLineHeight()));
-            ImGui.Text(locWinChance);
-            ImGui.TextColored(colorResultData, "100%%");    // TODO
+            if (isOptimizerRunning || optimizerWinChance >= 0.0f)
+            {
+                ImGui.Text(locWinChance);
+                ImGui.TextColored(colorResultData, optimizerWinChance < 0 ? "--" : optimizerWinChance.ToString("P0").Replace("%", "%%"));
+            }
 
             if (isOptimizerRunning)
             {
@@ -262,6 +269,9 @@ namespace TriadBuddyPlugin
                     shownCardIds = pendingCardIds;
                     pendingCardIds = null;
 
+                    optimizerWinChance = pendingWinChance;
+                    pendingWinChance = -1;
+
                     for (int idx = 0; idx < shownCardIds.Length; idx++)
                     {
                         var cardOb = TriadCardDB.Get().FindById(shownCardIds[idx]);
@@ -295,6 +305,8 @@ namespace TriadBuddyPlugin
                     optimizerProgress = deckOptimizer.GetProgress() / 100.0f;
 
                     int secondsRemaining = deckOptimizer.GetSecondsRemaining((int)(optimizerElapsedTime * 1000));
+                    optimizerElapsedTime = 0;
+
                     var tspan = TimeSpan.FromSeconds(secondsRemaining);
                     if (tspan.Hours > 0 || tspan.Minutes > 55)
                     {

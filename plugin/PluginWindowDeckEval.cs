@@ -69,6 +69,7 @@ namespace TriadBuddyPlugin
             IsOpen = active;
             if (active)
             {
+                GameCardDB.Get().Refresh();
                 UpdateWindowBounds();
             }
         }
