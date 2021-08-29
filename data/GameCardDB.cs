@@ -74,6 +74,19 @@ namespace TriadBuddyPlugin
                 }
             }
 
+            // update list for game logic classes
+            var cardDB = TriadCardDB.Get();
+            var settingsDB = PlayerSettingsDB.Get();
+
+            settingsDB.ownedCards.Clear();
+            foreach (var cardOb in cardDB.cards)
+            {
+                if (cardOb != null && ownedCardIds.Contains(cardOb.Id))
+                {
+                    settingsDB.ownedCards.Add(cardOb);
+                }
+            }
+
             foreach (var kvp in mapCards)
             {
                 kvp.Value.IsOwned = ownedCardIds.Contains(kvp.Value.CardId);

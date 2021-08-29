@@ -85,6 +85,11 @@ namespace FFTriadBuddy
             return null;
         }
 
+        public static uint GetCardTextureId(int cardId)
+        {
+            return (cardId < 0 || cardId > 400) ? 82100 : (uint)cardId + 82100;
+        }
+
         public void ProcessSameSideLists()
         {
             sameNumberMap.Clear();

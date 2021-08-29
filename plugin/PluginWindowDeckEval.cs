@@ -1,4 +1,6 @@
 ﻿using Dalamud;
+using Dalamud.Interface;
+using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
 using FFTriadBuddy;
 using ImGuiNET;
@@ -16,15 +18,18 @@ namespace TriadBuddyPlugin
 
         private readonly UIReaderTriadPrep uiReaderPrep;
         private readonly Solver solver;
+        private readonly PluginWindowDeckOptimize optimizerWindow;
 
         private string locEvaluating;
         private string locWinChance;
         private string locCantFind;
+        private string locOptimize;
 
-        public PluginWindowDeckEval(Solver solver, UIReaderTriadPrep uiReaderPrep) : base("Deck Eval")
+        public PluginWindowDeckEval(Solver solver, UIReaderTriadPrep uiReaderPrep, PluginWindowDeckOptimize optimizerWindow) : base("Deck Eval")
         {
             this.solver = solver;
             this.uiReaderPrep = uiReaderPrep;
+            this.optimizerWindow = optimizerWindow;
 
             uiReaderPrep.OnMatchRequestChanged += OnMatchRequestChanged;
             OnMatchRequestChanged(uiReaderPrep.HasMatchRequestUI);
@@ -37,7 +42,7 @@ namespace TriadBuddyPlugin
                 ImGuiWindowFlags.NoResize |
                 ImGuiWindowFlags.NoSavedSettings |
                 ImGuiWindowFlags.NoMove |
-                ImGuiWindowFlags.NoMouseInputs |
+                // ImGuiWindowFlags.NoMouseInputs |
                 ImGuiWindowFlags.NoDocking |
                 ImGuiWindowFlags.NoFocusOnAppearing |
                 ImGuiWindowFlags.NoNav;
@@ -56,6 +61,7 @@ namespace TriadBuddyPlugin
             locEvaluating = Localization.Localize("DE_Evaluating", "Evaluating decks...");
             locWinChance = Localization.Localize("DE_WinChance", "win {0:P0}");
             locCantFind = Localization.Localize("DE_Failed", "Err.. Can't find best deck :<");
+            locOptimize = Localization.Localize("DE_Optimize", "Optimize deck");
         }
 
         private void OnMatchRequestChanged(bool active)
@@ -107,6 +113,19 @@ namespace TriadBuddyPlugin
                 var textSize = ImGui.CalcTextSize(hintText);
                 ImGui.SetCursorPos(new Vector2((Size.Value.X - textSize.X) * 0.5f, (Size.Value.Y - textSize.Y) * 0.5f));
                 ImGui.TextColored(hintColor, hintText);
+
+                if (optimizerWindow.CanRunOptimizer())
+                {
+                    ImGui.SetCursorPos(new Vector2(Size.Value.X - 50, (Size.Value.Y - textSize.Y) * 0.5f - ImGui.GetStyle().FramePadding.Y));
+                    if (ImGuiComponents.IconButton(FontAwesomeIcon.Search))
+                    {
+                        optimizerWindow.SetupAndOpen(solver.preGameNpc, solver.preGameMods);
+                    }
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(locOptimize);
+                    }
+                }
             }
         }
 

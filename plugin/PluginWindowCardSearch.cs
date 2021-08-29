@@ -48,7 +48,7 @@ namespace TriadBuddyPlugin
                 ImGuiWindowFlags.NoDocking |
                 ImGuiWindowFlags.NoFocusOnAppearing |
                 ImGuiWindowFlags.NoNav;
-         
+
             Plugin.CurrentLocManager.LocalizationChanged += (_) => CacheLocalization();
             CacheLocalization();
         }

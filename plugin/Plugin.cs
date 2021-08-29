@@ -42,6 +42,7 @@ namespace TriadBuddyPlugin
             this.commandManager = commandManager;
             this.framework = framework;
 
+            // prep utils
             locManager = new Localization("assets/loc", "", true);
             locManager.SetupWithLangCode(pluginInterface.UiLanguage);
             CurrentLocManager = locManager;
@@ -49,11 +50,10 @@ namespace TriadBuddyPlugin
             dataLoader = new GameDataLoader();
             dataLoader.StartAsyncWork(dataManager);
 
-            GameCardDB.Get().memReader = new UnsafeReaderTriadCards(sigScanner);
-
             solver = new Solver();
             solver.profileGS = canUseProfileReader ? new UnsafeReaderProfileGS(gameGui) : null;
 
+            // prep data scrapers
             uiReaderGame = new UIReaderTriadGame(gameGui);
             uiReaderGame.OnUIStateChanged += (state) => solver.UpdateGame(state);
 
@@ -63,14 +63,22 @@ namespace TriadBuddyPlugin
 
             uiReaderCardList = new UIReaderTriadCardList(gameGui);
 
+            GameCardDB.Get().memReader = new UnsafeReaderTriadCards(sigScanner);
+
+            // prep UI
             overlays = new PluginOverlays(solver, uiReaderGame, uiReaderPrep);
             statusWindow = new PluginWindowStatus(solver, uiReaderGame, uiReaderPrep);
             windowSystem.AddWindow(statusWindow);
 
-            windowSystem.AddWindow(new PluginWindowDeckEval(solver, uiReaderPrep));
+            var deckOptimizerWindow = new PluginWindowDeckOptimize(dataManager);
+            var deckEvalWindow = new PluginWindowDeckEval(solver, uiReaderPrep, deckOptimizerWindow);
+            windowSystem.AddWindow(deckEvalWindow);
+            windowSystem.AddWindow(deckOptimizerWindow);
+
             windowSystem.AddWindow(new PluginWindowCardInfo(uiReaderCardList, gameGui));
             windowSystem.AddWindow(new PluginWindowCardSearch(uiReaderCardList));
 
+            // prep plugin hooks
             statusCommand = new(OnCommand);
             commandManager.AddHandler("/triadbuddy", statusCommand);
 
