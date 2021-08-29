@@ -124,10 +124,22 @@ namespace FFTriadBuddy
     {
         private static PlayerSettingsDB instance = new PlayerSettingsDB();
         public List<TriadCard> ownedCards = new List<TriadCard>();
+        public TriadCard[] starterCards;
 
         public static PlayerSettingsDB Get()
         {
             return instance;
+        }
+
+        public PlayerSettingsDB()
+        {
+            TriadCardDB cardDB = TriadCardDB.Get();
+            starterCards = new TriadCard[5];
+            starterCards[0] = cardDB.Find("Dodo");
+            starterCards[1] = cardDB.Find("Sabotender");
+            starterCards[2] = cardDB.Find("Bomb");
+            starterCards[3] = cardDB.Find("Mandragora");
+            starterCards[4] = cardDB.Find("Coeurl");
         }
     }
 
