@@ -32,10 +32,10 @@
             "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/assets/image2.png", 
             "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/assets/image3.png"
         ], 
-        "InternalName": "TriadBuddy_A4", 
-        "IsHide": false, 
+        "InternalName": "TriadBuddy", 
+        "IsHide": true, 
         "IsTestingExclusive": true, 
-        "LastUpdated": 1630370060, 
+        "LastUpdated": 1630370315, 
         "LoadPriority": 0, 
         "Name": "TriadBuddy - API 4 ONLY", 
         "Punchline": "Triple triad solver", 

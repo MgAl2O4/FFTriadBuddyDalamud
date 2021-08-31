@@ -4,7 +4,6 @@ import time
 from zipfile import ZipFile
 
 outputDir = '.\\bin\\x64\\Release'
-buildName = ''
 buildVersion = ''
 
 def buildProject():
@@ -20,16 +19,6 @@ def processOutputManifest():
     global buildVersion
     buildVersion = manifestOb['AssemblyVersion']
     print('Using build version: %s' % buildVersion)
-
-    # temp! can't have api3 and api4 in same pluginmaster with identical InternalName key
-    # rename api4 and pack with updated .json
-    global buildName
-    buildName = 'TriadBuddy_A4'
-    manifestOb['InternalName'] = buildName
-    print('Using build name: %s' % buildName)
-
-    with open(manifestPath, 'w') as mfile:
-        mfile.write(json.dumps(manifestOb, indent=4, sort_keys=True))
 
 
 def stageBuild():
@@ -59,8 +48,6 @@ def updatePluginMaster():
     with open(manifestPath, 'r') as mfile:
         manifestOb = json.load(mfile)
 
-    if len(buildName) > 0:
-        manifestOb[1]['InternalName'] = buildName
     manifestOb[1]['AssemblyVersion'] = buildVersion
     manifestOb[1]['TestingAssemblyVersion'] = buildVersion
     manifestOb[1]['LastUpdated'] = int(time.time())
