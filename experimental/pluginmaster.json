@@ -33,7 +33,7 @@
             "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/assets/image3.png"
         ], 
         "InternalName": "TriadBuddy", 
-        "IsHide": true, 
+        "IsHide": false, 
         "IsTestingExclusive": true, 
         "LastUpdated": 1630370315, 
         "LoadPriority": 0, 
