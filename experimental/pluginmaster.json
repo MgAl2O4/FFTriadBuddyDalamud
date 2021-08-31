@@ -15,36 +15,5 @@
         "LastUpdated": "1630273364", 
         "Name": "TriadBuddy", 
         "RepoUrl": "https://github.com/MgAl2O4/FFTriadBuddyDalamud"
-    }, 
-    {
-        "ApplicableVersion": "any", 
-        "AssemblyVersion": "1.2.0.1", 
-        "Author": "MgAl2O4", 
-        "DalamudApiLevel": 4, 
-        "Description": "DALAMUD TESTING BUILD ONLY\n\nTriple triad solver, NPC matches only.\n- highlights next move during mini game\n- evaluates all deck presets before match\n- deck optimizer for NPC\n- adds more details to card collection window\n\nDALAMUD TESTING BUILD ONLY", 
-        "DownloadCount": 0, 
-        "DownloadLinkInstall": "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/experimental/api4/latest.zip", 
-        "DownloadLinkTesting": "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/experimental/api4/latest.zip", 
-        "DownloadLinkUpdate": "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/experimental/api4/latest.zip", 
-        "IconUrl": "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/assets/icon.png", 
-        "ImageUrls": [
-            "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/assets/image1.png", 
-            "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/assets/image2.png", 
-            "https://raw.githubusercontent.com/MgAl2O4/FFTriadBuddyDalamud/main/assets/image3.png"
-        ], 
-        "InternalName": "TriadBuddy", 
-        "IsHide": false, 
-        "IsTestingExclusive": true, 
-        "LastUpdated": 1630370315, 
-        "LoadPriority": 0, 
-        "Name": "TriadBuddy - API 4 ONLY", 
-        "Punchline": "Triple triad solver", 
-        "RepoUrl": "https://github.com/MgAl2O4/FFTriadBuddyDalamud", 
-        "Tags": [
-            "solver", 
-            "triad", 
-            "triple triad"
-        ], 
-        "TestingAssemblyVersion": "1.2.0.1"
     }
 ]
