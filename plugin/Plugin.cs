@@ -25,6 +25,7 @@ namespace TriadBuddyPlugin
         private readonly UIReaderTriadGame uiReaderGame;
         private readonly UIReaderTriadPrep uiReaderPrep;
         private readonly UIReaderTriadCardList uiReaderCardList;
+        private readonly UIReaderTriadDeckEdit uiReaderDeckEdit;
         private readonly Solver solver;
         private readonly GameDataLoader dataLoader;
         private readonly PluginOverlays overlays;
@@ -62,6 +63,7 @@ namespace TriadBuddyPlugin
             uiReaderPrep.OnUIStateChanged += (state) => solver.UpdateDecks(state);
 
             uiReaderCardList = new UIReaderTriadCardList(gameGui);
+            uiReaderDeckEdit = new UIReaderTriadDeckEdit(gameGui);
 
             GameCardDB.Get().memReader = new UnsafeReaderTriadCards(sigScanner);
 
@@ -70,7 +72,7 @@ namespace TriadBuddyPlugin
             statusWindow = new PluginWindowStatus(solver, uiReaderGame, uiReaderPrep);
             windowSystem.AddWindow(statusWindow);
 
-            var deckOptimizerWindow = new PluginWindowDeckOptimize(dataManager);
+            var deckOptimizerWindow = new PluginWindowDeckOptimize(dataManager, solver, uiReaderDeckEdit);
             var deckEvalWindow = new PluginWindowDeckEval(solver, uiReaderPrep, deckOptimizerWindow);
             windowSystem.AddWindow(deckEvalWindow);
             windowSystem.AddWindow(deckOptimizerWindow);
@@ -138,6 +140,7 @@ namespace TriadBuddyPlugin
                     uiReaderGame.Update();
                     uiReaderPrep.Update();
                     uiReaderCardList.Update();
+                    uiReaderDeckEdit.Update();
                 }
             }
             catch (Exception ex)

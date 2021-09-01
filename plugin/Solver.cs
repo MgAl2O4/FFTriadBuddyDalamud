@@ -107,10 +107,13 @@ namespace TriadBuddyPlugin
             }
         }
 
+        public delegate void SolveDeckDelegate(TriadGameResultChance winChance);
+
         private class DeckSolverContext
         {
             public TriadGameSession session;
             public TriadGameData gameData;
+            public SolveDeckDelegate callback;
             public int deckId;
             public int passId;
         }
@@ -297,6 +300,52 @@ namespace TriadBuddyPlugin
                     preGameBestId = bestId;
                 }
             }
+        }
+
+        public void SolveOptimizedDeck(TriadDeck deck, TriadNpc npc, List<TriadGameModifier> regionMods, SolveDeckDelegate callback)
+        {
+            if (npc == null || deck == null)
+            {
+                return;
+            }
+
+            var session = new TriadGameSession();
+            foreach (var mod in npc.Rules)
+            {
+                if (mod != null)
+                {
+                    var modCopy = (TriadGameModifier)Activator.CreateInstance(mod.GetType());
+                    modCopy.OnMatchInit();
+
+                    session.modifiers.Add(modCopy);
+                }
+            }
+
+            foreach (var mod in regionMods)
+            {
+                if (mod != null)
+                {
+                    var modCopy = (TriadGameModifier)Activator.CreateInstance(mod.GetType());
+                    modCopy.OnMatchInit();
+
+                    session.modifiers.Add(modCopy);
+                }
+            }
+
+            session.UpdateSpecialRules();
+
+            var gameData = session.StartGame(deck, npc.Deck, ETriadGameState.InProgressRed);
+            var calcContext = new DeckSolverContext() { session = session, gameData = gameData, callback = callback };
+
+            Action<object> solverAction = (ctxOb) =>
+            {
+                var ctx = ctxOb as DeckSolverContext;
+                ctx.session.SolverFindBestMove(ctx.gameData, out int bestNextPos, out TriadCard bestNextCard, out TriadGameResultChance bestChance);
+
+                callback?.Invoke(bestChance);
+            };
+
+            new TaskFactory().StartNew(solverAction, calcContext);
         }
     }
 }

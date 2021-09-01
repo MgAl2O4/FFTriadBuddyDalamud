@@ -17,6 +17,8 @@ namespace TriadBuddyPlugin
         private readonly Vector4 colorResultData = new Vector4(0.0f, 0.9f, 0.9f, 1);
 
         private DataManager dataManager;
+        private Solver solver;
+        private UIReaderTriadDeckEdit uiReaderDeckEdit;
 
         private TriadDeckOptimizer deckOptimizer = new();
         private List<TriadGameModifier> regionMods = new();
@@ -31,9 +33,14 @@ namespace TriadBuddyPlugin
         private bool isOptimizerRunning;
         private int[] pendingCardIds;
         private int[] shownCardIds;
-        private string[] shownCardTooltips = new string[5];
+        private string[] shownCardTooltipsDeckEdit = new string[5];
+        private string[] shownCardTooltipsCollection = new string[5];
         private float pendingCardsUpdateTimeRemaining;
         private float optimizerStatsTimeRemaining;
+
+        private bool hasDeckSolverResult;
+        private TriadGameResultChance deckWinChance;
+        private TriadDeck cachedSolverDeck;
 
         private Dictionary<int, TextureWrap> mapCardImages = new();
         private TextureWrap cardBackgroundImage;
@@ -47,14 +54,18 @@ namespace TriadBuddyPlugin
         private string locNpc;
         private string locRegionRules;
         private string locWinChance;
+        private string locDeckScore;
         private string locTimeRemaining;
-        private string locTooltipPage;
+        private string locCollectionPage;
+        private string locDeckEditPage;
         private string locOptimizeStart;
         private string locOptimizeAbort;
 
-        public PluginWindowDeckOptimize(DataManager dataManager) : base("Deck Optimizer")
+        public PluginWindowDeckOptimize(DataManager dataManager, Solver solver, UIReaderTriadDeckEdit uiReaderDeckEdit) : base("Deck Optimizer")
         {
             this.dataManager = dataManager;
+            this.solver = solver;
+            this.uiReaderDeckEdit = uiReaderDeckEdit;
 
             deckOptimizer.OnFoundDeck += DeckOptimizer_OnFoundDeck;
 
@@ -84,6 +95,7 @@ namespace TriadBuddyPlugin
             {
                 // buffer card changes to catch multiple fast swaps and reduce number of loaded images
                 pendingWinChance = estWinChance;
+                cachedSolverDeck = deck;
 
                 pendingCardIds = new int[5];
                 for (int idx = 0; idx < pendingCardIds.Length; idx++)
@@ -104,11 +116,14 @@ namespace TriadBuddyPlugin
 
         private void CacheLocalization()
         {
+            WindowName = Localization.Localize("DO_Title", "Deck Optimizer");
             locNpc = Localization.Localize("DO_Npc", "Npc:");
             locRegionRules = Localization.Localize("DO_RegionRules", "Region rules:");
             locWinChance = Localization.Localize("DO_WinChance", "Win chance:");
+            locDeckScore = Localization.Localize("DO_DeckScore", "Deck score:");
             locTimeRemaining = Localization.Localize("DO_TimeRemaining", "Time remaining:");
-            locTooltipPage = Localization.Localize("DO_CardTooltip", "Collection page: {0}");
+            locCollectionPage = Localization.Localize("DO_CollectionPage", "Collection page: {0}");
+            locDeckEditPage = Localization.Localize("DO_DeckBuilderPage", "Deck builder page: {0}");
             locOptimizeStart = Localization.Localize("DO_Start", "Optimize deck");
             locOptimizeAbort = Localization.Localize("DO_Abort", "Abort");
         }
@@ -154,7 +169,9 @@ namespace TriadBuddyPlugin
             }
 
             optimizerWinChance = -1;
+
             IsOpen = true;
+            uiReaderDeckEdit?.OnDeckOptimizerVisible(IsOpen);
         }
 
         private TextureWrap GetCardTexture(int cardId)
@@ -215,17 +232,29 @@ namespace TriadBuddyPlugin
 
                     if (ImGui.IsItemHovered())
                     {
-                        ImGui.SetTooltip(shownCardTooltips[idx]);
+                        bool isDeckEditorOpen = uiReaderDeckEdit?.IsVisible ?? false;
+                        ImGui.SetTooltip(isDeckEditorOpen ? shownCardTooltipsDeckEdit[idx] : shownCardTooltipsCollection[idx]);
                     }
                 }
             }
 
             // stat block
             ImGui.SetCursorPos(new Vector2(currentPos.X, currentPos.Y + cardImagePos[3].Y + ImGui.GetTextLineHeight()));
-            if (isOptimizerRunning || optimizerWinChance >= 0.0f)
+            if (isOptimizerRunning || hasDeckSolverResult || optimizerWinChance >= 0.0f)
             {
-                ImGui.Text(locWinChance);
-                ImGui.TextColored(colorResultData, optimizerWinChance < 0 ? "--" : optimizerWinChance.ToString("P0").Replace("%", "%%"));
+                if (hasDeckSolverResult)
+                {
+                    ImGui.Text(locWinChance);
+                    ImGui.TextColored(colorResultData, deckWinChance.winChance.ToString("P0").Replace("%", "%%"));
+                }
+                else
+                {
+                    PluginLog.Log($"chance:{optimizerWinChance}");
+
+                    // "win chance" - it's a score assigned by deck optimizer, that can be approximated as win chance %
+                    ImGui.Text(locDeckScore);
+                    ImGui.TextColored(colorResultData, optimizerWinChance < 0 ? "--" : (optimizerWinChance * 1000).ToString("0"));
+                }
             }
 
             if (isOptimizerRunning)
@@ -272,19 +301,27 @@ namespace TriadBuddyPlugin
                     optimizerWinChance = pendingWinChance;
                     pendingWinChance = -1;
 
+                    uiReaderDeckEdit?.SetHighlightedCards(shownCardIds);
+
                     for (int idx = 0; idx < shownCardIds.Length; idx++)
                     {
                         var cardOb = TriadCardDB.Get().FindById(shownCardIds[idx]);
                         if (cardOb != null)
                         {
-                            shownCardTooltips[idx] = $"{(int)cardOb.Rarity + 1}★  {cardOb.Name.GetLocalized()}";
+                            var tooltip = $"{(int)cardOb.Rarity + 1}★  {cardOb.Name.GetLocalized()}";
+                            shownCardTooltipsCollection[idx] = tooltip;
+                            shownCardTooltipsDeckEdit[idx] = tooltip;
 
                             var cardInfo = GameCardDB.Get().FindById(shownCardIds[idx]);
                             if (cardInfo != null)
                             {
-                                int pageIdx = cardInfo.Collection[(int)GameCardCollectionFilter.All].PageIndex;
-                                shownCardTooltips[idx] += "\n\n";
-                                shownCardTooltips[idx] += string.Format(locTooltipPage, pageIdx + 1);
+                                int editPageIdx = cardInfo.Collection[(int)GameCardCollectionFilter.OnlyOwned].PageIndex;
+                                shownCardTooltipsDeckEdit[idx] += "\n\n";
+                                shownCardTooltipsDeckEdit[idx] += string.Format(locDeckEditPage, editPageIdx + 1);
+
+                                int collectionPageIdx = cardInfo.Collection[(int)GameCardCollectionFilter.All].PageIndex;
+                                shownCardTooltipsCollection[idx] += "\n\n";
+                                shownCardTooltipsCollection[idx] += string.Format(locCollectionPage, collectionPageIdx + 1);
                             }
                         }
                     }
@@ -350,16 +387,34 @@ namespace TriadBuddyPlugin
             optimizerProgress = 0;
             optimizerTimeRemainingDesc = "--";
             isOptimizerRunning = true;
+            hasDeckSolverResult = false;
 
             await deckOptimizer.Process(npc, regionMods.ToArray(), lockedCards);
 
             isOptimizerRunning = false;
             optimizerTimeRemainingDesc = "--";
+
+            RunDeckSolver();
         }
 
         private void AbortOptimizer()
         {
             deckOptimizer.AbortProcess();
+        }
+
+        private void RunDeckSolver()
+        {
+            hasDeckSolverResult = false;
+
+            if (solver != null && cachedSolverDeck != null)
+            {
+                solver.SolveOptimizedDeck(cachedSolverDeck, npc, regionMods, (chance) =>
+                {
+                    // this is invoked from worker thread!
+                    hasDeckSolverResult = true;
+                    deckWinChance = chance;
+                });
+            }
         }
 
         public override void OnClose()
@@ -368,6 +423,8 @@ namespace TriadBuddyPlugin
             {
                 deckOptimizer.AbortProcess();
             }
+
+            uiReaderDeckEdit?.OnDeckOptimizerVisible(false);
 
             // free cached card images on window close
             foreach (var kvp in mapCardImages)
