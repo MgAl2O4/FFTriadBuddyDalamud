@@ -6,6 +6,8 @@ namespace TriadBuddyPlugin
 {
     public class GameUIParser
     {
+        public const int PartialNpcNameLength = 20;
+
         public TriadCardDB cards = TriadCardDB.Get();
         public TriadNpcDB npcs = TriadNpcDB.Get();
         public TriadGameModifierDB mods = TriadGameModifierDB.Get();
@@ -94,7 +96,7 @@ namespace TriadBuddyPlugin
         {
             // some names will be truncated in UI, e.g. 'Guhtwint of the Three...'
             // limit match to first 20 characters and hope that SE will keep it unique
-            string matchPattern = (desc.Length > 20) ? desc.Substring(0, 20) : desc;
+            string matchPattern = (desc.Length > PartialNpcNameLength) ? desc.Substring(0, PartialNpcNameLength) : desc;
 
             var matchOb = npcs.FindByNameStart(matchPattern);
             if (matchOb == null && markFailed)

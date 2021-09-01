@@ -328,6 +328,8 @@ namespace TriadBuddyPlugin
                 var npcIdData = mapTriadNpcData[rowData.RowId];
                 var npcOb = new TriadNpc(npcDB.npcs.Count, listRules, cardsFixed, cardsVariable);
                 npcOb.Name.Text = npcIdData.Item3;
+                npcOb.OnNameUpdated();
+
                 npcDB.npcs.Add(npcOb);
 
                 var newCachedData = new ENpcCachedData() { gameLogicId = npcOb.Id, triadId = npcIdData.Item2 };
