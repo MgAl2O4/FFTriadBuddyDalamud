@@ -76,7 +76,6 @@ namespace TriadBuddyPlugin
                 filterMode = -1;
                 searchFilter.Clear();
 
-                UpdateWindowBounds();
                 OnUIStateChanged(uiReaderCardList.cachedState);
             }
         }
@@ -118,17 +117,13 @@ namespace TriadBuddyPlugin
             }
         }
 
-        public void UpdateWindowBounds()
+        public override void PreDraw()
         {
             Position = new Vector2(uiReaderCardList.cachedState.screenPos.X + uiReaderCardList.cachedState.screenSize.X + 10, uiReaderCardList.cachedState.screenPos.Y);
         }
 
         public override void Draw()
         {
-            // position & size will lag 1 tick behind, no hooks in Window class to do dynamic stuff before drawing?
-            // doesn't really matter, it's docked under what's supposed to be simple UI screen where all interaction comes down to clicking a button
-            UpdateWindowBounds();
-
             bool showOwnedCheckbox = filterMode == 0;
 
             searchFilter.Draw("", Size.Value.X - 20);

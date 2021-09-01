@@ -72,11 +72,10 @@ namespace TriadBuddyPlugin
             if (active)
             {
                 GameCardDB.Get().Refresh();
-                UpdateWindowBounds();
             }
         }
 
-        public void UpdateWindowBounds()
+        public override void PreDraw()
         {
             Position = uiReaderPrep.cachedState.screenPos + new Vector2(0, uiReaderPrep.cachedState.screenSize.Y);
             Size = new Vector2(uiReaderPrep.cachedState.screenSize.X, 50);
@@ -84,10 +83,6 @@ namespace TriadBuddyPlugin
 
         public override void Draw()
         {
-            // position & size will lag 1 tick behind, no hooks in Window class to do dynamic stuff before drawing?
-            // doesn't really matter, it's docked under what's supposed to be simple UI screen where all interaction comes down to clicking a button
-            UpdateWindowBounds();
-
             if (solver.preGameDecks.Count > 0)
             {
                 Vector4 hintColor = colorTxt;

@@ -75,13 +75,9 @@ namespace TriadBuddyPlugin
             }
 
             IsOpen = canShow;
-            if (IsOpen)
-            {
-                UpdateWindowBounds();
-            }
         }
 
-        public void UpdateWindowBounds()
+        public override void PreDraw()
         {
             Position = uiReaderCardList.cachedState.descriptionPos;
             Size = uiReaderCardList.cachedState.descriptionSize;
@@ -89,10 +85,6 @@ namespace TriadBuddyPlugin
 
         public override void Draw()
         {
-            // position & size will lag 1 tick behind, no hooks in Window class to do dynamic stuff before drawing?
-            // doesn't really matter, it's docked under what's supposed to be simple UI screen where all interaction comes down to clicking a button
-            UpdateWindowBounds();
-
             if (selectedCard != null)
             {
                 var colorName = new Vector4(0.9f, 0.9f, 0.2f, 1);
