@@ -70,6 +70,7 @@ namespace TriadBuddyPlugin
             NoErrors,
             AddonNotFound,
             AddonNotVisible,
+            PvPMatch,
             FailedToReadMove,
             FailedToReadRules,
             FailedToReadRedPlayer,
@@ -114,7 +115,10 @@ namespace TriadBuddyPlugin
             status = Status.NoErrors;
             var newState = new UIStateTriadGame();
 
-            (newState.rules, newState.redPlayerDesc) = GetUIDescriptions(addon);
+            var nodeArrL0 = GUINodeUtils.GetImmediateChildNodes(addon->AtkUnitBase.RootNode);
+            newState.redPlayerDesc = GetUIDescriptionRedPlayer(nodeArrL0);
+            newState.rules = GetUIDescriptionRules(nodeArrL0);
+            newState.isPvP = GetUIStatePvP(nodeArrL0);
 
             if (status == Status.NoErrors)
             {
@@ -151,6 +155,13 @@ namespace TriadBuddyPlugin
             }
 
             SetCurrentState(status == Status.NoErrors ? newState : null);
+            
+            // pvp status is part of UI state, allow setting detection, just make sure that solver will be disabled
+            // if this flag is not set in pvp match, red player description will not match known npc and solver will be in failed state anyway
+            if (newState.isPvP)
+            {
+                SetStatus(Status.PvPMatch);
+            }
         }
 
         private void SetStatus(Status newStatus)
@@ -188,32 +199,11 @@ namespace TriadBuddyPlugin
             }
         }
 
-        private unsafe (List<string>, List<string>) GetUIDescriptions(AddonTripleTriad* addon)
+        private unsafe List<string> GetUIDescriptionRedPlayer(AtkResNode*[] level0)
         {
-            var listRuleDesc = new List<string>();
             var listRedDesc = new List<string>();
 
-            var nodeArrL0 = GUINodeUtils.GetImmediateChildNodes(addon->AtkUnitBase.RootNode);
-
-            var nodeRule0 = GUINodeUtils.PickNode(nodeArrL0, 4, 12);
-            var nodeArrRule = GUINodeUtils.GetImmediateChildNodes(nodeRule0);
-            if (nodeArrRule != null && nodeArrRule.Length == 5)
-            {
-                for (int idx = 0; idx < 4; idx++)
-                {
-                    var text = GUINodeUtils.GetNodeText(nodeArrRule[4 - idx]);
-                    if (!string.IsNullOrEmpty(text))
-                    {
-                        listRuleDesc.Add(text);
-                    }
-                }
-            }
-            else
-            {
-                SetStatus(Status.FailedToReadRules);
-            }
-
-            var nodeName0 = GUINodeUtils.PickNode(nodeArrL0, 6, 12);
+            var nodeName0 = GUINodeUtils.PickNode(level0, 6, 12);
             var nodeArrNameL1 = GUINodeUtils.GetImmediateChildNodes(nodeName0);
             var nodeNameL1 = GUINodeUtils.PickNode(nodeArrNameL1, 0, 5);
             var nodeArrNameL2 = GUINodeUtils.GetAllChildNodes(nodeNameL1);
@@ -242,7 +232,45 @@ namespace TriadBuddyPlugin
                 SetStatus(Status.FailedToReadRedPlayer);
             }
 
-            return (listRuleDesc, listRedDesc);
+            return listRedDesc;
+        }
+
+        private unsafe List<string> GetUIDescriptionRules(AtkResNode*[] level0)
+        {
+            var listRuleDesc = new List<string>();
+
+            var nodeRule0 = GUINodeUtils.PickNode(level0, 4, 12);
+            var nodeArrRule = GUINodeUtils.GetImmediateChildNodes(nodeRule0);
+            if (nodeArrRule != null && nodeArrRule.Length == 5)
+            {
+                for (int idx = 0; idx < 4; idx++)
+                {
+                    var text = GUINodeUtils.GetNodeText(nodeArrRule[4 - idx]);
+                    if (!string.IsNullOrEmpty(text))
+                    {
+                        listRuleDesc.Add(text);
+                    }
+                }
+            }
+            else
+            {
+                SetStatus(Status.FailedToReadRules);
+            }
+
+
+            return listRuleDesc;
+        }
+
+        private unsafe bool GetUIStatePvP(AtkResNode*[] level0)
+        {
+            // verify, is that for both pvp and tournament games?
+            var nodePvPButton = GUINodeUtils.PickNode(level0, 11, 12);
+            if (nodePvPButton != null && nodePvPButton->IsVisible)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private unsafe (string, bool) GetCardTextureData(AddonTripleTriadCard addonCard)

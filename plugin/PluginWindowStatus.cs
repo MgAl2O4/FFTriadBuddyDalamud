@@ -14,6 +14,7 @@ namespace TriadBuddyPlugin
 
         private string locStatus;
         private string locStatusNotActive;
+        private string locStatusPvPMatch;
         private string locStatusActive;
         private string locGameData;
         private string locGameDataError;
@@ -22,6 +23,7 @@ namespace TriadBuddyPlugin
         private string locPrepRule;
         private string locGameNpc;
         private string locGameMove;
+        private string locGameMoveDisabled;
         private string locBoardX0;
         private string locBoardX1;
         private string locBoardX2;
@@ -54,6 +56,7 @@ namespace TriadBuddyPlugin
         {
             locStatus = Localization.Localize("ST_Status", "Status:");
             locStatusNotActive = Localization.Localize("ST_StatusNotActive", "Minigame not active");
+            locStatusPvPMatch = Localization.Localize("ST_StatusPvP", "PvP match");
             locStatusActive = Localization.Localize("ST_StatusActive", "Active");
             locGameData = Localization.Localize("ST_GameData", "Game data:");
             locGameDataError = Localization.Localize("ST_GameDataError", "missing! solver disabled");
@@ -62,6 +65,7 @@ namespace TriadBuddyPlugin
             locPrepRule = Localization.Localize("ST_PrepRules", "Prep.Rules:");
             locGameNpc = Localization.Localize("ST_GameNpc", "Solver.NPC:");
             locGameMove = Localization.Localize("ST_GameMove", "Solver.Move:");
+            locGameMoveDisabled = Localization.Localize("ST_GameMoveDisabled", "disabled");
             locBoardX0 = Localization.Localize("ST_BoardXLeft", "left");
             locBoardX1 = Localization.Localize("ST_BoardXCenter", "center");
             locBoardX2 = Localization.Localize("ST_BoardXRight", "right");
@@ -79,19 +83,28 @@ namespace TriadBuddyPlugin
 
             ImGui.Text(locStatus);
             ImGui.SameLine();
+
+            bool isPvPMatch = (uiReaderGame.status == UIReaderTriadGame.Status.PvPMatch) || (solver.status == Solver.Status.FailedToParseNpc);
             var statusDesc =
+                isPvPMatch ? locStatusPvPMatch :
                 uiReaderGame.HasErrors ? uiReaderGame.status.ToString() :
                 solver.HasErrors ? solver.status.ToString() :
                 !uiReaderGame.IsVisible ? locStatusNotActive :
                 locStatusActive;
 
-            ImGui.TextColored(uiReaderGame.HasErrors || solver.HasErrors ? colorErr : colorOk, statusDesc);
+            var statusColor =
+                isPvPMatch ? colorYellow :
+                uiReaderGame.HasErrors || solver.HasErrors ? colorErr :
+                colorOk;
+
+            ImGui.TextColored(statusColor, statusDesc);
 
             ImGui.Text(locGameData);
             ImGui.SameLine();
             int numCards = FFTriadBuddy.TriadCardDB.Get().cards.Count;
             int numNpcs = FFTriadBuddy.TriadNpcDB.Get().npcs.Count;
-            if (numCards == 0 || numNpcs == 0)
+            bool isGameDataMissing = numCards == 0 || numNpcs == 0;
+            if (isGameDataMissing)
             {
                 ImGui.TextColored(colorErr, locGameDataError);
             }
@@ -138,7 +151,12 @@ namespace TriadBuddyPlugin
 
                 ImGui.Text(locGameMove);
                 ImGui.SameLine();
-                if (solver.hasMove)
+
+                if (isPvPMatch || isGameDataMissing)
+                {
+                    ImGui.TextColored(colorYellow, locGameMoveDisabled);
+                }
+                else if (solver.hasMove)
                 {
                     var useColor =
                         (solver.moveWinChance.expectedResult == FFTriadBuddy.ETriadGameState.BlueWins) ? colorOk :

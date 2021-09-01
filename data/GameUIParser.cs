@@ -15,6 +15,8 @@ namespace TriadBuddyPlugin
         public bool hasFailedNpc = false;
         public bool HasErrors => hasFailedCard || hasFailedModifier || hasFailedNpc;
 
+        private static string lastLoggedNpc;
+
         public void Reset()
         {
             hasFailedCard = false;
@@ -117,6 +119,19 @@ namespace TriadBuddyPlugin
         public void OnFailedNpc(string desc)
         {
             PluginLog.Error($"failed to match npc: {string.Join(", ", desc)}");
+            hasFailedNpc = true;
+        }
+
+        public void OnFailedNpcSilent(string desc)
+        {
+            // limit number of log spam, use normal verbocity
+            if (lastLoggedNpc != desc)
+            {
+                lastLoggedNpc = desc;
+                PluginLog.Log($"failed to match npc: {string.Join(", ", desc)}, is it pvp?");
+            }
+
+            // always mark as failure though
             hasFailedNpc = true;
         }
     }

@@ -55,6 +55,7 @@ namespace TriadBuddyPlugin
         public UIStateTriadCard[] blueDeck = new UIStateTriadCard[5];
         public UIStateTriadCard[] redDeck = new UIStateTriadCard[5];
         public UIStateTriadCard[] board = new UIStateTriadCard[9];
+        public bool isPvP;
         public byte move;
 
         public bool Equals(UIStateTriadGame other)
@@ -107,6 +108,8 @@ namespace TriadBuddyPlugin
         public TriadNpc ToTriadNpc(GameUIParser ctx)
         {
             TriadNpc resultOb = null;
+            bool canLogError = false;
+
             foreach (var name in redPlayerDesc)
             {
                 var matchOb = ctx.ParseNpcNameStart(name, false);
@@ -120,6 +123,7 @@ namespace TriadBuddyPlugin
                     {
                         // um.. names matched two different npc, fail 
                         resultOb = null;
+                        canLogError = true;
                         break;
                     }
                 }
@@ -127,7 +131,16 @@ namespace TriadBuddyPlugin
 
             if (redPlayerDesc.Count > 0 && resultOb == null)
             {
-                ctx.OnFailedNpc(string.Join(',', redPlayerDesc));
+                // don't spam errors on npc match, this will happened when someone tries playing pvp match too
+                string npcDesc = string.Join(',', redPlayerDesc);
+                if (canLogError)
+                {
+                    ctx.OnFailedNpc(npcDesc);
+                }
+                else
+                {
+                    ctx.OnFailedNpcSilent(npcDesc);
+                }
             }
 
             return resultOb;

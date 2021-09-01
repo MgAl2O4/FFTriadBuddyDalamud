@@ -82,7 +82,7 @@ namespace TriadBuddyPlugin
                 currentNpc = null;
             }
 
-            if (currentNpc != null && screenOb.turnState == ScannerTriad.ETurnState.Active)
+            if (currentNpc != null && screenOb.turnState == ScannerTriad.ETurnState.Active && !stateOb.isPvP)
             {
                 var updateFlags = screenMemory.OnNewScan(screenOb, currentNpc);
                 if (updateFlags != TriadGameScreenMemory.EUpdateFlags.None)
