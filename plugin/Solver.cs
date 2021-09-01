@@ -147,6 +147,7 @@ namespace TriadBuddyPlugin
                 var profileDecks = canReadFromProfile ? profileGS.GetPlayerDecks() : null;
                 int numDecks = (profileDecks != null) ? profileDecks.Length : state.decks.Count;
 
+                TriadDeck anyDeckOb = null;
                 for (int deckIdx = 0; deckIdx < numDecks; deckIdx++)
                 {
                     parseCtx.Reset();
@@ -158,8 +159,16 @@ namespace TriadBuddyPlugin
                     if (!parseCtx.HasErrors && deckData != null)
                     {
                         preGameDecks.Add(deckData.id, deckData);
+                        anyDeckOb = deckData.solverDeck;
                     }
                 }
+
+                // initialize screenMemory.playerDeck, see comment in OnSolvedDeck() for details
+                if (anyDeckOb == null)
+                {
+                    anyDeckOb = new TriadDeck(PlayerSettingsDB.Get().starterCards);
+                }
+                screenMemory.UpdatePlayerDeck(anyDeckOb);
 
                 foreach (var kvp in preGameDecks)
                 {
@@ -257,6 +266,19 @@ namespace TriadBuddyPlugin
                         {
                             bestId = kvp.Key;
                             bestScore = testScore;
+                        }
+                    }
+                    
+                    // screenMemory.PlayerDeck - originally used for determining swapped cards
+                    // there's probably much better way of doing that and it needs further work
+                    // for now, just pretend that best scoring deck is the one that player will be using
+                    // - yes, player used that one in game - yay, swap detection works correctly
+                    // - nope, player picked something else - whatever, build in failsafes in swap detection will handle that after 3-4 matches
+                    if (bestId >= 0 && bestId != preGameBestId)
+                    {
+                        if (preGameDecks.TryGetValue(bestId, out var bestDeckData))
+                        {
+                            screenMemory.UpdatePlayerDeck(bestDeckData.solverDeck);
                         }
                     }
 
