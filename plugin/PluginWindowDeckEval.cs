@@ -66,7 +66,9 @@ namespace TriadBuddyPlugin
 
         private void OnMatchRequestChanged(bool active)
         {
-            IsOpen = active;
+            bool canAccessProfileDecks = (solver.profileGS != null) && !solver.profileGS.HasErrors;
+            IsOpen = active && canAccessProfileDecks;
+
             if (active)
             {
                 GameCardDB.Get().Refresh();

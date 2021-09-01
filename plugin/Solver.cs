@@ -227,16 +227,28 @@ namespace TriadBuddyPlugin
         private DeckData ParseDeckDataFromUI(UIStateTriadPrepDeck deckOb, GameUIParser ctx)
         {
             // empty UI decks are valid objects, but their card data is empty (handled by ctx)
+            // do quick filter pass looking for nulls in card slots too
 
-            var deckData = new DeckData() { id = deckOb.id, name = deckOb.name };
-
-            var cards = new TriadCard[5];
+            int numValidCards = 0;
             for (int cardIdx = 0; cardIdx < 5; cardIdx++)
             {
-                cards[cardIdx] = ctx.ParseCard(deckOb.cardTexPaths[cardIdx]);
+                numValidCards += string.IsNullOrEmpty(deckOb.cardTexPaths[cardIdx]) ? 0 : 1;
             }
 
-            deckData.solverDeck = ctx.HasErrors ? null : new TriadDeck(cards);
+            DeckData deckData = null;
+            if (numValidCards == 5)
+            {
+                deckData = new DeckData() { id = deckOb.id, name = deckOb.name };
+
+                var cards = new TriadCard[5];
+                for (int cardIdx = 0; cardIdx < 5; cardIdx++)
+                {
+                    cards[cardIdx] = ctx.ParseCard(deckOb.cardTexPaths[cardIdx]);
+                }
+
+                deckData.solverDeck = ctx.HasErrors ? null : new TriadDeck(cards);
+            }
+
             return deckData;
         }
 
@@ -268,7 +280,7 @@ namespace TriadBuddyPlugin
                             bestScore = testScore;
                         }
                     }
-                    
+
                     // screenMemory.PlayerDeck - originally used for determining swapped cards
                     // there's probably much better way of doing that and it needs further work
                     // for now, just pretend that best scoring deck is the one that player will be using

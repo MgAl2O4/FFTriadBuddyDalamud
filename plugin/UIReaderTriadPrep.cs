@@ -180,13 +180,8 @@ namespace TriadBuddyPlugin
                         deckOb.id = cachedState.decks.Count;
                         deckOb.rootNodeAddr = (ulong)nodeB;
 
-                        //PluginLog.Log($"deck[{deckOb.id}], nodeB=root.vis:{nodeB->IsVisible}, nodeC1=name.vis:{nodeC1->IsVisible}");
-
-                        bool canAddDeck = true;
                         if (shouldScanDeckData)
                         {
-                            int numValidCards = 0;
-
                             var nodeArrC1 = GUINodeUtils.GetImmediateChildNodes(nodeC1);
                             if (nodeArrC1 != null && nodeArrC1.Length == 5)
                             {
@@ -201,20 +196,14 @@ namespace TriadBuddyPlugin
                                     }
 
                                     deckOb.cardTexPaths[idxC] = texPath;
-                                    numValidCards++;
                                 }
                             }
-
-                            canAddDeck = numValidCards == deckOb.cardTexPaths.Length;
 
                             var nodeC2 = GUINodeUtils.PickChildNode(nodeB, 11, 12);
                             deckOb.name = GUINodeUtils.GetNodeText(nodeC2);
                         }
 
-                        if (canAddDeck)
-                        {
-                            cachedState.decks.Add(deckOb);
-                        }
+                        cachedState.decks.Add(deckOb);
                     }
                 }
             }

@@ -58,7 +58,7 @@ namespace TriadBuddyPlugin
             uiReaderGame.OnUIStateChanged += (state) => solver.UpdateGame(state);
 
             uiReaderPrep = new UIReaderTriadPrep(gameGui);
-            uiReaderPrep.shouldScanDeckData = (solver.profileGS != null) && !solver.profileGS.HasErrors;
+            uiReaderPrep.shouldScanDeckData = (solver.profileGS == null) || solver.profileGS.HasErrors;
             uiReaderPrep.OnUIStateChanged += (state) => solver.UpdateDecks(state);
 
             uiReaderCardList = new UIReaderTriadCardList(gameGui);

@@ -155,7 +155,7 @@ namespace TriadBuddyPlugin
             }
 
             SetCurrentState(status == Status.NoErrors ? newState : null);
-            
+
             // pvp status is part of UI state, allow setting detection, just make sure that solver will be disabled
             // if this flag is not set in pvp match, red player description will not match known npc and solver will be in failed state anyway
             if (newState.isPvP)
