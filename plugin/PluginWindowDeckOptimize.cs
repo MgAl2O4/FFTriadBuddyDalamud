@@ -142,6 +142,9 @@ namespace TriadBuddyPlugin
                 return;
             }
 
+            string prevModDesc = regionModsDesc;
+            var prevNpc = this.npc;
+
             regionMods.Clear();
             regionModsDesc = null;
 
@@ -168,7 +171,19 @@ namespace TriadBuddyPlugin
                 }
             }
 
-            optimizerWinChance = -1;
+            bool setupChanged = (npc != prevNpc) || (regionModsDesc != prevModDesc);
+            if (setupChanged)
+            {
+                optimizerWinChance = -1;
+                hasDeckSolverResult = false;
+                shownCardIds = null;
+            }
+
+            // opening on already running optimizer? sounds bad, make sure it's aborted
+            if (isOptimizerRunning)
+            {
+                AbortOptimizer();
+            }
 
             IsOpen = true;
             uiReaderDeckEdit?.OnDeckOptimizerVisible(IsOpen);
