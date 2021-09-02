@@ -8,7 +8,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
-    <AssemblyVersion>1.2.0.2</AssemblyVersion>
+    <AssemblyVersion>1.2.0.3</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
