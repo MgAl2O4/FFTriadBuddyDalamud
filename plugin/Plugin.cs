@@ -17,6 +17,7 @@ namespace TriadBuddyPlugin
         private readonly DalamudPluginInterface pluginInterface;
         private readonly CommandManager commandManager;
         private readonly Framework framework;
+        private readonly DataManager dataManager;
         private readonly WindowSystem windowSystem = new("TriadBuddy");
 
         private readonly Window statusWindow;
@@ -41,6 +42,7 @@ namespace TriadBuddyPlugin
         {
             this.pluginInterface = pluginInterface;
             this.commandManager = commandManager;
+            this.dataManager = dataManager;
             this.framework = framework;
 
             // prep utils
@@ -69,7 +71,7 @@ namespace TriadBuddyPlugin
 
             // prep UI
             overlays = new PluginOverlays(solver, uiReaderGame, uiReaderPrep);
-            statusWindow = new PluginWindowStatus(solver, uiReaderGame, uiReaderPrep);
+            statusWindow = new PluginWindowStatus(dataManager, solver, uiReaderGame, uiReaderPrep);
             windowSystem.AddWindow(statusWindow);
 
             var deckOptimizerWindow = new PluginWindowDeckOptimize(dataManager, solver, uiReaderDeckEdit);

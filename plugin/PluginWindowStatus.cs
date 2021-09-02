@@ -1,7 +1,13 @@
 ﻿using Dalamud;
+using Dalamud.Data;
+using Dalamud.Interface;
+using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
+using FFTriadBuddy;
 using ImGuiNET;
+using ImGuiScene;
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 
 namespace TriadBuddyPlugin
@@ -11,6 +17,19 @@ namespace TriadBuddyPlugin
         private readonly UIReaderTriadGame uiReaderGame;
         private readonly UIReaderTriadPrep uiReaderPrep;
         private readonly Solver solver;
+        private readonly DataManager dataManager;
+
+        private bool showDebugDetails;
+        private Vector2 orgSize;
+        private Vector2 debugWndSize = new(420.0f, 350.0f);
+        private float orgDrawPosX;
+        private Dictionary<int, TextureWrap> mapCardImages = new();
+        private const float debugCellSize = 30.0f;
+        private const float debugCellPading = 4.0f;
+
+        private Vector4 colorErr = new Vector4(0.9f, 0.2f, 0.2f, 1);
+        private Vector4 colorOk = new Vector4(0.2f, 0.9f, 0.2f, 1);
+        private Vector4 colorYellow = new Vector4(0.9f, 0.9f, 0.2f, 1);
 
         private string locStatus;
         private string locStatusNotActive;
@@ -31,16 +50,19 @@ namespace TriadBuddyPlugin
         private string locBoardY1;
         private string locBoardY2;
         private string locBoardCenter;
+        private string locDebugMode;
 
-        public PluginWindowStatus(Solver solver, UIReaderTriadGame uiReaderGame, UIReaderTriadPrep uiReaderPrep) : base("Triad Buddy")
+        public PluginWindowStatus(DataManager dataManager, Solver solver, UIReaderTriadGame uiReaderGame, UIReaderTriadPrep uiReaderPrep) : base("Triad Buddy")
         {
+            this.dataManager = dataManager;
             this.solver = solver;
             this.uiReaderGame = uiReaderGame;
             this.uiReaderPrep = uiReaderPrep;
 
             IsOpen = false;
 
-            Size = new Vector2(350, 120);
+            Size = new Vector2(350, ImGui.GetTextLineHeight() * 8);
+            SizeConstraints = new WindowSizeConstraints() { MinimumSize = this.Size.Value, MaximumSize = new Vector2(3000, 3000) };
             SizeCondition = ImGuiCond.FirstUseEver;
 
             Plugin.CurrentLocManager.LocalizationChanged += (_) => CacheLocalization();
@@ -49,7 +71,10 @@ namespace TriadBuddyPlugin
 
         public void Dispose()
         {
-            // meh
+            foreach (var kvp in mapCardImages)
+            {
+                kvp.Value.Dispose();
+            }
         }
 
         private void CacheLocalization()
@@ -73,14 +98,33 @@ namespace TriadBuddyPlugin
             locBoardY1 = Localization.Localize("ST_BoardYCenter", "center");
             locBoardY2 = Localization.Localize("ST_BoardYBottom", "bottom");
             locBoardCenter = Localization.Localize("ST_BoardXYCenter", "center");
+            locDebugMode = Localization.Localize("ST_DebugMode", "Show debug details");
+        }
+
+        public override void OnOpen()
+        {
+            if (Size.HasValue && Size.Value.Y == debugWndSize.Y)
+            {
+                Size = orgSize;
+                SizeCondition = ImGuiCond.Always;
+            }
+
+            showDebugDetails = false;
+        }
+
+        public override void OnClose()
+        {
+            // release all images collected so far
+            foreach (var kvp in mapCardImages)
+            {
+                kvp.Value.Dispose();
+            }
+            mapCardImages.Clear();
         }
 
         public override void Draw()
         {
-            var colorErr = new Vector4(0.9f, 0.2f, 0.2f, 1);
-            var colorOk = new Vector4(0.2f, 0.9f, 0.2f, 1);
-            var colorYellow = new Vector4(0.9f, 0.9f, 0.2f, 1);
-
+            ImGui.AlignTextToFramePadding();
             ImGui.Text(locStatus);
             ImGui.SameLine();
 
@@ -98,11 +142,36 @@ namespace TriadBuddyPlugin
                 colorOk;
 
             ImGui.TextColored(statusColor, statusDesc);
+            ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - 20);
+
+            if (SizeCondition != ImGuiCond.FirstUseEver)
+            {
+                SizeCondition = ImGuiCond.FirstUseEver;
+            }
+            if (ImGuiComponents.IconButton(FontAwesomeIcon.Bug))
+            {
+                if (showDebugDetails)
+                {
+                    Size = orgSize;
+                    SizeCondition = ImGuiCond.Always;
+                }
+                else
+                {
+                    orgSize = Size.Value;
+                    Size = new Vector2(Math.Max(orgSize.X, debugWndSize.X), debugWndSize.Y);
+                    SizeCondition = ImGuiCond.Always;
+                }
+                showDebugDetails = !showDebugDetails;
+            }
+            if (ImGui.IsItemHovered())
+            {
+                ImGui.SetTooltip(locDebugMode);
+            }
 
             ImGui.Text(locGameData);
             ImGui.SameLine();
-            int numCards = FFTriadBuddy.TriadCardDB.Get().cards.Count;
-            int numNpcs = FFTriadBuddy.TriadNpcDB.Get().npcs.Count;
+            int numCards = TriadCardDB.Get().cards.Count;
+            int numNpcs = TriadNpcDB.Get().npcs.Count;
             bool isGameDataMissing = numCards == 0 || numNpcs == 0;
             if (isGameDataMissing)
             {
@@ -112,6 +181,8 @@ namespace TriadBuddyPlugin
             {
                 ImGui.Text(string.Format(locGameDataLog, numCards, numNpcs));
             }
+
+            ImGui.Separator();
 
             // context sensitive part
             if (uiReaderPrep.HasDeckSelectionUI || uiReaderPrep.HasMatchRequestUI)
@@ -133,7 +204,6 @@ namespace TriadBuddyPlugin
                     rulesDesc = string.Join(", ", uiReaderPrep.cachedState.rules);
                 }
 
-                ImGui.Separator();
                 ImGui.Text(locPrepNpc);
                 ImGui.SameLine();
                 ImGui.TextColored(colorYellow, npcDesc);
@@ -144,7 +214,6 @@ namespace TriadBuddyPlugin
             }
             else
             {
-                ImGui.Separator();
                 ImGui.Text(locGameNpc);
                 ImGui.SameLine();
                 ImGui.TextColored(colorYellow, (solver.currentNpc != null) ? solver.currentNpc.Name.GetLocalized() : "--");
@@ -159,8 +228,8 @@ namespace TriadBuddyPlugin
                 else if (solver.hasMove)
                 {
                     var useColor =
-                        (solver.moveWinChance.expectedResult == FFTriadBuddy.ETriadGameState.BlueWins) ? colorOk :
-                        (solver.moveWinChance.expectedResult == FFTriadBuddy.ETriadGameState.BlueDraw) ? colorYellow :
+                        (solver.moveWinChance.expectedResult == ETriadGameState.BlueWins) ? colorOk :
+                        (solver.moveWinChance.expectedResult == ETriadGameState.BlueDraw) ? colorYellow :
                         colorErr;
 
                     string humanCard = (solver.moveCard != null) ? solver.moveCard.Name.GetLocalized() : "??";
@@ -178,6 +247,199 @@ namespace TriadBuddyPlugin
                     ImGui.TextColored(colorYellow, "--");
                 }
             }
+
+            if (showDebugDetails)
+            {
+                ImGui.Separator();
+                DrawDebugDetails();
+            }
+        }
+
+        public void DrawDebugDetails()
+        {
+            // mostly for debugging purposes, try avoiding localized texts
+            // visualize current uistate 
+            if (solver == null || solver.DebugScreenMemory == null)
+            {
+                return;
+            }
+
+            // rules
+            ImGui.PushFont(UiBuilder.IconFont);
+            ImGui.Text($"{FontAwesomeIcon.Book.ToIconString()}");
+            ImGui.PopFont();
+            ImGui.SameLine();
+
+            string modDesc = "";
+            foreach (var mod in solver.DebugScreenMemory.gameSession.modifiers)
+            {
+                if (modDesc.Length > 0) { modDesc += ", "; }
+                modDesc += mod.GetLocalizedName();
+            }
+            ImGui.TextColored(colorYellow, modDesc);
+
+            // swap card
+            ImGui.PushFont(UiBuilder.IconFont);
+            ImGui.Text($"{FontAwesomeIcon.ArrowsAltH.ToIconString()}");
+            ImGui.PopFont();
+            ImGui.SameLine();
+            ImGui.Text($"{solver.DebugScreenMemory.swappedBlueCardIdx}");
+
+            // cards
+            const uint colorBlue = 0x80ff9400;
+            const uint colorRed = 0x800000ff;
+            const uint colorNope = 0x80ffffff;
+            const uint colorHidden = 0x8000ffff;
+            const uint colorForced = 0x80ffffff;
+
+            var pos = ImGui.GetCursorScreenPos();
+            pos.Y += 10;
+            orgDrawPosX = pos.X;
+
+            var linePos = new Vector2[3];
+            var redDeckOffsetX = 50;
+
+            // - board
+            for (int idxY = 0; idxY < 3; idxY++)
+            {
+                for (int idxX = 0; idxX < 3; idxX++)
+                {
+                    int cellId = idxX + (idxY * 3);
+                    var boardCellOb = solver.DebugScreenMemory.gameState.board[cellId];
+                    uint useColor = (boardCellOb == null) ? colorNope :
+                        (boardCellOb.owner == ETriadCardOwner.Blue) ? colorBlue :
+                        (boardCellOb.owner == ETriadCardOwner.Red) ? colorRed :
+                        colorNope;
+
+                    DrawPaddedCardHelper(ref pos, boardCellOb == null ? null : boardCellOb.card, useColor);
+                }
+
+                linePos[idxY] = pos;
+                DrawPaddedNewline(ref pos);
+            }
+
+            // - red: unknown cards
+            var redDeckInst = solver.DebugScreenMemory.deckRed;
+            var (redKnownCards, redUnknownCards) = solver.GetScreenRedDeckDebug();
+
+            pos = linePos[0] + new Vector2(redDeckOffsetX, 0);
+            var posDeckStartX = pos.X;
+            DrawPaddedIcon(ref pos, FontAwesomeIcon.Question, colorRed);
+            for (int idx = 0; idx < 5; idx++)
+            {
+                if (idx < redUnknownCards.Count)
+                {
+                    var cardOb = redUnknownCards[idx];
+                    DrawPaddedCardHelper(ref pos, cardOb, cardOb != null && !cardOb.IsValid() ? colorHidden : colorRed);
+                }
+                else
+                {
+                    DrawPaddedCardHelper(ref pos, null, colorRed);
+                }
+            }
+
+            // - red: known cards
+            pos = linePos[1] + new Vector2(redDeckOffsetX, 0);
+            DrawPaddedIcon(ref pos, FontAwesomeIcon.Check, colorRed);
+            for (int idx = 0; idx < 5; idx++)
+            {
+                if (idx < redKnownCards.Count)
+                {
+                    var cardOb = redKnownCards[idx];
+                    DrawPaddedCardHelper(ref pos, cardOb, cardOb != null && !cardOb.IsValid() ? colorHidden : colorRed);
+                }
+                else
+                {
+                    DrawPaddedCardHelper(ref pos, null, colorRed);
+                }
+            }
+
+            // - red: ui state
+            pos = linePos[2] + new Vector2(redDeckOffsetX, 0);
+            DrawPaddedIcon(ref pos, FontAwesomeIcon.Eye, colorRed);
+            if (solver.DebugScreenState != null)
+            {
+                for (int idx = 0; idx < 5; idx++)
+                {
+                    var cardOb = solver.DebugScreenState.redDeck[idx];
+                    DrawPaddedCardHelper(ref pos, cardOb, cardOb != null && !cardOb.IsValid() ? colorHidden : colorRed);
+                }
+            }
+
+            // - blue: known cards
+            DrawPaddedNewline(ref pos);
+            pos = new Vector2(posDeckStartX, pos.Y + 10);
+            DrawPaddedIcon(ref pos, FontAwesomeIcon.Check, colorBlue);
+            if (solver.DebugScreenMemory.deckBlue != null)
+            {
+                int forcedCardIdx = solver.DebugScreenMemory.gameState?.forcedCardIdx ?? -1;
+                for (int idx = 0; idx < 5; idx++)
+                {
+                    var cardOb = solver.DebugScreenMemory.deckBlue.GetCard(idx);
+                    DrawPaddedCardHelper(ref pos, cardOb, idx == forcedCardIdx ? colorForced : colorBlue);
+                }
+            }
+        }
+
+        private void DrawPaddedCardHelper(ref Vector2 pos, TriadCard cardOb, uint cellColor)
+        {
+            const float halfThickness = debugCellPading / 2;
+            float totalSize = debugCellSize + debugCellPading * 2;
+
+            var drawList = ImGui.GetWindowDrawList();
+            drawList.AddRect(pos + new Vector2(halfThickness, halfThickness),
+                pos + new Vector2(totalSize - halfThickness, totalSize - halfThickness),
+                cellColor, 0.0f, ImDrawFlags.None, halfThickness * 2);
+
+            if (cardOb != null && cardOb.IsValid())
+            {
+                var texture = GetCardTexture(cardOb.Id);
+                drawList.AddImage(texture.ImGuiHandle,
+                    pos + new Vector2(debugCellPading, debugCellPading),
+                    pos + new Vector2(debugCellPading + debugCellSize, debugCellPading + debugCellSize));
+            }
+            else
+            {
+                var textStr = cardOb != null ? "??" : "-";
+                var textSize = ImGui.CalcTextSize(textStr);
+                drawList.AddText(pos + new Vector2((totalSize - textSize.X) * 0.5f, (totalSize - textSize.Y) * 0.5f), 0xffffffff, textStr);
+            }
+
+            pos.X += totalSize;
+        }
+
+        private void DrawPaddedIcon(ref Vector2 pos, FontAwesomeIcon icon, uint color)
+        {
+            float totalSize = debugCellSize + debugCellPading * 2;
+
+            ImGui.PushFont(UiBuilder.IconFont);
+            var textStr = icon.ToIconString();
+            var textSize = ImGui.CalcTextSize(textStr);
+            var drawList = ImGui.GetWindowDrawList();
+            drawList.AddText(pos + new Vector2((totalSize - textSize.X) * 0.5f, (totalSize - textSize.Y) * 0.5f), color, textStr);
+            ImGui.PopFont();
+
+            pos.X += totalSize;
+        }
+
+        private void DrawPaddedNewline(ref Vector2 pos)
+        {
+            pos.X = orgDrawPosX;
+            pos.Y += debugCellSize + debugCellPading * 2;
+        }
+
+        private TextureWrap GetCardTexture(int cardId)
+        {
+            if (mapCardImages.TryGetValue(cardId, out var texWrap))
+            {
+                return texWrap;
+            }
+
+            uint iconId = TriadCardDB.GetCardIconTextureId(cardId);
+            var newTexWrap = dataManager.GetImGuiTextureIcon(iconId);
+            mapCardImages.Add(cardId, newTexWrap);
+
+            return newTexWrap;
         }
     }
 }

@@ -38,5 +38,6 @@
 	"ST_BoardYTop": { "message": "top" },
 	"ST_BoardYCenter": { "message": "center" },
 	"ST_BoardYBottom": { "message": "bottom" },
-	"ST_BoardXYCenter": { "message": "center" }
+	"ST_BoardXYCenter": { "message": "center" },
+	"ST_DebugMode": { "message": "Show debug details" }
 }

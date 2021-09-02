@@ -20,6 +20,11 @@ namespace TriadBuddyPlugin
 
         // game
         private TriadGameScreenMemory screenMemory = new();
+        public TriadGameScreenMemory DebugScreenMemory => screenMemory;
+
+        private ScannerTriad.GameState cachedScreenState;
+        public ScannerTriad.GameState DebugScreenState => cachedScreenState;
+
         public TriadNpc currentNpc;
         public TriadCard moveCard => screenMemory.deckBlue?.GetCard(moveCardIdx);
         public int moveCardIdx;
@@ -82,6 +87,7 @@ namespace TriadBuddyPlugin
                 currentNpc = null;
             }
 
+            cachedScreenState = screenOb;
             if (currentNpc != null && screenOb.turnState == ScannerTriad.ETurnState.Active && !stateOb.isPvP)
             {
                 var updateFlags = screenMemory.OnNewScan(screenOb, currentNpc);
@@ -105,6 +111,52 @@ namespace TriadBuddyPlugin
                 hasMove = false;
                 OnMoveChanged?.Invoke(hasMove);
             }
+        }
+
+        public (List<TriadCard>, List<TriadCard>) GetScreenRedDeckDebug()
+        {
+            var knownCards = new List<TriadCard>();
+            var unknownCards = new List<TriadCard>();
+
+            if (screenMemory != null && screenMemory.deckRed != null && screenMemory.deckRed.deck != null)
+            {
+                var deckInst = screenMemory.deckRed;
+                if (deckInst.availableCardMask > 0)
+                {
+                    for (int Idx = 0; Idx < deckInst.cards.Length; Idx++)
+                    {
+                        bool bIsAvailable = (deckInst.availableCardMask & (1 << Idx)) != 0;
+                        if (bIsAvailable)
+                        {
+                            TriadCard cardOb = deckInst.GetCard(Idx);
+                            bool bIsKnownPool = deckInst.deck.knownCards.Contains(cardOb);
+
+                            var listToUse = bIsKnownPool ? knownCards : unknownCards;
+                            listToUse.Add(cardOb);
+                        }
+                    }
+                }
+
+                int visibleCardsMask = (deckInst.cards != null) ? ((1 << deckInst.cards.Length) - 1) : 0;
+                bool hasHiddenCards = (deckInst.availableCardMask & ~visibleCardsMask) != 0;
+                if (hasHiddenCards)
+                {
+                    for (int Idx = deckInst.cards.Length; Idx < 15; Idx++)
+                    {
+                        bool bIsAvailable = (deckInst.availableCardMask & (1 << Idx)) != 0;
+                        if (bIsAvailable)
+                        {
+                            TriadCard cardOb = deckInst.GetCard(Idx);
+                            bool bIsKnownPool = (deckInst.unknownPoolMask & (1 << Idx)) == 0;
+
+                            var listToUse = bIsKnownPool ? knownCards : unknownCards;
+                            listToUse.Add(cardOb);
+                        }
+                    }
+                }
+            }
+
+            return (knownCards, unknownCards);
         }
 
         public delegate void SolveDeckDelegate(TriadGameResultChance winChance);
