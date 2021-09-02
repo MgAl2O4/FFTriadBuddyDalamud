@@ -33,7 +33,7 @@ namespace TriadBuddyPlugin
         private readonly Localization locManager;
 
         public static Localization CurrentLocManager;
-        private string[] supportedLangCodes = { "en" };
+        private string[] supportedLangCodes = { "en", "zh" };
 
         // fallback option in case profile reader breaks
         private bool canUseProfileReader = true;
