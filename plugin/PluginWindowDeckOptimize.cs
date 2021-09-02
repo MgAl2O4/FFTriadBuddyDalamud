@@ -264,8 +264,6 @@ namespace TriadBuddyPlugin
                 }
                 else
                 {
-                    PluginLog.Log($"chance:{optimizerWinChance}");
-
                     // "win chance" - it's a score assigned by deck optimizer, that can be approximated as win chance %
                     ImGui.Text(locDeckScore);
                     ImGui.TextColored(colorResultData, optimizerWinChance < 0 ? "--" : (optimizerWinChance * 1000).ToString("0"));
