@@ -175,7 +175,7 @@ namespace TriadBuddyPlugin
                         cardDB.cards.Add(cardOb);
 
                         // create matching entry in extended card info db
-                        var cardInfo = new GameCardInfo() { CardId = cardOb.Id };
+                        var cardInfo = new GameCardInfo() { CardId = cardOb.Id, SortKey = rowData.SortKey };
                         cardInfoDB.mapCards.Add(cardOb.Id, cardInfo);
                     }
                 }

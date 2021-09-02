@@ -328,7 +328,9 @@ namespace TriadBuddyPlugin
                             var cardInfo = GameCardDB.Get().FindById(shownCardIds[idx]);
                             if (cardInfo != null)
                             {
-                                // deck editor sorting is a weird one. investigate.
+                                int deckEditPageIdx = cardInfo.Collection[(int)GameCardCollectionFilter.DeckEditDefault].PageIndex;
+                                shownCardTooltipsDeckEdit[idx] += "\n\n";
+                                shownCardTooltipsDeckEdit[idx] += string.Format(locDeckEditPage, deckEditPageIdx + 1);
 
                                 int collectionPageIdx = cardInfo.Collection[(int)GameCardCollectionFilter.All].PageIndex;
                                 shownCardTooltipsCollection[idx] += "\n\n";

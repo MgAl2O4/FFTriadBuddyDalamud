@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game.Text.SeStringHandling.Payloads;
 using FFTriadBuddy;
+using System;
 using System.Collections.Generic;
 
 namespace TriadBuddyPlugin
@@ -9,6 +10,7 @@ namespace TriadBuddyPlugin
         All,
         OnlyOwned,
         OnlyMissing,
+        DeckEditDefault,
     }
 
     public class GameCardInfo
@@ -20,13 +22,14 @@ namespace TriadBuddyPlugin
         }
 
         public int CardId;
+        public int SortKey;
 
         public int RewardNpcId = -1;
         public MapLinkPayload RewardNpcLocation;
 
         // call GameCardDB.Refresh() before reading fields below
         public bool IsOwned;
-        public CollectionPos[] Collection = new CollectionPos[3];
+        public CollectionPos[] Collection = new CollectionPos[4];
     }
 
     // aguments TriadCardDB with stuff not related to game logic
@@ -92,13 +95,16 @@ namespace TriadBuddyPlugin
                 kvp.Value.IsOwned = ownedCardIds.Contains(kvp.Value.CardId);
             }
 
-            RebuildCollections();
+            RebuildCollectionPages();
+            RebuildDeckEditPages();
         }
 
-        private void RebuildCollections()
+        private void RebuildCollectionPages()
         {
+            var cardsDB = TriadCardDB.Get();
+
             var sortedTriadCards = new List<TriadCard>();
-            sortedTriadCards.AddRange(TriadCardDB.Get().cards);
+            sortedTriadCards.AddRange(cardsDB.cards);
             sortedTriadCards.RemoveAll(x => (x == null) || !x.IsValid());
             sortedTriadCards.Sort((a, b) => a.SortOrder.CompareTo(b.SortOrder));
 
@@ -143,6 +149,67 @@ namespace TriadBuddyPlugin
                         {
                             cardInfoOb.Collection[filterIdx] = new GameCardInfo.CollectionPos() { PageIndex = -1, CellIndex = -1 };
                         }
+                    }
+                }
+            }
+        }
+
+        private void RebuildDeckEditPages()
+        {
+            var cardsDB = TriadCardDB.Get();
+
+            var sortedDeckEditCards = new List<Tuple<TriadCard, GameCardInfo>>();
+            foreach (var kvp in mapCards)
+            {
+                var cardOb = cardsDB.FindById(kvp.Key);
+                if (cardOb != null && cardOb.IsValid())
+                {
+                    var entry = new Tuple<TriadCard, GameCardInfo>(cardOb, kvp.Value);
+                    sortedDeckEditCards.Add(entry);
+                }
+            }
+
+            sortedDeckEditCards.Sort((a, b) =>
+            {
+                if (a.Item1.Rarity != b.Item1.Rarity)
+                {
+                    return a.Item1.Rarity.CompareTo(b.Item1.Rarity);
+                }
+
+                if (a.Item2.SortKey != b.Item2.SortKey)
+                {
+                    return a.Item2.SortKey.CompareTo(b.Item2.SortKey);
+                }
+
+                return a.Item1.SortOrder.CompareTo(b.Item1.SortOrder);
+            });
+
+            var noCollectionData = new GameCardInfo.CollectionPos() { PageIndex = -1, CellIndex = -1 };
+
+            int filterIdx = (int)GameCardCollectionFilter.DeckEditDefault;
+            int pageIdx = 0;
+            int cellIdx = 0;
+
+            foreach (var entry in sortedDeckEditCards)
+            {
+                var cardOb = entry.Item1;
+                var cardInfoOb = entry.Item2;
+                if (cardOb != null && cardInfoOb != null)
+                {
+                    if (ownedCardIds.Contains(cardOb.Id))
+                    {
+                        if (cellIdx >= MaxGridCells)
+                        {
+                            cellIdx = 0;
+                            pageIdx++;
+                        }
+
+                        cardInfoOb.Collection[filterIdx] = new GameCardInfo.CollectionPos() { PageIndex = pageIdx, CellIndex = cellIdx };
+                        cellIdx++;
+                    }
+                    else
+                    {
+                        cardInfoOb.Collection[filterIdx] = new GameCardInfo.CollectionPos() { PageIndex = -1, CellIndex = -1 };
                     }
                 }
             }
