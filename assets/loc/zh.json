@@ -27,6 +27,7 @@
     "ST_BoardYBottom": "下",
     "ST_BoardYCenter": "中",
     "ST_BoardYTop": "上",
+	"ST_DebugMode": "显示调试详情",
     "ST_GameData": "游戏数据:",
     "ST_GameDataError": "找不到数据! 求解器已禁用",
     "ST_GameDataLog": "幻卡: {0}, NPC: {1}",
