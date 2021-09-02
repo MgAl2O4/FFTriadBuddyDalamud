@@ -103,7 +103,8 @@ namespace TriadBuddyPlugin
             {
                 foreach (int cardId in cardIds)
                 {
-                    var pathPattern = string.Format("{0}.tex", FFTriadBuddy.TriadCardDB.GetCardIconTextureId(cardId));
+                    // see TriadCardDB.FindByTexture for details on patterns
+                    var pathPattern = string.Format("082000/{0:D6}", FFTriadBuddy.TriadCardDB.GetCardIconTextureId(cardId));
                     highlightTexPaths.Add(pathPattern);
                 }
             }
@@ -113,7 +114,7 @@ namespace TriadBuddyPlugin
         {
             foreach (var pathPattern in highlightTexPaths)
             {
-                if (texPath.EndsWith(pathPattern))
+                if (texPath.Contains(pathPattern))
                 {
                     return true;
                 }
