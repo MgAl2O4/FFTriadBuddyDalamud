@@ -19,7 +19,8 @@ namespace TriadBuddyPlugin
         private class ENpcCachedData
         {
             public uint triadId;                // TripleTriad sheet
-            public int gameLogicId = -1;        // TriadNpcDB
+            public int gameLogicIdx = -1;        // TriadNpcDB
+            public TriadNpc gameLogicOb;
 
             public float[] mapRawCoords;
             public float[] mapCoords;
@@ -35,6 +36,13 @@ namespace TriadBuddyPlugin
         {
             Task.Run(() =>
             {
+                var cardInfoDB = GameCardDB.Get();
+                var cardDB = TriadCardDB.Get();
+                var npcDB = TriadNpcDB.Get();
+
+                cardInfoDB.mapCards.Clear();
+                cardDB.cards.Clear();
+                npcDB.npcs.Clear();
                 mapENpcCache.Clear();
 
                 bool result = true;
@@ -45,13 +53,9 @@ namespace TriadBuddyPlugin
                 result = result && ParseNpcLocations(dataManager);
                 result = result && ParseCardRewards(dataManager);
 
-                var cardInfoDB = GameCardDB.Get();
-                var cardDB = TriadCardDB.Get();
-                var npcDB = TriadNpcDB.Get();
-
                 if (result)
                 {
-                    ParseENpcCacheData();
+                    FinalizeNpcList();
 
                     PluginLog.Log($"Loaded game data for cards:{cardDB.cards.Count}, npcs:{npcDB.npcs.Count}");
                     IsDataReady = true;
@@ -155,6 +159,19 @@ namespace TriadBuddyPlugin
                         var cardOb = new TriadCard((int)idx, null, cardRarity, cardType, rowData.Top, rowData.Bottom, rowData.Right, rowData.Left, rowData.Order, rowData.UIPriority);
                         cardOb.Name.Text = rowName.Name.RawString;
 
+                        // shared logic code maps card by their ids directly: cards[id]=card
+                        // should be linear and offset by 1 ([0] = empty)
+                        int absDiff = (int)Math.Abs(cardDB.cards.Count - idx);
+                        if (absDiff > 10)
+                        {
+                            PluginLog.Fatal($"Failed to assign card data (got:{cardDB.cards.Count}, expected:{idx})");
+                            return false;
+                        }
+
+                        while (cardDB.cards.Count < idx)
+                        {
+                            cardDB.cards.Add(null);
+                        }
                         cardDB.cards.Add(cardOb);
 
                         // create matching entry in extended card info db
@@ -232,6 +249,7 @@ namespace TriadBuddyPlugin
                 ruleLuminaToLogicMap[ruleLogicToLuminaMap[idx]] = idx;
             }
 
+            int nameLocId = 0;
             foreach (var rowData in npcDataSheet)
             {
                 if (!mapTriadNpcData.ContainsKey(rowData.RowId))
@@ -326,13 +344,14 @@ namespace TriadBuddyPlugin
                 }
 
                 var npcIdData = mapTriadNpcData[rowData.RowId];
-                var npcOb = new TriadNpc(npcDB.npcs.Count, listRules, cardsFixed, cardsVariable);
+                var npcOb = new TriadNpc(nameLocId, listRules, cardsFixed, cardsVariable);
                 npcOb.Name.Text = npcIdData.Item3;
                 npcOb.OnNameUpdated();
+                nameLocId++;
 
-                npcDB.npcs.Add(npcOb);
+                // don't add to noc lists just yet, there are some entries with missing locations that need to be filtered out first!
 
-                var newCachedData = new ENpcCachedData() { gameLogicId = npcOb.Id, triadId = npcIdData.Item2 };
+                var newCachedData = new ENpcCachedData() { triadId = npcIdData.Item2, gameLogicOb = npcOb };
                 if (rowData.ItemPossibleReward != null && rowData.ItemPossibleReward.Length > 0)
                 {
                     newCachedData.rewardItems = new uint[rowData.ItemPossibleReward.Length];
@@ -393,11 +412,6 @@ namespace TriadBuddyPlugin
             return true;
         }
 
-        public void TestMe(DataManager dataManager)
-        {
-            ParseCardRewards(dataManager);
-        }
-
         private bool ParseCardRewards(DataManager dataManager)
         {
             var sheetItems = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>();
@@ -432,10 +446,34 @@ namespace TriadBuddyPlugin
             return true;
         }
 
-        private void ParseENpcCacheData()
+        private void FinalizeNpcList()
         {
             GameCardDB gameCardDB = GameCardDB.Get();
             TriadNpcDB npcDB = TriadNpcDB.Get();
+
+            foreach (var kvp in mapENpcCache)
+            {
+                var cacheOb = kvp.Value;
+                if (cacheOb != null && cacheOb.gameLogicOb != null)
+                {
+                    if (cacheOb.mapId != 0)
+                    {
+                        // valid npc, add to lists
+                        cacheOb.gameLogicIdx = npcDB.npcs.Count;
+                        npcDB.npcs.Add(cacheOb.gameLogicOb);
+                    }
+                    else
+                    {
+                        // normal and annoying.
+                        // PluginLog.Log($"Failed to add triad[{cacheOb.triadId}], enpc[{kvp.Key}], name:{cacheOb.gameLogicOb.Name.GetLocalized()} - no location found!");
+                    }
+                }
+            }
+
+            if (npcDB.npcs.Count > 1)
+            {
+                npcDB.npcs.Sort((x, y) => x.Id.CompareTo(y.Id));
+            }
 
             // TODO: multiple npcs giving same card?
             foreach (var kvp in mapENpcCache)
@@ -443,16 +481,16 @@ namespace TriadBuddyPlugin
                 foreach (var cardId in kvp.Value.rewardCardIds)
                 {
                     var cardInfo = gameCardDB.FindById(cardId);
-                    var npcOb = ((kvp.Value.gameLogicId >= 0) && (kvp.Value.gameLogicId < npcDB.npcs.Count)) ? npcDB.npcs[kvp.Value.gameLogicId] : null;
+                    var npcOb = ((kvp.Value.gameLogicIdx >= 0) && (kvp.Value.gameLogicIdx < npcDB.npcs.Count)) ? npcDB.npcs[kvp.Value.gameLogicIdx] : null;
 
                     if (npcOb != null)
                     {
-                        cardInfo.RewardNpcId = kvp.Value.gameLogicId;
+                        cardInfo.RewardNpcId = kvp.Value.gameLogicIdx;
                         cardInfo.RewardNpcLocation = new Dalamud.Game.Text.SeStringHandling.Payloads.MapLinkPayload(kvp.Value.territoryId, kvp.Value.mapId, kvp.Value.mapCoords[0], kvp.Value.mapCoords[1]);
                     }
                     else
                     {
-                        PluginLog.Error($"Failed to match npc reward data! npc:{kvp.Value.gameLogicId}, key:{kvp.Key}");
+                        PluginLog.Error($"Failed to match npc reward data! npc:{kvp.Value.gameLogicIdx}, key:{kvp.Key}");
                     }
                 }
             }

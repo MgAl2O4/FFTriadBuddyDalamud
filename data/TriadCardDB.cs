@@ -52,6 +52,16 @@ namespace FFTriadBuddy
 
         public TriadCard FindById(int cardId)
         {
+            if (cardId < 0 || cardId >= cards.Count)
+            {
+                return null;
+            }
+
+            if (cards[cardId] != null && cards[cardId].Id == cardId)
+            {
+                return cards[cardId];
+            }
+
             return cards.Find(x => (x != null) && x.Id == cardId);
         }
 
