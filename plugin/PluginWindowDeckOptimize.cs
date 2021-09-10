@@ -187,6 +187,7 @@ namespace TriadBuddyPlugin
 
             IsOpen = true;
             uiReaderDeckEdit?.OnDeckOptimizerVisible(IsOpen);
+            uiReaderDeckEdit?.SetHighlightedCards(shownCardIds);
         }
 
         private TextureWrap GetCardTexture(int cardId)
