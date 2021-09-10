@@ -135,11 +135,14 @@ namespace FFTriadBuddy
         {
             TriadCardDB cardDB = TriadCardDB.Get();
             starterCards = new TriadCard[5];
-            starterCards[0] = cardDB.Find("Dodo");
-            starterCards[1] = cardDB.Find("Sabotender");
-            starterCards[2] = cardDB.Find("Bomb");
-            starterCards[3] = cardDB.Find("Mandragora");
-            starterCards[4] = cardDB.Find("Coeurl");
+
+            // localization is not fully loaded, just active language!
+            // find starter cards by their ids 
+            starterCards[0] = cardDB.FindById(1); // Dodo
+            starterCards[1] = cardDB.FindById(3); // Sabotender
+            starterCards[2] = cardDB.FindById(6); // Bomb
+            starterCards[3] = cardDB.FindById(7); // Mandragora
+            starterCards[4] = cardDB.FindById(10); // Coeurl
         }
     }
 
