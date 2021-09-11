@@ -34,6 +34,7 @@
 	"ST_GameMove": { "message": "求解器.移动:" },
 	"ST_GameMoveDisabled": { "message": "禁用" },
 	"ST_GameNpc": { "message": "求解器.NPC:" },
+	"ST_GameToggleHints": { "message": "在游戏中显示求解器提示" },
 	"ST_PrepNpc": { "message": "准备.NPC:" },
 	"ST_PrepRules": { "message": "准备.规则:" },
 	"ST_Status": { "message": "状态:" },
