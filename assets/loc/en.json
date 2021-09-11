@@ -39,5 +39,6 @@
 	"ST_Status": { "message": "Status:" },
 	"ST_StatusActive": { "message": "Active" },
 	"ST_StatusNotActive": { "message": "Minigame not active" },
-	"ST_StatusPvP": { "message": "PvP match" }
+	"ST_StatusPvP": { "message": "PvP match" },
+	"ST_GameToggleHints":  { "message": "Show solver hints in game" }
 }

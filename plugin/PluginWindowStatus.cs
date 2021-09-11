@@ -18,7 +18,9 @@ namespace TriadBuddyPlugin
         private readonly UIReaderTriadPrep uiReaderPrep;
         private readonly Solver solver;
         private readonly DataManager dataManager;
+        private readonly Configuration config;
 
+        public bool showConfigs = false;
         private bool showDebugDetails;
         private Vector2 orgSize;
         private Vector2 debugWndSize = new(420.0f, 350.0f);
@@ -30,6 +32,7 @@ namespace TriadBuddyPlugin
         private Vector4 colorErr = new Vector4(0.9f, 0.2f, 0.2f, 1);
         private Vector4 colorOk = new Vector4(0.2f, 0.9f, 0.2f, 1);
         private Vector4 colorYellow = new Vector4(0.9f, 0.9f, 0.2f, 1);
+        private Vector4 colorInactive = new Vector4(0.5f, 0.5f, 0.5f, 1);
 
         private string locStatus;
         private string locStatusNotActive;
@@ -51,13 +54,15 @@ namespace TriadBuddyPlugin
         private string locBoardY2;
         private string locBoardCenter;
         private string locDebugMode;
+        private string locConfigSolverHints;
 
-        public PluginWindowStatus(DataManager dataManager, Solver solver, UIReaderTriadGame uiReaderGame, UIReaderTriadPrep uiReaderPrep) : base("Triad Buddy")
+        public PluginWindowStatus(DataManager dataManager, Solver solver, UIReaderTriadGame uiReaderGame, UIReaderTriadPrep uiReaderPrep, Configuration config) : base("Triad Buddy")
         {
             this.dataManager = dataManager;
             this.solver = solver;
             this.uiReaderGame = uiReaderGame;
             this.uiReaderPrep = uiReaderPrep;
+            this.config = config;
 
             IsOpen = false;
 
@@ -99,6 +104,7 @@ namespace TriadBuddyPlugin
             locBoardY2 = Localization.Localize("ST_BoardYBottom", "bottom");
             locBoardCenter = Localization.Localize("ST_BoardXYCenter", "center");
             locDebugMode = Localization.Localize("ST_DebugMode", "Show debug details");
+            locConfigSolverHints = Localization.Localize("ST_DebugMode", "Show solver hints in game");
         }
 
         public override void OnOpen()
@@ -124,6 +130,42 @@ namespace TriadBuddyPlugin
 
         public override void Draw()
         {
+            if (showConfigs)
+            {
+                DrawConfiguration();
+            }
+            else
+            {
+                DrawStatus();
+            }
+        }
+
+        private void DrawConfiguration()
+        {
+            ImGui.AlignTextToFramePadding();
+            ImGui.Text(locStatus);
+            ImGui.SameLine();
+            
+            if (ImGuiComponents.IconButton(FontAwesomeIcon.Backward))
+            {
+                showConfigs = false;
+            }
+
+            ImGui.Separator();
+            bool hasChanges = false;
+            
+            var showSolverHintsInGameCopy = config.ShowSolverHintsInGame;
+            hasChanges = ImGui.Checkbox(locConfigSolverHints, ref showSolverHintsInGameCopy) || hasChanges;
+
+            if (hasChanges)
+            {
+                config.ShowSolverHintsInGame = showSolverHintsInGameCopy;
+                config.Save();
+            }
+        }
+
+        private void DrawStatus()
+        {
             ImGui.AlignTextToFramePadding();
             ImGui.Text(locStatus);
             ImGui.SameLine();
@@ -142,7 +184,7 @@ namespace TriadBuddyPlugin
                 colorOk;
 
             ImGui.TextColored(statusColor, statusDesc);
-            ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - 20);
+            ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - 50);
 
             if (SizeCondition != ImGuiCond.FirstUseEver)
             {
@@ -166,6 +208,12 @@ namespace TriadBuddyPlugin
             if (ImGui.IsItemHovered())
             {
                 ImGui.SetTooltip(locDebugMode);
+            }
+
+            ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - 20);
+            if (ImGuiComponents.IconButton(FontAwesomeIcon.Cog))
+            {
+                showConfigs = true;
             }
 
             ImGui.Text(locGameData);
@@ -221,7 +269,7 @@ namespace TriadBuddyPlugin
                 ImGui.Text(locGameMove);
                 ImGui.SameLine();
 
-                if (isPvPMatch || isGameDataMissing)
+                if (isPvPMatch || isGameDataMissing || !config.ShowSolverHintsInGame)
                 {
                     ImGui.TextColored(colorYellow, locGameMoveDisabled);
                 }
@@ -255,7 +303,7 @@ namespace TriadBuddyPlugin
             }
         }
 
-        public void DrawDebugDetails()
+        private void DrawDebugDetails()
         {
             // mostly for debugging purposes, try avoiding localized texts
             // visualize current uistate 

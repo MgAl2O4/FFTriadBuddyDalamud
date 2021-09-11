@@ -20,7 +20,7 @@ namespace TriadBuddyPlugin
         private readonly DataManager dataManager;
         private readonly WindowSystem windowSystem = new("TriadBuddy");
 
-        private readonly Window statusWindow;
+        private readonly PluginWindowStatus statusWindow;
         private readonly CommandInfo statusCommand;
 
         private readonly UIReaderTriadGame uiReaderGame;
@@ -35,8 +35,7 @@ namespace TriadBuddyPlugin
         public static Localization CurrentLocManager;
         private string[] supportedLangCodes = { "en", "fr", "zh" };
 
-        // fallback option in case profile reader breaks
-        private bool canUseProfileReader = true;
+        private Configuration configuration { get; init; }
 
         public Plugin(DalamudPluginInterface pluginInterface, Framework framework, CommandManager commandManager, GameGui gameGui, DataManager dataManager, SigScanner sigScanner)
         {
@@ -44,6 +43,9 @@ namespace TriadBuddyPlugin
             this.commandManager = commandManager;
             this.dataManager = dataManager;
             this.framework = framework;
+
+            configuration = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+            configuration.Initialize(pluginInterface);
 
             // prep utils
             locManager = new Localization("assets/loc", "", true);
@@ -54,7 +56,7 @@ namespace TriadBuddyPlugin
             dataLoader.StartAsyncWork(dataManager);
 
             solver = new Solver();
-            solver.profileGS = canUseProfileReader ? new UnsafeReaderProfileGS(gameGui) : null;
+            solver.profileGS = configuration.CanUseProfileReader ? new UnsafeReaderProfileGS(gameGui) : null;
 
             // prep data scrapers
             uiReaderGame = new UIReaderTriadGame(gameGui);
@@ -70,8 +72,8 @@ namespace TriadBuddyPlugin
             GameCardDB.Get().memReader = new UnsafeReaderTriadCards(sigScanner);
 
             // prep UI
-            overlays = new PluginOverlays(solver, uiReaderGame, uiReaderPrep);
-            statusWindow = new PluginWindowStatus(dataManager, solver, uiReaderGame, uiReaderPrep);
+            overlays = new PluginOverlays(solver, uiReaderGame, uiReaderPrep, configuration);
+            statusWindow = new PluginWindowStatus(dataManager, solver, uiReaderGame, uiReaderPrep, configuration);
             windowSystem.AddWindow(statusWindow);
 
             var deckOptimizerWindow = new PluginWindowDeckOptimize(dataManager, solver, uiReaderDeckEdit);
@@ -88,6 +90,7 @@ namespace TriadBuddyPlugin
 
             pluginInterface.LanguageChanged += OnLanguageChanged;
             pluginInterface.UiBuilder.Draw += OnDraw;
+            pluginInterface.UiBuilder.OpenConfigUi += OnOpenConfig;
 
             framework.Update += Framework_OnUpdateEvent;
 
@@ -131,6 +134,12 @@ namespace TriadBuddyPlugin
         {
             windowSystem.Draw();
             overlays.OnDraw();
+        }
+
+        private void OnOpenConfig()
+        {
+            statusWindow.showConfigs = true;
+            statusWindow.IsOpen = true;
         }
 
         private void Framework_OnUpdateEvent(Framework framework)

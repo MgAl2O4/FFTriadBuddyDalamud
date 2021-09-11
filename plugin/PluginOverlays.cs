@@ -15,6 +15,7 @@ namespace TriadBuddyPlugin
         public readonly UIReaderTriadGame uiReaderGame;
         public readonly UIReaderTriadPrep uiReaderPrep;
         public readonly Solver solver;
+        public readonly Configuration config;
 
         // overlay: game board
         private bool hasGameOverlay;
@@ -25,11 +26,12 @@ namespace TriadBuddyPlugin
         // overlay: deck selection
         private bool hasDeckSelection;
 
-        public PluginOverlays(Solver solver, UIReaderTriadGame uiReaderGame, UIReaderTriadPrep uiReaderPrep)
+        public PluginOverlays(Solver solver, UIReaderTriadGame uiReaderGame, UIReaderTriadPrep uiReaderPrep, Configuration config)
         {
             this.solver = solver;
             this.uiReaderGame = uiReaderGame;
             this.uiReaderPrep = uiReaderPrep;
+            this.config = config;
 
             solver.OnMoveChanged += OnSolverMove;
             uiReaderPrep.OnDeckSelectionChanged += (active) => hasDeckSelection = active;
@@ -72,15 +74,18 @@ namespace TriadBuddyPlugin
                 return;
             }
 
-            var (deckCardPos, deckCardSize) = uiReaderGame.GetBlueCardPosAndSize(gameCardIdx);
-            var (boardCardPos, boardCardSize) = uiReaderGame.GetBoardCardPosAndSize(gameBoardIdx);
+            if (config.ShowSolverHintsInGame)
+            {
+                var (deckCardPos, deckCardSize) = uiReaderGame.GetBlueCardPosAndSize(gameCardIdx);
+                var (boardCardPos, boardCardSize) = uiReaderGame.GetBoardCardPosAndSize(gameBoardIdx);
 
-            var drawCardPos = deckCardPos + ImGuiHelpers.MainViewport.Pos;
-            var drawBoardPos = boardCardPos + ImGuiHelpers.MainViewport.Pos;
+                var drawCardPos = deckCardPos + ImGuiHelpers.MainViewport.Pos;
+                var drawBoardPos = boardCardPos + ImGuiHelpers.MainViewport.Pos;
 
-            var drawList = ImGui.GetForegroundDrawList(ImGuiHelpers.MainViewport);
-            drawList.AddRect(drawCardPos, drawCardPos + deckCardSize, gameCardColor, 5.0f, ImDrawFlags.RoundCornersAll, 5.0f);
-            drawList.AddRect(drawBoardPos, drawBoardPos + boardCardSize, colorBoard, 5.0f, ImDrawFlags.RoundCornersAll, 5.0f);
+                var drawList = ImGui.GetForegroundDrawList(ImGuiHelpers.MainViewport);
+                drawList.AddRect(drawCardPos, drawCardPos + deckCardSize, gameCardColor, 5.0f, ImDrawFlags.RoundCornersAll, 5.0f);
+                drawList.AddRect(drawBoardPos, drawBoardPos + boardCardSize, colorBoard, 5.0f, ImDrawFlags.RoundCornersAll, 5.0f);
+            }
         }
 
         private void DrawDeckSelectionOverlay()
