@@ -68,7 +68,7 @@ namespace TriadBuddyPlugin
             // consider switching to memory read for bulk checks? not that UI itself cares about it...
             // check IsTriadCardOwned() for details, uiState+0x15ce5 is a byte array of szie 0x29 used as a bitmask with cardId => buffer[id / 8] & (1 << (id % 8))
 
-            for (int id = 1; id < maxId; id++)
+            for (int id = 1; id <= maxId; id++)
             {
                 bool isOwned = memReader.IsCardOwned(id);
                 if (isOwned)
