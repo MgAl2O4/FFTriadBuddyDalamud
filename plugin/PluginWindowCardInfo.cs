@@ -33,6 +33,7 @@ namespace TriadBuddyPlugin
             // doesn't matter will be updated on next draw
             PositionCondition = ImGuiCond.None;
             SizeCondition = ImGuiCond.None;
+            RespectCloseHotkey = false;
 
             Flags = ImGuiWindowFlags.NoDecoration |
                 ImGuiWindowFlags.NoResize |
