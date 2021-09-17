@@ -5,6 +5,10 @@
 	"CS_FilterActive": { "message": "(Collection filtering is active)" },
 	"CS_NotOwnedOnly": { "message": "Not owned only" },
 	"CS_NpcOnly": { "message": "NPC matches only" },
+	"CS_BeatenNpc": { "message": "Hide beaten once" },
+	"CS_CompletedNpc": { "message": "Hide completed" },
+	"CS_TabCards": { "message": "Cards" },
+	"CS_TabNpc": { "message": "NPC" },
 	"Cmd_Status": { "message": "Show state of {0} plugin" },
 	"DE_Evaluating": { "message": "Evaluating decks..." },
 	"DE_Failed": { "message": "Err.. Can't find best deck :<" },
@@ -40,5 +44,5 @@
 	"ST_StatusActive": { "message": "Active" },
 	"ST_StatusNotActive": { "message": "Minigame not active" },
 	"ST_StatusPvP": { "message": "PvP match" },
-	"ST_GameToggleHints":  { "message": "Show solver hints in game" }
+	"ST_GameToggleHints": { "message": "Show solver hints in game" }
 }

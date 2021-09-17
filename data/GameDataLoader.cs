@@ -190,6 +190,13 @@ namespace TriadBuddyPlugin
             return true;
         }
 
+        private struct NpcIds
+        {
+            public uint TriadNpcId;
+            public uint ENpcId;
+            public string Name;
+        }
+
         private bool ParseNpcs(DataManager dataManager)
         {
             var npcDB = TriadNpcDB.Get();
@@ -218,7 +225,7 @@ namespace TriadBuddyPlugin
                 return false;
             }
 
-            var mapTriadNpcData = new Dictionary<uint, Tuple<uint, uint, string>>();
+            var mapTriadNpcData = new Dictionary<uint, NpcIds>();
             var sheetNpcNames = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.ENpcResident>();
             var sheetENpcBase = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.ENpcBase>();
             if (sheetNpcNames != null && sheetENpcBase != null)
@@ -231,7 +238,7 @@ namespace TriadBuddyPlugin
                         var rowName = sheetNpcNames.GetRow(rowData.RowId);
                         if (rowName != null)
                         {
-                            mapTriadNpcData.Add(triadId, new Tuple<uint, uint, string>(rowData.RowId, triadId, rowName.Singular.RawString));
+                            mapTriadNpcData.Add(triadId, new NpcIds() { ENpcId = rowData.RowId, TriadNpcId = triadId, Name = rowName.Singular.RawString });
                         }
                     }
                 }
@@ -345,13 +352,13 @@ namespace TriadBuddyPlugin
 
                 var npcIdData = mapTriadNpcData[rowData.RowId];
                 var npcOb = new TriadNpc(nameLocId, listRules, cardsFixed, cardsVariable);
-                npcOb.Name.Text = npcIdData.Item3;
+                npcOb.Name.Text = npcIdData.Name;
                 npcOb.OnNameUpdated();
                 nameLocId++;
 
                 // don't add to noc lists just yet, there are some entries with missing locations that need to be filtered out first!
 
-                var newCachedData = new ENpcCachedData() { triadId = npcIdData.Item2, gameLogicOb = npcOb };
+                var newCachedData = new ENpcCachedData() { triadId = npcIdData.TriadNpcId, gameLogicOb = npcOb };
                 if (rowData.ItemPossibleReward != null && rowData.ItemPossibleReward.Length > 0)
                 {
                     newCachedData.rewardItems = new uint[rowData.ItemPossibleReward.Length];
@@ -361,7 +368,7 @@ namespace TriadBuddyPlugin
                     }
                 }
 
-                mapENpcCache.Add(npcIdData.Item1, newCachedData);
+                mapENpcCache.Add(npcIdData.ENpcId, newCachedData);
             }
 
             return true;
@@ -449,6 +456,7 @@ namespace TriadBuddyPlugin
         private void FinalizeNpcList()
         {
             GameCardDB gameCardDB = GameCardDB.Get();
+            GameNpcDB gameNpcDB = GameNpcDB.Get();
             TriadNpcDB npcDB = TriadNpcDB.Get();
 
             foreach (var kvp in mapENpcCache)
@@ -470,29 +478,46 @@ namespace TriadBuddyPlugin
                 }
             }
 
+            gameNpcDB.mapNpcs.Clear();
             if (npcDB.npcs.Count > 1)
             {
                 npcDB.npcs.Sort((x, y) => x.Id.CompareTo(y.Id));
             }
 
-            // TODO: multiple npcs giving same card?
             foreach (var kvp in mapENpcCache)
             {
+                if (kvp.Value.gameLogicIdx < 0)
+                {
+                    continue;
+                }
+
+                var gameNpcOb = new GameNpcInfo();
+                gameNpcOb.npcId = kvp.Value.gameLogicIdx;
+                gameNpcOb.triadId = (int)kvp.Value.triadId;
+
+                if (kvp.Value.mapCoords != null)
+                {
+                    gameNpcOb.Location = new Dalamud.Game.Text.SeStringHandling.Payloads.MapLinkPayload(kvp.Value.territoryId, kvp.Value.mapId, kvp.Value.mapCoords[0], kvp.Value.mapCoords[1]);
+                }
+
                 foreach (var cardId in kvp.Value.rewardCardIds)
                 {
-                    var cardInfo = gameCardDB.FindById(cardId);
-                    var npcOb = ((kvp.Value.gameLogicIdx >= 0) && (kvp.Value.gameLogicIdx < npcDB.npcs.Count)) ? npcDB.npcs[kvp.Value.gameLogicIdx] : null;
+                    gameNpcOb.rewardCards.Add(cardId);
 
+                    var cardInfo = gameCardDB.FindById(cardId);
+                    var npcOb = (gameNpcOb.npcId < npcDB.npcs.Count) ? npcDB.npcs[gameNpcOb.npcId] : null;
                     if (npcOb != null)
                     {
-                        cardInfo.RewardNpcId = kvp.Value.gameLogicIdx;
-                        cardInfo.RewardNpcLocation = new Dalamud.Game.Text.SeStringHandling.Payloads.MapLinkPayload(kvp.Value.territoryId, kvp.Value.mapId, kvp.Value.mapCoords[0], kvp.Value.mapCoords[1]);
+                        cardInfo.RewardNpcId = gameNpcOb.npcId;
+                        cardInfo.RewardNpcLocation = gameNpcOb.Location;
                     }
                     else
                     {
-                        PluginLog.Error($"Failed to match npc reward data! npc:{kvp.Value.gameLogicIdx}, key:{kvp.Key}");
+                        PluginLog.Error($"Failed to match npc reward data! npc:{gameNpcOb.npcId}, key:{kvp.Key}");
                     }
                 }
+
+                gameNpcDB.mapNpcs.Add(gameNpcOb.npcId, gameNpcOb);
             }
         }
 

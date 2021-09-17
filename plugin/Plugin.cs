@@ -69,7 +69,9 @@ namespace TriadBuddyPlugin
             uiReaderCardList = new UIReaderTriadCardList(gameGui);
             uiReaderDeckEdit = new UIReaderTriadDeckEdit(gameGui);
 
-            GameCardDB.Get().memReader = new UnsafeReaderTriadCards(sigScanner);
+            var memReaderTriadFunc = new UnsafeReaderTriadCards(sigScanner);
+            GameCardDB.Get().memReader = memReaderTriadFunc;
+            GameNpcDB.Get().memReader = memReaderTriadFunc;
 
             // prep UI
             overlays = new PluginOverlays(solver, uiReaderGame, uiReaderPrep, configuration);
@@ -82,7 +84,7 @@ namespace TriadBuddyPlugin
             windowSystem.AddWindow(deckOptimizerWindow);
 
             windowSystem.AddWindow(new PluginWindowCardInfo(uiReaderCardList, gameGui));
-            windowSystem.AddWindow(new PluginWindowCardSearch(uiReaderCardList));
+            windowSystem.AddWindow(new PluginWindowCardSearch(uiReaderCardList, gameGui));
 
             // prep plugin hooks
             statusCommand = new(OnCommand);
