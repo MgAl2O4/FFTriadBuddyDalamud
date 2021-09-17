@@ -15,6 +15,7 @@ namespace TriadBuddyPlugin
         private readonly Vector4 colorDraw = new Vector4(0.9f, 0.9f, 0.2f, 1);
         private readonly Vector4 colorLose = new Vector4(0.9f, 0.2f, 0.2f, 1);
         private readonly Vector4 colorTxt = new Vector4(1, 1, 1, 1);
+        private readonly Vector4 colorGray = new Vector4(0.6f, 0.6f, 0.6f, 1);
 
         private readonly UIReaderTriadPrep uiReaderPrep;
         private readonly Solver solver;
@@ -110,19 +111,31 @@ namespace TriadBuddyPlugin
                 }
 
                 var textSize = ImGui.CalcTextSize(hintText);
-                ImGui.SetCursorPos(new Vector2((Size.Value.X - textSize.X) * 0.5f, (Size.Value.Y - textSize.Y) * 0.5f));
+                var hintPosY = (Size.Value.Y - textSize.Y) * 0.5f;
+                var hintPosX = (Size.Value.X - textSize.X) * 0.5f;
+
+                var btnStartX = Size.Value.X - 50;
+                var btnStartY = (Size.Value.Y - textSize.Y) * 0.5f - ImGui.GetStyle().FramePadding.Y;
+                var optimizeSize = ImGui.CalcTextSize(locOptimize);
+                var optimizeStartX = btnStartX - optimizeSize.X - 5;
+
+                if (optimizerWindow.CanRunOptimizer())
+                {
+                    hintPosX = Math.Max(10, Math.Min(hintPosX, optimizeStartX - 20 - textSize.X));
+                }
+
+                ImGui.SetCursorPos(new Vector2(hintPosX, hintPosY));
                 ImGui.TextColored(hintColor, hintText);
 
                 if (optimizerWindow.CanRunOptimizer())
                 {
-                    ImGui.SetCursorPos(new Vector2(Size.Value.X - 50, (Size.Value.Y - textSize.Y) * 0.5f - ImGui.GetStyle().FramePadding.Y));
+                    ImGui.SetCursorPos(new Vector2(optimizeStartX, hintPosY));
+                    ImGui.TextColored(colorGray, locOptimize);
+
+                    ImGui.SetCursorPos(new Vector2(btnStartX, btnStartY));
                     if (ImGuiComponents.IconButton(FontAwesomeIcon.Search))
                     {
                         optimizerWindow.SetupAndOpen(solver.preGameNpc, solver.preGameMods);
-                    }
-                    if (ImGui.IsItemHovered())
-                    {
-                        ImGui.SetTooltip(locOptimize);
                     }
                 }
             }
