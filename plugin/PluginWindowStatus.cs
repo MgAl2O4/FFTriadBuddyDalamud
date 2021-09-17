@@ -145,7 +145,7 @@ namespace TriadBuddyPlugin
             ImGui.AlignTextToFramePadding();
             ImGui.Text(locStatus);
             ImGui.SameLine();
-            
+
             if (ImGuiComponents.IconButton(FontAwesomeIcon.Backward))
             {
                 showConfigs = false;
@@ -153,7 +153,7 @@ namespace TriadBuddyPlugin
 
             ImGui.Separator();
             bool hasChanges = false;
-            
+
             var showSolverHintsInGameCopy = config.ShowSolverHintsInGame;
             hasChanges = ImGui.Checkbox(locConfigSolverHints, ref showSolverHintsInGameCopy) || hasChanges;
 

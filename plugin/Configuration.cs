@@ -8,7 +8,7 @@ namespace TriadBuddyPlugin
     public class Configuration : IPluginConfiguration
     {
         public int Version { get; set; } = 0;
-        
+
         public bool ShowSolverHintsInGame { get; set; } = true;
         public bool CanUseProfileReader { get; set; } = true;
 
