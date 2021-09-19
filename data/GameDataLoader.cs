@@ -19,7 +19,7 @@ namespace TriadBuddyPlugin
         private class ENpcCachedData
         {
             public uint triadId;                // TripleTriad sheet
-            public int gameLogicIdx = -1;        // TriadNpcDB
+            public int gameLogicIdx = -1;       // TriadNpcDB
             public TriadNpc gameLogicOb;
 
             public float[] mapRawCoords;
@@ -31,6 +31,7 @@ namespace TriadBuddyPlugin
             public List<int> rewardCardIds = new();
         }
         private Dictionary<uint, ENpcCachedData> mapENpcCache = new();
+        private Dictionary<uint, int> mapNpcAchievementId = new();
 
         public void StartAsyncWork(DataManager dataManager)
         {
@@ -44,12 +45,14 @@ namespace TriadBuddyPlugin
                 cardDB.cards.Clear();
                 npcDB.npcs.Clear();
                 mapENpcCache.Clear();
+                mapNpcAchievementId.Clear();
 
                 bool result = true;
                 result = result && ParseRules(dataManager);
                 result = result && ParseCardTypes(dataManager);
                 result = result && ParseCards(dataManager);
                 result = result && ParseNpcs(dataManager);
+                result = result && ParseNpcAchievements(dataManager);
                 result = result && ParseNpcLocations(dataManager);
                 result = result && ParseCardRewards(dataManager);
 
@@ -71,6 +74,7 @@ namespace TriadBuddyPlugin
                 }
 
                 mapENpcCache.Clear();
+                mapNpcAchievementId.Clear();
             });
         }
 
@@ -374,6 +378,21 @@ namespace TriadBuddyPlugin
             return true;
         }
 
+        private bool ParseNpcAchievements(DataManager dataManager)
+        {
+            var npcDataSheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadResident>();
+            if (npcDataSheet != null)
+            {
+                // rowIds are not going from 0 here!
+                foreach (var rowData in npcDataSheet)
+                {
+                    mapNpcAchievementId.Add(rowData.RowId, rowData.Order);
+                }
+            }
+
+            return true;
+        }
+
         private bool ParseNpcLocations(DataManager dataManager)
         {
             var sheetLevel = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Level>();
@@ -494,6 +513,10 @@ namespace TriadBuddyPlugin
                 var gameNpcOb = new GameNpcInfo();
                 gameNpcOb.npcId = kvp.Value.gameLogicIdx;
                 gameNpcOb.triadId = (int)kvp.Value.triadId;
+                if (!mapNpcAchievementId.TryGetValue(kvp.Value.triadId, out gameNpcOb.achievementId))
+                {
+                     PluginLog.Log($"Failed to find achievId for triadId:{kvp.Value.triadId}");
+                }
 
                 if (kvp.Value.mapCoords != null)
                 {

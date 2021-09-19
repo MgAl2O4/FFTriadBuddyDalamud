@@ -239,7 +239,7 @@ namespace TriadBuddyPlugin
                 for (int idx = 0; idx < listNpcs.Count; idx++)
                 {
                     var (npcOb, npcInfo) = listNpcs[idx];
-                    if ((hideNpcBeatenOnce && npcInfo.IsBeatenOnce) ||
+                    if ((hideNpcBeatenOnce && (npcInfo.IsBeatenOnce || npcInfo.IsExcludedFromAchievementTracker)) ||
                         (hideNpcCompleted && npcInfo.IsCompleted))
                     {
                         continue;

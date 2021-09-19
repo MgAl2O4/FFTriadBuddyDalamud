@@ -7,6 +7,7 @@ namespace TriadBuddyPlugin
     {
         public int npcId;
         public int triadId;
+        public int achievementId;
 
         public MapLinkPayload Location;
         public List<int> rewardCards = new();
@@ -14,6 +15,7 @@ namespace TriadBuddyPlugin
         // call GameNpcDB.Refresh() before reading fields below
         public bool IsBeatenOnce;
         public bool IsCompleted;
+        public bool IsExcludedFromAchievementTracker => (achievementId == 0xffff);
     }
 
     public class GameNpcDB
