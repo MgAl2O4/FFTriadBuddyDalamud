@@ -515,7 +515,7 @@ namespace TriadBuddyPlugin
                 gameNpcOb.triadId = (int)kvp.Value.triadId;
                 if (!mapNpcAchievementId.TryGetValue(kvp.Value.triadId, out gameNpcOb.achievementId))
                 {
-                     PluginLog.Log($"Failed to find achievId for triadId:{kvp.Value.triadId}");
+                    PluginLog.Log($"Failed to find achievId for triadId:{kvp.Value.triadId}");
                 }
 
                 if (kvp.Value.mapCoords != null)
