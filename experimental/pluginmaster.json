@@ -1,7 +1,7 @@
 [
     {
         "ApplicableVersion": "any", 
-        "AssemblyVersion": "1.0.2.9", 
+        "AssemblyVersion": "1.0.2.10", 
         "Author": "MgAl2O4", 
         "DalamudApiLevel": 3, 
         "Description": "Triple triad solver, NPC matches only.\n- highlights next move during mini game\n- evaluates all deck presets before match\n- deck optimizer for NPC\n- adds more details to card collection window", 
@@ -12,7 +12,7 @@
         "InternalName": "TriadBuddy", 
         "IsHide": false, 
         "IsTestingExclusive": false, 
-        "LastUpdated": "1632018976", 
+        "LastUpdated": "1632181311", 
         "Name": "TriadBuddy", 
         "RepoUrl": "https://github.com/MgAl2O4/FFTriadBuddyDalamud"
     }
