@@ -43,7 +43,7 @@ namespace FFTriadBuddy
             hasLocMarkup = Name.GetCodeName().Contains('[');
             if (hasLocMarkup)
             {
-                string namePattern = Regex.Replace(Name.GetCodeName(), "\\[[a-z]\\]", ".*");
+                string namePattern = Regex.Replace(Name.GetCodeName().ToLower(), "\\[[a-z]\\]", ".*");
                 NameRegex = new Regex(namePattern);
 
                 // not really a partial regex match, but good enough for GameUIParser.ParseNpcNameStart
@@ -91,12 +91,14 @@ namespace FFTriadBuddy
 
         public TriadNpc Find(string Name)
         {
-            return npcs.Find(x => (x != null) && x.IsMatchingName(Name));
+            string nameLower = Name.ToLower();
+            return npcs.Find(x => (x != null) && x.IsMatchingName(nameLower));
         }
 
         public TriadNpc FindByNameStart(string Name)
         {
-            return npcs.Find(x => (x != null) && x.IsMatchingNameStart(Name));
+            string nameLower = Name.ToLower();
+            return npcs.Find(x => (x != null) && x.IsMatchingNameStart(nameLower));
         }
     }
 }
