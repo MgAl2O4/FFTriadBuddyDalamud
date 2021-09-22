@@ -22,8 +22,6 @@ namespace TriadBuddyPlugin
 
         public bool showConfigs = false;
         private bool showDebugDetails;
-        private Vector2 orgSize;
-        private Vector2 debugWndSize = new(420.0f, 350.0f);
         private float orgDrawPosX;
         private Dictionary<int, TextureWrap> mapCardImages = new();
         private const float debugCellSize = 30.0f;
@@ -66,9 +64,9 @@ namespace TriadBuddyPlugin
 
             IsOpen = false;
 
-            Size = new Vector2(350, ImGui.GetTextLineHeight() * 8);
-            SizeConstraints = new WindowSizeConstraints() { MinimumSize = this.Size.Value, MaximumSize = new Vector2(3000, 3000) };
-            SizeCondition = ImGuiCond.FirstUseEver;
+            SizeConstraints = new WindowSizeConstraints() { MinimumSize = new Vector2(350, 0), MaximumSize = new Vector2(700, 3000) };
+
+            Flags = ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoScrollbar;
 
             Plugin.CurrentLocManager.LocalizationChanged += (_) => CacheLocalization();
             CacheLocalization();
@@ -109,12 +107,6 @@ namespace TriadBuddyPlugin
 
         public override void OnOpen()
         {
-            if (Size.HasValue && Size.Value.Y == debugWndSize.Y)
-            {
-                Size = orgSize;
-                SizeCondition = ImGuiCond.Always;
-            }
-
             showDebugDetails = false;
         }
 
@@ -186,23 +178,8 @@ namespace TriadBuddyPlugin
             ImGui.TextColored(statusColor, statusDesc);
             ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - 50);
 
-            if (SizeCondition != ImGuiCond.FirstUseEver)
-            {
-                SizeCondition = ImGuiCond.FirstUseEver;
-            }
             if (ImGuiComponents.IconButton(FontAwesomeIcon.Bug))
             {
-                if (showDebugDetails)
-                {
-                    Size = orgSize;
-                    SizeCondition = ImGuiCond.Always;
-                }
-                else
-                {
-                    orgSize = Size.Value;
-                    Size = new Vector2(Math.Max(orgSize.X, debugWndSize.X), debugWndSize.Y);
-                    SizeCondition = ImGuiCond.Always;
-                }
                 showDebugDetails = !showDebugDetails;
             }
             if (ImGui.IsItemHovered())
@@ -214,6 +191,7 @@ namespace TriadBuddyPlugin
             if (ImGuiComponents.IconButton(FontAwesomeIcon.Cog))
             {
                 showConfigs = true;
+                showDebugDetails = false;
             }
 
             ImGui.Text(locGameData);
@@ -299,6 +277,8 @@ namespace TriadBuddyPlugin
             if (showDebugDetails)
             {
                 ImGui.Separator();
+                ImGui.Spacing();
+
                 DrawDebugDetails();
             }
         }
@@ -427,6 +407,8 @@ namespace TriadBuddyPlugin
                     DrawPaddedCardHelper(ref pos, cardOb, idx == forcedCardIdx ? colorForced : colorBlue);
                 }
             }
+
+            ImGui.Dummy(new Vector2(400, 180));
         }
 
         private void DrawPaddedCardHelper(ref Vector2 pos, TriadCard cardOb, uint cellColor)
