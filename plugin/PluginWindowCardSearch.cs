@@ -192,7 +192,7 @@ namespace TriadBuddyPlugin
                 for (int idx = 0; idx < listCards.Count; idx++)
                 {
                     var (cardOb, cardInfo) = listCards[idx];
-                    if ((showNpcMatchesOnly && cardInfo.RewardNpcId < 0) ||
+                    if ((showNpcMatchesOnly && cardInfo.RewardNpcs.Count <= 0) ||
                         (showOwnedCheckbox && showNotOwnedOnly && cardInfo.IsOwned))
                     {
                         continue;

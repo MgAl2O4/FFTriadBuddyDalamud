@@ -1,5 +1,6 @@
 ﻿using Dalamud;
 using Dalamud.Game.Gui;
+using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
 using FFTriadBuddy;
@@ -16,6 +17,11 @@ namespace TriadBuddyPlugin
 
         private TriadCard selectedCard;
         private GameCardInfo selectedCardInfo;
+        private GameNpcInfo rewardNpcInfo;
+        private TriadNpc rewardNpc;
+        private string rewardNpcRules;
+        private int rewardSourceIdx;
+        private int numRewardSources;
 
         private string locNpcReward;
         private string locShowOnMap;
@@ -75,6 +81,10 @@ namespace TriadBuddyPlugin
                 }
             }
 
+            numRewardSources = (selectedCardInfo == null) ? 0 : selectedCardInfo.RewardNpcs.Count;
+            rewardSourceIdx = 0;
+            UpdateRewardSource();
+
             IsOpen = canShow;
         }
 
@@ -103,23 +113,37 @@ namespace TriadBuddyPlugin
                 }
 
                 ImGui.NewLine();
+
+                if (numRewardSources > 1)
+                {
+                    if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowAltCircleRight))
+                    {
+                        rewardSourceIdx = (rewardSourceIdx + 1) % numRewardSources;
+                        UpdateRewardSource();
+                    }
+
+                    ImGui.SameLine();
+                    ImGui.AlignTextToFramePadding();
+                }
+
                 ImGui.Text(locNpcReward);
 
-                TriadNpc rewardNpc = (selectedCardInfo == null) ? null :
-                    (selectedCardInfo.RewardNpcId < 0 || selectedCardInfo.RewardNpcId >= TriadNpcDB.Get().npcs.Count) ? null :
-                    TriadNpcDB.Get().npcs[selectedCardInfo.RewardNpcId];
-
-                if (selectedCardInfo != null && rewardNpc != null)
+                if (selectedCardInfo != null && rewardNpc != null && rewardNpcInfo != null)
                 {
                     ImGui.SameLine();
                     ImGui.TextColored(colorName, rewardNpc.Name.GetLocalized());
 
+                    if (numRewardSources > 1)
+                    {
+                        ImGui.Spacing();
+                    }
+
                     //ImGui.NewLine();
                     var cursorY = ImGui.GetCursorPosY();
                     ImGui.SetCursorPosY(cursorY - ImGui.GetStyle().FramePadding.Y);
-                    if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.Map))
+                    if (ImGuiComponents.IconButton(FontAwesomeIcon.Map))
                     {
-                        gameGui.OpenMapWithMapLink(selectedCardInfo.RewardNpcLocation);
+                        gameGui.OpenMapWithMapLink(rewardNpcInfo.Location);
                     }
                     if (ImGui.IsItemHovered())
                     {
@@ -128,11 +152,55 @@ namespace TriadBuddyPlugin
 
                     ImGui.SetCursorPosY(cursorY);
                     ImGui.SameLine();
-                    ImGui.Text($"{selectedCardInfo.RewardNpcLocation.PlaceName} {selectedCardInfo.RewardNpcLocation.CoordinateString}");
+
+                    var indentPosX = ImGui.GetCursorPosX();
+                    ImGui.Text($"{rewardNpcInfo.Location.PlaceName} {rewardNpcInfo.Location.CoordinateString}");
+
+                    ImGui.NewLine();
+                    ImGui.SameLine(indentPosX);
+                    ImGui.TextColored(colorGray, rewardNpcRules);
                 }
                 else
                 {
                     ImGui.TextColored(colorGray, locNoAvail);
+                }
+            }
+        }
+
+        private void UpdateRewardSource()
+        {
+            rewardNpc = null;
+            rewardNpcInfo = null;
+            rewardNpcRules = "";
+
+            if (numRewardSources <= 0)
+            {
+                return;
+            }
+
+            int npcId = (rewardSourceIdx < 0 || rewardSourceIdx >= selectedCardInfo.RewardNpcs.Count) ? -1 : selectedCardInfo.RewardNpcs[rewardSourceIdx];
+            if (npcId >= 0 && npcId < TriadNpcDB.Get().npcs.Count)
+            {
+                rewardNpc = TriadNpcDB.Get().npcs[npcId];
+                if (!GameNpcDB.Get().mapNpcs.TryGetValue(npcId, out rewardNpcInfo))
+                {
+                    rewardNpc = null;
+                }
+            }
+
+            if (rewardNpc != null)
+            {
+                if (rewardNpc != null && rewardNpc.Rules.Count > 0)
+                {
+                    foreach (var rule in rewardNpc.Rules)
+                    {
+                        if (rewardNpcRules.Length > 0) { rewardNpcRules += ", "; }
+                        rewardNpcRules += rule.GetLocalizedName();
+                    }
+                }
+                else
+                {
+                    rewardNpcRules = "--";
                 }
             }
         }

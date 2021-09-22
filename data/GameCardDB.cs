@@ -1,5 +1,4 @@
-﻿using Dalamud.Game.Text.SeStringHandling.Payloads;
-using FFTriadBuddy;
+﻿using FFTriadBuddy;
 using System;
 using System.Collections.Generic;
 
@@ -24,8 +23,7 @@ namespace TriadBuddyPlugin
         public int CardId;
         public int SortKey;
 
-        public int RewardNpcId = -1;
-        public MapLinkPayload RewardNpcLocation;
+        public List<int> RewardNpcs = new();
 
         // call GameCardDB.Refresh() before reading fields below
         public bool IsOwned;

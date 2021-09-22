@@ -531,8 +531,7 @@ namespace TriadBuddyPlugin
                     var npcOb = (gameNpcOb.npcId < npcDB.npcs.Count) ? npcDB.npcs[gameNpcOb.npcId] : null;
                     if (npcOb != null)
                     {
-                        cardInfo.RewardNpcId = gameNpcOb.npcId;
-                        cardInfo.RewardNpcLocation = gameNpcOb.Location;
+                        cardInfo.RewardNpcs.Add(gameNpcOb.npcId);
                     }
                     else
                     {
