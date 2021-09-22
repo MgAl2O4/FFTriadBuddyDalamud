@@ -66,7 +66,7 @@ namespace TriadBuddyPlugin
             TriadGameSession.StaticInitialize();
         }
 
-        public void UpdateGame(UIStateTriadGame stateOb)
+        public async void UpdateGame(UIStateTriadGame stateOb)
         {
             status = Status.NoErrors;
 
@@ -96,36 +96,48 @@ namespace TriadBuddyPlugin
             cachedScreenState = screenOb;
             if (currentNpc != null && screenOb.turnState == ScannerTriad.ETurnState.Active && !stateOb.isPvP)
             {
-                pauseOptimizerForSolver = true;
-                UpdateDeckOptimizerPause();
-
-                Task.Run(() =>
+                var updateFlags = screenMemory.OnNewScan(screenOb, currentNpc);
+                if (updateFlags != TriadGameScreenMemory.EUpdateFlags.None)
                 {
-                    var updateFlags = screenMemory.OnNewScan(screenOb, currentNpc);
-                    if (updateFlags != TriadGameScreenMemory.EUpdateFlags.None)
+                    if (screenMemory.deckBlue != null && screenMemory.gameState != null && screenMemory.gameSession != null)
                     {
-                        screenMemory.gameSession.SolverFindBestMove(screenMemory.gameState, out int solverBoardPos, out TriadCard solverTriadCard, out moveWinChance);
+                        pauseOptimizerForSolver = true;
+                        UpdateDeckOptimizerPause();
+
+                        var solverResult = await UpdateGameRunSolver();
+
                         hasMove = true;
-                        moveCardIdx = screenMemory.deckBlue.GetCardIndex(solverTriadCard);
-                        moveBoardIdx = (moveCardIdx < 0) ? -1 : solverBoardPos;
+                        moveCardIdx = screenMemory.deckBlue.GetCardIndex(solverResult.Item2);
+                        moveBoardIdx = (moveCardIdx < 0) ? -1 : solverResult.Item1;
+                        moveWinChance = solverResult.Item3;
 
                         Logger.WriteLine("  suggested move: [{0}] {1} {2} (expected: {3})",
                             moveBoardIdx, ETriadCardOwner.Blue,
-                            solverTriadCard != null ? solverTriadCard.Name.GetCodeName() : "??",
+                            solverResult.Item2 != null ? solverResult.Item2.Name.GetCodeName() : "??",
                             moveWinChance.expectedResult);
 
-                        OnMoveChanged?.Invoke(hasMove);
+                        pauseOptimizerForSolver = false;
+                        UpdateDeckOptimizerPause();
+                    }
+                    else
+                    {
+                        hasMove = false;
                     }
 
-                    pauseOptimizerForSolver = false;
-                    UpdateDeckOptimizerPause();
-                });
+                    OnMoveChanged?.Invoke(hasMove);
+                }
             }
             else if (hasMove)
             {
                 hasMove = false;
                 OnMoveChanged?.Invoke(hasMove);
             }
+        }
+
+        private Task<Tuple<int, TriadCard, TriadGameResultChance>> UpdateGameRunSolver()
+        {
+            screenMemory.gameSession.SolverFindBestMove(screenMemory.gameState, out int solverBoardPos, out TriadCard solverTriadCard, out var solverWinChance);
+            return Task.FromResult(new Tuple<int, TriadCard, TriadGameResultChance>(solverBoardPos, solverTriadCard, solverWinChance));
         }
 
         public (List<TriadCard>, List<TriadCard>) GetScreenRedDeckDebug()
