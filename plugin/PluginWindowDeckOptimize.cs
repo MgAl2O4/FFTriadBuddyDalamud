@@ -20,7 +20,7 @@ namespace TriadBuddyPlugin
         private Solver solver;
         private UIReaderTriadDeckEdit uiReaderDeckEdit;
 
-        private TriadDeckOptimizer deckOptimizer = new();
+        private TriadDeckOptimizer deckOptimizer;
         private List<TriadGameModifier> regionMods = new();
         private TriadNpc npc;
         private string regionModsDesc;
@@ -67,6 +67,7 @@ namespace TriadBuddyPlugin
             this.solver = solver;
             this.uiReaderDeckEdit = uiReaderDeckEdit;
 
+            deckOptimizer = (solver != null) ? solver.deckOptimizer : new TriadDeckOptimizer();
             deckOptimizer.OnFoundDeck += DeckOptimizer_OnFoundDeck;
 
             cardBackgroundImage = dataManager.GetImGuiTexture("ui/uld/CardTripleTriad.tex");
@@ -413,6 +414,7 @@ namespace TriadBuddyPlugin
 
         private void AbortOptimizer()
         {
+            deckOptimizer.SetPaused(false);
             deckOptimizer.AbortProcess();
         }
 
