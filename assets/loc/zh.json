@@ -12,6 +12,7 @@
 	"Cmd_Status": { "message": "显示 {0} 插件状态" },
 	"DE_Evaluating": { "message": "正在计算牌组..." },
 	"DE_Failed": { "message": "错误... 找不到最佳牌组 :<" },
+	"DE_NoProfileDecks": { "message": "错误... 没有要计算的牌组" },
 	"DE_Optimize": { "message": "优化牌组" },
 	"DE_WinChance": { "message": "赢得 {0:P0}" },
 	"DO_Abort": { "message": "中断" },

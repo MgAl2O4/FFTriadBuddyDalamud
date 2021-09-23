@@ -12,6 +12,7 @@
 	"Cmd_Status": { "message": "Afficher l'état du plugin {0}" },
 	"DE_Evaluating": { "message": "Évaluation des decks en cours..." },
 	"DE_Failed": { "message": "Erm... Deck optimal introuvable :<" },
+	"DE_NoProfileDecks": { "message": "Erm.. Aucun deck à évaluer" },
 	"DE_Optimize": { "message": "Optimiser le deck" },
 	"DE_WinChance": { "message": "gagner {0:P0}" },
 	"DO_Abort": { "message": "Abandonner" },
