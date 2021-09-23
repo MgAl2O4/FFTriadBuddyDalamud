@@ -54,10 +54,12 @@ namespace TriadBuddyPlugin
         public int preGameBestId = -1;
         private int preGameId = 0;
         private int preGameSolved = 0;
+        private bool preGameAllProfileDecksEmpty;
         private object preGameLock = new();
 
         public Status status;
         public bool HasErrors => status != Status.NoErrors;
+        public bool HasAllProfileDecksEmpty => preGameAllProfileDecksEmpty;
 
         public event Action<bool> OnMoveChanged;
 
@@ -247,6 +249,7 @@ namespace TriadBuddyPlugin
                 }
 
                 // initialize screenMemory.playerDeck, see comment in OnSolvedDeck() for details
+                preGameAllProfileDecksEmpty = (profileDecks != null) && (anyDeckOb == null);
                 if (anyDeckOb == null)
                 {
                     anyDeckOb = new TriadDeck(PlayerSettingsDB.Get().starterCards);

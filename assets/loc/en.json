@@ -12,6 +12,7 @@
 	"Cmd_Status": { "message": "Show state of {0} plugin" },
 	"DE_Evaluating": { "message": "Evaluating decks..." },
 	"DE_Failed": { "message": "Err.. Can't find best deck :<" },
+	"DE_NoProfileDecks": { "message": "Err.. No decks to evaluate" },
 	"DE_Optimize": { "message": "Optimize deck" },
 	"DE_WinChance": { "message": "win {0:P0}" },
 	"DO_Abort": { "message": "Abort" },

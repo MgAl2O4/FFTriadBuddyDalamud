@@ -24,6 +24,7 @@ namespace TriadBuddyPlugin
         private string locEvaluating;
         private string locWinChance;
         private string locCantFind;
+        private string locNoProfileDecks;
         private string locOptimize;
 
         public PluginWindowDeckEval(Solver solver, UIReaderTriadPrep uiReaderPrep, PluginWindowDeckOptimize optimizerWindow) : base("Deck Eval")
@@ -63,6 +64,7 @@ namespace TriadBuddyPlugin
             locEvaluating = Localization.Localize("DE_Evaluating", "Evaluating decks...");
             locWinChance = Localization.Localize("DE_WinChance", "win {0:P0}");
             locCantFind = Localization.Localize("DE_Failed", "Err.. Can't find best deck :<");
+            locNoProfileDecks = Localization.Localize("DE_NoProfileDecks", "Err.. No decks to evaluate");
             locOptimize = Localization.Localize("DE_Optimize", "Optimize deck");
         }
 
@@ -85,58 +87,61 @@ namespace TriadBuddyPlugin
 
         public override void Draw()
         {
-            if (solver.preGameDecks.Count > 0)
-            {
-                Vector4 hintColor = colorTxt;
-                string hintText = "";
+            Vector4 hintColor = colorTxt;
+            string hintText = "";
 
-                if (solver.preGameProgress < 1.0f)
+            if (solver.preGameDecks.Count == 0)
+            {
+                // no profile decks created vs profile reader failed
+                hintColor = solver.HasAllProfileDecksEmpty ? colorTxt : colorDraw;
+                hintText = locNoProfileDecks;
+            }
+            else if (solver.preGameProgress < 1.0f)
+            {
+                hintColor = colorTxt;
+                hintText = string.Format("{0} {1:P0}", locEvaluating, solver.preGameProgress).Replace("%", "%%");
+            }
+            else
+            {
+                if (solver.preGameDecks.TryGetValue(solver.preGameBestId, out var bestDeckData))
                 {
-                    hintColor = colorTxt;
-                    hintText = string.Format("{0} {1:P0}", locEvaluating, solver.preGameProgress).Replace("%", "%%");
+                    hintColor = GetChanceColor(bestDeckData.chance);
+                    hintText = $"{bestDeckData.name} -- ";
+                    hintText += string.Format(locWinChance, bestDeckData.chance.winChance).Replace("%", "%%");
                 }
                 else
                 {
-                    if (solver.preGameDecks.TryGetValue(solver.preGameBestId, out var bestDeckData))
-                    {
-                        hintColor = GetChanceColor(bestDeckData.chance);
-                        hintText = $"{bestDeckData.name} -- ";
-                        hintText += string.Format(locWinChance, bestDeckData.chance.winChance).Replace("%", "%%");
-                    }
-                    else
-                    {
-                        hintColor = colorLose;
-                        hintText = locCantFind;
-                    }
+                    hintColor = colorLose;
+                    hintText = locCantFind;
                 }
+            }
 
-                var textSize = ImGui.CalcTextSize(hintText);
-                var hintPosY = (Size.Value.Y - textSize.Y) * 0.5f;
-                var hintPosX = (Size.Value.X - textSize.X) * 0.5f;
+            var textSize = ImGui.CalcTextSize(hintText);
+            var hintPosY = (Size.Value.Y - textSize.Y) * 0.5f;
+            var hintPosX = (Size.Value.X - textSize.X) * 0.5f;
 
-                var btnStartX = Size.Value.X - 50;
-                var btnStartY = (Size.Value.Y - textSize.Y) * 0.5f - ImGui.GetStyle().FramePadding.Y;
-                var optimizeSize = ImGui.CalcTextSize(locOptimize);
-                var optimizeStartX = btnStartX - optimizeSize.X - 5;
+            var btnStartX = Size.Value.X - 50;
+            var btnStartY = (Size.Value.Y - textSize.Y) * 0.5f - ImGui.GetStyle().FramePadding.Y;
+            var optimizeSize = ImGui.CalcTextSize(locOptimize);
+            var optimizeStartX = btnStartX - optimizeSize.X - 5;
 
-                if (optimizerWindow.CanRunOptimizer())
+            if (optimizerWindow.CanRunOptimizer())
+            {
+                hintPosX = Math.Max(10, Math.Min(hintPosX, optimizeStartX - 20 - textSize.X));
+            }
+
+            ImGui.SetCursorPos(new Vector2(hintPosX, hintPosY));
+            ImGui.TextColored(hintColor, hintText);
+
+            if (optimizerWindow.CanRunOptimizer())
+            {
+                ImGui.SetCursorPos(new Vector2(optimizeStartX, hintPosY));
+                ImGui.TextColored(colorGray, locOptimize);
+
+                ImGui.SetCursorPos(new Vector2(btnStartX, btnStartY));
+                if (ImGuiComponents.IconButton(FontAwesomeIcon.Search))
                 {
-                    hintPosX = Math.Max(10, Math.Min(hintPosX, optimizeStartX - 20 - textSize.X));
-                }
-
-                ImGui.SetCursorPos(new Vector2(hintPosX, hintPosY));
-                ImGui.TextColored(hintColor, hintText);
-
-                if (optimizerWindow.CanRunOptimizer())
-                {
-                    ImGui.SetCursorPos(new Vector2(optimizeStartX, hintPosY));
-                    ImGui.TextColored(colorGray, locOptimize);
-
-                    ImGui.SetCursorPos(new Vector2(btnStartX, btnStartY));
-                    if (ImGuiComponents.IconButton(FontAwesomeIcon.Search))
-                    {
-                        optimizerWindow.SetupAndOpen(solver.preGameNpc, solver.preGameMods);
-                    }
+                    optimizerWindow.SetupAndOpen(solver.preGameNpc, solver.preGameMods);
                 }
             }
         }
