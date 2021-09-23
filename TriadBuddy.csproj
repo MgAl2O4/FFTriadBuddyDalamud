@@ -12,12 +12,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="assets\loc\de.json" />
     <None Remove="assets\loc\en.json" />
     <None Remove="assets\loc\fr.json" />
     <None Remove="assets\loc\zh.json" />
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="assets\loc\de.json" />
     <EmbeddedResource Include="assets\loc\en.json" />
     <EmbeddedResource Include="assets\loc\fr.json" />
     <EmbeddedResource Include="assets\loc\zh.json" />
