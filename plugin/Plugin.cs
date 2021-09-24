@@ -50,7 +50,8 @@ namespace TriadBuddyPlugin
             configuration.Initialize(pluginInterface);
 
             // prep utils
-            locManager = new Localization("assets/loc", "", true);
+            var myAssemblyName = GetType().Assembly.GetName().Name;
+            locManager = new Localization($"{myAssemblyName}.assets.loc.", "", true);            // res stream format: TriadBuddy.assets.loc.en.json
             locManager.SetupWithLangCode(pluginInterface.UiLanguage);
             CurrentLocManager = locManager;
 
