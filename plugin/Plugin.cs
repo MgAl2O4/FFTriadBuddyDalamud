@@ -35,7 +35,7 @@ namespace TriadBuddyPlugin
         private readonly Localization locManager;
 
         public static Localization CurrentLocManager;
-        private string[] supportedLangCodes = { "en", "fr", "zh" };
+        private string[] supportedLangCodes = { "de", "en", "fr", "zh" };
 
         private Configuration configuration { get; init; }
 
