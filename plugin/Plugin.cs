@@ -6,6 +6,7 @@ using Dalamud.Game.Gui;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
 using Dalamud.Plugin;
+using MgAl2O4.Utils;
 using System;
 
 namespace TriadBuddyPlugin
@@ -29,6 +30,7 @@ namespace TriadBuddyPlugin
         private readonly UIReaderTriadDeckEdit uiReaderDeckEdit;
         private readonly Solver solver;
         private readonly GameDataLoader dataLoader;
+        private readonly UIReaderScheduler uiReaderScheduler;
         private readonly PluginOverlays overlays;
         private readonly Localization locManager;
 
@@ -68,6 +70,13 @@ namespace TriadBuddyPlugin
 
             uiReaderCardList = new UIReaderTriadCardList(gameGui);
             uiReaderDeckEdit = new UIReaderTriadDeckEdit(gameGui);
+
+            uiReaderScheduler = new UIReaderScheduler(gameGui);
+            uiReaderScheduler.AddObservedAddon(uiReaderGame);
+            uiReaderScheduler.AddObservedAddon(uiReaderPrep.uiReaderMatchRequest);
+            uiReaderScheduler.AddObservedAddon(uiReaderPrep.uiReaderDeckSelect);
+            uiReaderScheduler.AddObservedAddon(uiReaderCardList);
+            uiReaderScheduler.AddObservedAddon(uiReaderDeckEdit);
 
             var memReaderTriadFunc = new UnsafeReaderTriadCards(sigScanner);
             GameCardDB.Get().memReader = memReaderTriadFunc;
@@ -150,10 +159,8 @@ namespace TriadBuddyPlugin
             {
                 if (dataLoader.IsDataReady)
                 {
-                    uiReaderGame.Update();
-                    uiReaderPrep.Update();
-                    uiReaderCardList.Update();
-                    uiReaderDeckEdit.Update();
+                    float deltaSeconds = (float)framework.UpdateDelta.TotalSeconds;
+                    uiReaderScheduler.Update(deltaSeconds);
                 }
             }
             catch (Exception ex)

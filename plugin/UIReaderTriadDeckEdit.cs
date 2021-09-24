@@ -1,16 +1,15 @@
 ﻿using Dalamud.Game.Gui;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
+using MgAl2O4.Utils;
 using System;
 using System.Collections.Generic;
 
 namespace TriadBuddyPlugin
 {
-    public class UIReaderTriadDeckEdit
+    public class UIReaderTriadDeckEdit : IUIReader
     {
         public bool IsVisible { get; private set; }
-
-        private GameGui gameGui;
 
         private float blinkAlpha;
         private bool isOptimizerActive;
@@ -19,74 +18,73 @@ namespace TriadBuddyPlugin
 
         public UIReaderTriadDeckEdit(GameGui gameGui)
         {
-            this.gameGui = gameGui;
             blinkAlpha = 0.0f;
         }
 
-        public unsafe void Update()
+        public string GetAddonName()
         {
-            bool newVisible = false;
+            return "GSInfoEditDeck";
+        }
 
-            IntPtr addonPtr = gameGui.GetAddonByName("GSInfoEditDeck", 1);
-            if (addonPtr != IntPtr.Zero)
+        public void OnAddonLost()
+        {
+            IsVisible = false;
+        }
+
+        public void OnAddonShown(IntPtr addonPtr)
+        {
+            IsVisible = true;
+        }
+
+        public unsafe void OnAddonUpdate(IntPtr addonPtr)
+        {
+            var baseNode = (AtkUnitBase*)addonPtr;
+            blinkAlpha = (blinkAlpha + ImGui.GetIO().DeltaTime) % 1.0f;
+
+            // root, 14 children (sibling scan)
+            //     [9] res node, card icon grid + fancy stuff
+            //         [0] res node, just card icon grid
+            //             [x] DragDrop components for each card, 3 children on node list
+            //                 [2] icon component, 7 children on node list
+            //                     [0] image node
+
+            var nodeArrL0 = GUINodeUtils.GetImmediateChildNodes(baseNode->RootNode);
+            var nodeA = GUINodeUtils.PickNode(nodeArrL0, 9, 14);
+            var nodeB = GUINodeUtils.GetChildNode(nodeA);
+            var nodeArrCards = GUINodeUtils.GetImmediateChildNodes(nodeB);
+            if (nodeArrCards != null)
             {
-                var baseNode = (AtkUnitBase*)addonPtr;
-                if (baseNode != null && baseNode->RootNode != null && baseNode->RootNode->IsVisible)
+                foreach (var nodeD in nodeArrCards)
                 {
-                    blinkAlpha = (blinkAlpha + ImGui.GetIO().DeltaTime) % 1.0f;
-                    newVisible = true;
+                    var nodeE = GUINodeUtils.PickChildNode(nodeD, 2, 3);
+                    var nodeImage = GUINodeUtils.PickChildNode(nodeE, 0, 7);
 
-                    // root, 14 children (sibling scan)
-                    //     [9] res node, card icon grid + fancy stuff
-                    //         [0] res node, just card icon grid
-                    //             [x] DragDrop components for each card, 3 children on node list
-                    //                 [2] icon component, 7 children on node list
-                    //                     [0] image node
-
-                    var nodeArrL0 = GUINodeUtils.GetImmediateChildNodes(baseNode->RootNode);
-                    var nodeA = GUINodeUtils.PickNode(nodeArrL0, 9, 14);
-                    var nodeB = GUINodeUtils.GetChildNode(nodeA);
-                    var nodeArrCards = GUINodeUtils.GetImmediateChildNodes(nodeB);
-                    if (nodeArrCards != null)
+                    if (nodeImage != null)
                     {
-                        foreach (var nodeD in nodeArrCards)
+                        if (!isOptimizerActive)
                         {
-                            var nodeE = GUINodeUtils.PickChildNode(nodeD, 2, 3);
-                            var nodeImage = GUINodeUtils.PickChildNode(nodeE, 0, 7);
+                            // no optimizer: reset highlights
+                            nodeImage->MultiplyBlue = 100;
+                            nodeImage->MultiplyRed = 100;
+                            nodeImage->MultiplyGreen = 100;
+                        }
+                        else
+                        {
+                            var texPath = GUINodeUtils.GetNodeTexturePath(nodeImage);
+                            bool shouldHighlight = IsCardTexPathMatching(texPath);
 
-                            if (nodeImage != null)
-                            {
-                                if (!isOptimizerActive)
-                                {
-                                    // no optimizer: reset highlights
-                                    nodeImage->MultiplyBlue = 100;
-                                    nodeImage->MultiplyRed = 100;
-                                    nodeImage->MultiplyGreen = 100;
-                                }
-                                else
-                                {
-                                    var texPath = GUINodeUtils.GetNodeTexturePath(nodeImage);
-                                    bool shouldHighlight = IsCardTexPathMatching(texPath);
+                            // lerp color:
+                            //   t0 .. t0.5 = 0 -> 100%
+                            //   t0.5 .. t1 -> hold 100%
+                            float colorAlpha = (blinkAlpha < 0.5f) ? (blinkAlpha * 2.0f) : 1.0f;
+                            byte colorV = (byte)(shouldHighlight ? (50 + 50 * colorAlpha) : 25);
 
-                                    // lerp color:
-                                    //   t0 .. t0.5 = 0 -> 100%
-                                    //   t0.5 .. t1 -> hold 100%
-                                    float colorAlpha = (blinkAlpha < 0.5f) ? (blinkAlpha * 2.0f) : 1.0f;
-                                    byte colorV = (byte)(shouldHighlight ? (50 + 50 * colorAlpha) : 25);
-
-                                    nodeImage->MultiplyBlue = colorV;
-                                    nodeImage->MultiplyRed = colorV;
-                                    nodeImage->MultiplyGreen = colorV;
-                                }
-                            }
+                            nodeImage->MultiplyBlue = colorV;
+                            nodeImage->MultiplyRed = colorV;
+                            nodeImage->MultiplyGreen = colorV;
                         }
                     }
                 }
-            }
-
-            if (IsVisible != newVisible)
-            {
-                IsVisible = newVisible;
             }
         }
 

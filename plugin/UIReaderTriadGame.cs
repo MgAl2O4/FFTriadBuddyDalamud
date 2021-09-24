@@ -1,6 +1,7 @@
 ﻿using Dalamud.Game.Gui;
 using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using MgAl2O4.Utils;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -8,7 +9,7 @@ using System.Runtime.InteropServices;
 
 namespace TriadBuddyPlugin
 {
-    public class UIReaderTriadGame
+    public class UIReaderTriadGame : IUIReader
     {
         [StructLayout(LayoutKind.Explicit, Size = 0x1000)]              // no idea what size, last entries seems to be around +0xfc0? 
         private unsafe struct AddonTripleTriad
@@ -92,23 +93,28 @@ namespace TriadBuddyPlugin
             this.gameGui = gameGui;
         }
 
-        public unsafe void Update()
+        public string GetAddonName()
         {
-            addonPtr = gameGui.GetAddonByName("TripleTriad", 1);
-            if (addonPtr == IntPtr.Zero)
-            {
-                SetStatus(Status.AddonNotFound);
-                SetCurrentState(null);
-                return;
-            }
+            return "TripleTriad";
+        }
 
+        public void OnAddonLost()
+        {
+            SetStatus(Status.AddonNotFound);
+            SetCurrentState(null);
+            addonPtr = IntPtr.Zero;
+        }
+
+        public void OnAddonShown(IntPtr addonPtr)
+        {
+            this.addonPtr = addonPtr;
+        }
+
+        public unsafe void OnAddonUpdate(IntPtr addonPtr)
+        {
             var addon = (AddonTripleTriad*)addonPtr;
-
-            bool isVisible = (addon->AtkUnitBase.RootNode != null) && addon->AtkUnitBase.RootNode->IsVisible;
-            if (!isVisible)
+            if (addon == null)
             {
-                SetStatus(Status.AddonNotVisible);
-                SetCurrentState(null);
                 return;
             }
 

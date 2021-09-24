@@ -2,13 +2,14 @@
 using Dalamud.Logging;
 using FFTriadBuddy;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using MgAl2O4.Utils;
 using System;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace TriadBuddyPlugin
 {
-    public class UIReaderTriadCardList
+    public class UIReaderTriadCardList : IUIReader
     {
         [StructLayout(LayoutKind.Explicit, Size = 0x520)]               // it's around 0x550?
         private unsafe struct AddonTriadCardList
@@ -56,7 +57,6 @@ namespace TriadBuddyPlugin
         public bool HasErrors => false;
 
         private GameGui gameGui;
-        private IntPtr cachedAddonPtr;
         private IntPtr cachedAddonAgentPtr;
 
         public UIReaderTriadCardList(GameGui gameGui)
@@ -64,31 +64,28 @@ namespace TriadBuddyPlugin
             this.gameGui = gameGui;
         }
 
-        public unsafe void Update()
+        public string GetAddonName()
         {
-            IntPtr addonPtr = gameGui.GetAddonByName("GSInfoCardList", 1);
-            if (cachedAddonPtr != addonPtr)
-            {
-                // reset cached pointers when addon address changes
-                cachedAddonPtr = addonPtr;
-                cachedAddonAgentPtr = gameGui.FindAgentInterface(addonPtr);
+            return "GSInfoCardList";
+        }
 
-                cachedState.descNodeAddr = 0;
-            }
+        public void OnAddonLost()
+        {
+            // reset cached pointers when addon address changes
+            cachedState.descNodeAddr = 0;
+            cachedAddonAgentPtr = IntPtr.Zero;
 
-            if (addonPtr == IntPtr.Zero || cachedAddonAgentPtr == IntPtr.Zero)
-            {
-                SetStatus(Status.AddonNotFound);
-                return;
-            }
+            SetStatus(Status.AddonNotFound);
+        }
 
+        public void OnAddonShown(IntPtr addonPtr)
+        {
+            cachedAddonAgentPtr = (addonPtr != IntPtr.Zero) ? gameGui.FindAgentInterface(addonPtr) : IntPtr.Zero;
+        }
+
+        public unsafe void OnAddonUpdate(IntPtr addonPtr)
+        {
             var addon = (AddonTriadCardList*)addonPtr;
-            if (addon->AtkUnitBase.RootNode == null || !addon->AtkUnitBase.RootNode->IsVisible)
-            {
-                SetStatus(Status.AddonNotVisible);
-                return;
-            }
-
             if (cachedState.descNodeAddr == 0)
             {
                 if (!FindTextNodeAddresses(addon))
@@ -138,8 +135,8 @@ namespace TriadBuddyPlugin
             }
 
             // refresh cached pointers before using them
-            IntPtr addonPtr = gameGui.GetAddonByName("GSInfoCardList", 1);
-            cachedAddonAgentPtr = (addonPtr != IntPtr.Zero) ? gameGui.FindAgentInterface(addonPtr) : IntPtr.Zero;
+            IntPtr addonPtr = gameGui.GetAddonByName(GetAddonName(), 1);
+            OnAddonShown(addonPtr);
 
             if (addonPtr != IntPtr.Zero && cachedAddonAgentPtr != IntPtr.Zero)
             {

@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game.Gui;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using MgAl2O4.Utils;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -18,104 +19,89 @@ namespace TriadBuddyPlugin
         public Action<bool> OnMatchRequestChanged;
         public Action<bool> OnDeckSelectionChanged;
 
+        public UIReaderTriadPrepMatchRequest uiReaderMatchRequest = new();
+        public UIReaderTriadPrepDeckSelect uiReaderDeckSelect = new();
+
         private GameGui gameGui;
         private bool hasRequestUI;
         private bool hasDeckSelectionUI;
-        private IntPtr cachedDeckSelAddon;
 
         public UIReaderTriadPrep(GameGui gameGui)
         {
             this.gameGui = gameGui;
+
+            uiReaderMatchRequest.parentReader = this;
+            uiReaderDeckSelect.parentReader = this;
         }
 
-        public unsafe void Update()
+        public void OnAddonLost()
         {
-            bool foundActiveUI = false;
-            bool newHasRequestUI = false;
-            bool newHasDeckSelectUI = false;
+            SetIsMatchRequest(false);
+            SetIsDeckSelect(false);
 
-            //////////////////////////////////////////////////////////////////
-            // match request
-
-            IntPtr addonReqPtr = gameGui.GetAddonByName("TripleTriadRequest", 1);
-            if (addonReqPtr != IntPtr.Zero)
+            // addon ptr changed? reset cached node ptrs
+            foreach (var deckOb in cachedState.decks)
             {
-                var baseNode = (AtkUnitBase*)addonReqPtr;
-                if (baseNode != null && baseNode->RootNode != null && baseNode->RootNode->IsVisible)
+                deckOb.rootNodeAddr = 0;
+            }
+        }
+
+        public unsafe void OnAddonUpdateMatchRequest(IntPtr addonPtr)
+        {
+            var baseNode = (AtkUnitBase*)addonPtr;
+            if (baseNode == null)
+            {
+                return;
+            }
+
+            if (!hasRequestUI)
+            {
+                UpdateRequest(baseNode);
+                SetIsMatchRequest(true);
+
+                // notify always, if deck data depends on UI, it will be ignored by solver
+                OnUIStateChanged?.Invoke(cachedState);
+            }
+
+            (cachedState.screenPos, cachedState.screenSize) = GUINodeUtils.GetNodePosAndSize(baseNode->RootNode);
+        }
+
+        public unsafe void OnAddonUpdateDeckSelect(IntPtr addonPtr)
+        {
+            var baseNode = (AtkUnitBase*)addonPtr;
+            if (baseNode == null)
+            {
+                return;
+            }
+
+            if (!hasDeckSelectionUI)
+            {
+                UpdateDeckSelect(baseNode);
+            }
+
+            bool newHasDeckSelectUI = cachedState.decks.Count > 0;
+
+            // notify only when deck data is coming from UI
+            if (!hasDeckSelectionUI && newHasDeckSelectUI)
+            {
+                SetIsDeckSelect(true);
+
+                if (shouldScanDeckData)
                 {
-                    if (!hasRequestUI)
-                    {
-                        UpdateRequest(baseNode);
-
-                        // notify always, if deck data depends on UI, it will be ignored by solver
-                        OnUIStateChanged?.Invoke(cachedState);
-                    }
-
-                    (cachedState.screenPos, cachedState.screenSize) = GUINodeUtils.GetNodePosAndSize(baseNode->RootNode);
-                    newHasRequestUI = true;
-                    foundActiveUI = true;
+                    OnUIStateChanged?.Invoke(cachedState);
                 }
             }
 
-            if (hasRequestUI != newHasRequestUI)
+            if (newHasDeckSelectUI)
             {
-                hasRequestUI = newHasRequestUI;
-                OnMatchRequestChanged?.Invoke(hasRequestUI);
-            }
-
-
-            //////////////////////////////////////////////////////////////////
-            // deck selection
-
-            IntPtr addonDeckPtr = foundActiveUI ? IntPtr.Zero : gameGui.GetAddonByName("TripleTriadSelDeck", 1);
-            if (cachedDeckSelAddon != addonDeckPtr)
-            {
-                // addon ptr changed? reset cached node ptrs
-                cachedDeckSelAddon = addonDeckPtr;
                 foreach (var deckOb in cachedState.decks)
                 {
-                    deckOb.rootNodeAddr = 0;
-                }
-            }
-
-            if (addonDeckPtr != IntPtr.Zero)
-            {
-                var baseNode = (AtkUnitBase*)addonDeckPtr;
-                if (baseNode != null && baseNode->RootNode != null && baseNode->RootNode->IsVisible)
-                {
-                    if (!hasDeckSelectionUI)
+                    var updateNode = (AtkResNode*)deckOb.rootNodeAddr;
+                    if (updateNode != null)
                     {
-                        UpdateDeckSelect(baseNode);
-                    }
-
-                    newHasDeckSelectUI = cachedState.decks.Count > 0;
-
-                    // notify only when deck data is coming from UI
-                    if (!hasDeckSelectionUI && newHasDeckSelectUI && shouldScanDeckData)
-                    {
-                        OnUIStateChanged?.Invoke(cachedState);
-                    }
-
-                    if (newHasDeckSelectUI)
-                    {
-                        foundActiveUI = true;
-
-                        foreach (var deckOb in cachedState.decks)
-                        {
-                            var updateNode = (AtkResNode*)deckOb.rootNodeAddr;
-                            if (updateNode != null)
-                            {
-                                (deckOb.screenPos, deckOb.screenSize) = GUINodeUtils.GetNodePosAndSize(updateNode);
-                            }
-                        }
+                        (deckOb.screenPos, deckOb.screenSize) = GUINodeUtils.GetNodePosAndSize(updateNode);
                     }
                 }
-            }
-
-            if (hasDeckSelectionUI != newHasDeckSelectUI)
-            {
-                hasDeckSelectionUI = newHasDeckSelectUI;
-                OnDeckSelectionChanged?.Invoke(hasDeckSelectionUI);
             }
         }
 
@@ -207,6 +193,76 @@ namespace TriadBuddyPlugin
                     }
                 }
             }
+        }
+
+        private void SetIsMatchRequest(bool value)
+        {
+            if (hasRequestUI != value)
+            {
+                hasRequestUI = value;
+                OnMatchRequestChanged?.Invoke(value);
+            }
+        }
+
+        private void SetIsDeckSelect(bool value)
+        {
+            if (hasDeckSelectionUI != value)
+            {
+                hasDeckSelectionUI = value;
+                OnDeckSelectionChanged?.Invoke(value);
+            }
+        }
+    }
+
+    // helper class for scheduler: handles single octave performance UI and passes all notifies to parent
+    public class UIReaderTriadPrepMatchRequest : IUIReader
+    {
+        public UIReaderTriadPrep parentReader;
+
+        public string GetAddonName()
+        {
+            return "TripleTriadRequest";
+        }
+
+        public void OnAddonLost()
+        {
+            parentReader.OnAddonLost();
+        }
+
+        public void OnAddonShown(IntPtr addonPtr)
+        {
+            // nothing to cache
+        }
+
+        public void OnAddonUpdate(IntPtr addonPtr)
+        {
+            parentReader.OnAddonUpdateMatchRequest(addonPtr);
+        }
+    }
+
+    // helper class for scheduler: handles three octaves performance UI and passes all notifies to parent
+    public class UIReaderTriadPrepDeckSelect : IUIReader
+    {
+        public UIReaderTriadPrep parentReader;
+
+        public string GetAddonName()
+        {
+            return "TripleTriadSelDeck";
+        }
+
+        public void OnAddonLost()
+        {
+            parentReader.OnAddonLost();
+        }
+
+        public void OnAddonShown(IntPtr addonPtr)
+        {
+            // nothing to cache
+        }
+
+        public void OnAddonUpdate(IntPtr addonPtr)
+        {
+            parentReader.OnAddonUpdateDeckSelect(addonPtr);
         }
     }
 
