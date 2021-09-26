@@ -12,6 +12,11 @@ namespace TriadBuddyPlugin
         public bool ShowSolverHintsInGame { get; set; } = true;
         public bool CanUseProfileReader { get; set; } = true;
 
+        public bool CheckCardNpcMatchOnly = false;
+        public bool CheckCardNotOwnedOnly = false;
+        public bool CheckNpcHideBeaten = false;
+        public bool CheckNpcHideCompleted = false;
+
         [NonSerialized]
         private DalamudPluginInterface pluginInterface;
 
