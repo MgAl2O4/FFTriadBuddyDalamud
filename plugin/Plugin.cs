@@ -134,7 +134,6 @@ namespace TriadBuddyPlugin
             commandManager.RemoveHandler("/triadbuddy");
             windowSystem.RemoveAllWindows();
             framework.Update -= Framework_OnUpdateEvent;
-            pluginInterface.Dispose();
         }
 
         private void OnCommand(string command, string args)
