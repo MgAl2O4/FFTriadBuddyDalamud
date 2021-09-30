@@ -35,47 +35,81 @@ namespace TriadBuddyPlugin
 
         public void StartAsyncWork(DataManager dataManager)
         {
-            Task.Run(() =>
+            Task.Run(async () =>
             {
-                var cardInfoDB = GameCardDB.Get();
-                var cardDB = TriadCardDB.Get();
-                var npcDB = TriadNpcDB.Get();
+                // there are some rare and weird concurrency issues reported on plugin reinstall
+                //      at Lumina.Excel.ExcelSheet`1.GetEnumerator()+MoveNext()
+                //      at TriadBuddyPlugin.GameDataLoader.ParseNpcLocations(DataManager dataManager) in 
+                //
+                // add wait & retry mechanic, maybe it can work around whatever happened?
+                // lumina doesn't expose any sync/locking so can't really solve the issue
+
+                for (int retryIdx = 3; retryIdx >= 0; retryIdx--)
+                {
+                    bool needsRetry = false;
+                    try
+                    {
+                        ParseGameData(dataManager);
+                    }
+                    catch (Exception ex)
+                    {
+                        needsRetry = retryIdx > 1;
+                        PluginLog.Warning(ex, "exception while parsing! retry:{0}", needsRetry);
+                    }
+
+                    if (needsRetry)
+                    {
+                        await Task.Delay(2000);
+                        PluginLog.Log("retrying game data parsers...");
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            });
+        }
+
+        private void ParseGameData(DataManager dataManager)
+        {
+            var cardInfoDB = GameCardDB.Get();
+            var cardDB = TriadCardDB.Get();
+            var npcDB = TriadNpcDB.Get();
+
+            cardInfoDB.mapCards.Clear();
+            cardDB.cards.Clear();
+            npcDB.npcs.Clear();
+            mapENpcCache.Clear();
+            mapNpcAchievementId.Clear();
+
+            bool result = true;
+            result = result && ParseRules(dataManager);
+            result = result && ParseCardTypes(dataManager);
+            result = result && ParseCards(dataManager);
+            result = result && ParseNpcs(dataManager);
+            result = result && ParseNpcAchievements(dataManager);
+            result = result && ParseNpcLocations(dataManager);
+            result = result && ParseCardRewards(dataManager);
+
+            if (result)
+            {
+                FinalizeNpcList();
+
+                PluginLog.Log($"Loaded game data for cards:{cardDB.cards.Count}, npcs:{npcDB.npcs.Count}");
+                IsDataReady = true;
+            }
+            else
+            {
+                // welp. can't do anything at this point, clear all DBs
+                // UI scraping will fail when data is missing there
 
                 cardInfoDB.mapCards.Clear();
                 cardDB.cards.Clear();
                 npcDB.npcs.Clear();
-                mapENpcCache.Clear();
-                mapNpcAchievementId.Clear();
+            }
 
-                bool result = true;
-                result = result && ParseRules(dataManager);
-                result = result && ParseCardTypes(dataManager);
-                result = result && ParseCards(dataManager);
-                result = result && ParseNpcs(dataManager);
-                result = result && ParseNpcAchievements(dataManager);
-                result = result && ParseNpcLocations(dataManager);
-                result = result && ParseCardRewards(dataManager);
-
-                if (result)
-                {
-                    FinalizeNpcList();
-
-                    PluginLog.Log($"Loaded game data for cards:{cardDB.cards.Count}, npcs:{npcDB.npcs.Count}");
-                    IsDataReady = true;
-                }
-                else
-                {
-                    // welp. can't do anything at this point, clear all DBs
-                    // UI scraping will fail when data is missing there
-
-                    cardInfoDB.mapCards.Clear();
-                    cardDB.cards.Clear();
-                    npcDB.npcs.Clear();
-                }
-
-                mapENpcCache.Clear();
-                mapNpcAchievementId.Clear();
-            });
+            mapENpcCache.Clear();
+            mapNpcAchievementId.Clear();
         }
 
         private bool ParseRules(DataManager dataManager)
