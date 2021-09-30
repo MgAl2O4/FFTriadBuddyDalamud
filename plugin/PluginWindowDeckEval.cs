@@ -81,8 +81,10 @@ namespace TriadBuddyPlugin
 
         public override void PreDraw()
         {
+            var btnSize = ImGuiHelpers.GetButtonSize("-");
+
             Position = uiReaderPrep.cachedState.screenPos + new Vector2(0, uiReaderPrep.cachedState.screenSize.Y);
-            Size = new Vector2(uiReaderPrep.cachedState.screenSize.X, 50);
+            Size = new Vector2(uiReaderPrep.cachedState.screenSize.X, btnSize.Y + (2 * 10)) / ImGuiHelpers.GlobalScale;
         }
 
         public override void Draw()
@@ -116,18 +118,22 @@ namespace TriadBuddyPlugin
                 }
             }
 
+            var btnSize = ImGuiHelpers.GetButtonSize("-");
             var textSize = ImGui.CalcTextSize(hintText);
-            var hintPosY = (Size.Value.Y - textSize.Y) * 0.5f;
-            var hintPosX = (Size.Value.X - textSize.X) * 0.5f;
+            var windowMin = ImGui.GetWindowContentRegionMin();
+            var windowMax = ImGui.GetWindowContentRegionMax();
+            var windowSize = windowMax - windowMin;
+            var hintPosY = windowMin.Y + ((windowSize.Y - textSize.Y) * 0.5f);
+            var hintPosX = windowMin.X + ((windowSize.X - textSize.X) * 0.5f);
 
-            var btnStartX = Size.Value.X - 50;
-            var btnStartY = (Size.Value.Y - textSize.Y) * 0.5f - ImGui.GetStyle().FramePadding.Y;
+            var btnStartX = windowSize.X - btnSize.X - (10 * ImGuiHelpers.GlobalScale);
+            var btnStartY = windowMin.Y + ((windowSize.Y - textSize.Y) * 0.5f) - ImGui.GetStyle().FramePadding.Y;
             var optimizeSize = ImGui.CalcTextSize(locOptimize);
-            var optimizeStartX = btnStartX - optimizeSize.X - 5;
+            var optimizeStartX = btnStartX - optimizeSize.X - (5 * ImGuiHelpers.GlobalScale);
 
             if (optimizerWindow.CanRunOptimizer())
             {
-                hintPosX = Math.Max(10, Math.Min(hintPosX, optimizeStartX - 20 - textSize.X));
+                hintPosX = Math.Max(windowMin.X + (10 * ImGuiHelpers.GlobalScale), Math.Min(hintPosX, optimizeStartX - (20 * ImGuiHelpers.GlobalScale) - textSize.X));
             }
 
             ImGui.SetCursorPos(new Vector2(hintPosX, hintPosY));

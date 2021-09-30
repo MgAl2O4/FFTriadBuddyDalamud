@@ -1,5 +1,6 @@
 ﻿using Dalamud;
 using Dalamud.Data;
+using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
 using FFTriadBuddy;
@@ -81,10 +82,8 @@ namespace TriadBuddyPlugin
             cardImageBox.X = cardImagePos[2].X + cardImageSize.X;
             cardImageBox.Y = cardImagePos[4].Y + cardImageSize.Y;
 
-            SizeCondition = ImGuiCond.Appearing;
-            Size = new Vector2(cardImageBox.X + 150, cardImageBox.Y + (ImGui.GetTextLineHeight() * 7.5f));
-
-            Flags = ImGuiWindowFlags.NoResize;
+            SizeCondition = ImGuiCond.None;
+            Flags = ImGuiWindowFlags.AlwaysAutoResize;
 
             Plugin.CurrentLocManager.LocalizationChanged += (langCode) => CacheLocalization();
             CacheLocalization();
@@ -231,7 +230,13 @@ namespace TriadBuddyPlugin
             var imageBoxOffsetX = Math.Max(0, textWidthMax - imageBoxIndentX);
 
             var currentPos = ImGui.GetCursorPos();
-            var centerOffset = new Vector2((ImGui.GetWindowContentRegionWidth() - cardImageBox.X) / 2, 10);
+            // card images are not scaled and neither is dummy filler!
+            ImGui.Dummy(cardImageBox);
+            ImGui.SameLine();
+            ImGui.Dummy(new Vector2(75 * 2, 1));
+
+            var centerOffset = new Vector2((ImGui.GetWindowContentRegionWidth() - cardImageBox.X) / 2, 10 * ImGuiHelpers.GlobalScale);
+            var footerPosY = currentPos.Y + cardImageBox.Y + (20 * ImGuiHelpers.GlobalScale);
 
             for (int idx = 0; idx < cardImagePos.Length; idx++)
             {
@@ -277,10 +282,13 @@ namespace TriadBuddyPlugin
                 ImGui.NewLine();
                 ImGui.Text(locTimeRemaining);
                 ImGui.TextColored(colorResultData, optimizerTimeRemainingDesc);
+
+                var statBlockPosY = ImGui.GetCursorPosY();
+                footerPosY = Math.Max(footerPosY, statBlockPosY);
             }
 
             // footer
-            ImGui.SetCursorPos(new Vector2(currentPos.X, currentPos.Y + cardImageBox.Y + 20));
+            ImGui.SetCursorPos(new Vector2(currentPos.X, footerPosY));
             if (!isOptimizerRunning)
             {
                 if (ImGui.Button(locOptimizeStart, new Vector2(-1, 0)))

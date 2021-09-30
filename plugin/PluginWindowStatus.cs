@@ -176,7 +176,7 @@ namespace TriadBuddyPlugin
                 colorOk;
 
             ImGui.TextColored(statusColor, statusDesc);
-            ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - 50);
+            ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - (50 * ImGuiHelpers.GlobalScale));
 
             if (ImGuiComponents.IconButton(FontAwesomeIcon.Bug))
             {
@@ -187,7 +187,7 @@ namespace TriadBuddyPlugin
                 ImGui.SetTooltip(locDebugMode);
             }
 
-            ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - 20);
+            ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - (20 * ImGuiHelpers.GlobalScale));
             if (ImGuiComponents.IconButton(FontAwesomeIcon.Cog))
             {
                 showConfigs = true;

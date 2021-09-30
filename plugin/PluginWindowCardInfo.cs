@@ -90,8 +90,14 @@ namespace TriadBuddyPlugin
 
         public override void PreDraw()
         {
+            var requestedSize = uiReaderCardList.cachedState.descriptionSize / ImGuiHelpers.GlobalScale;
+            if (ImGuiHelpers.GlobalScale > 1.0f)
+            {
+                requestedSize.Y = Math.Max(requestedSize.Y, ImGui.GetTextLineHeight() * 6.5f);
+            }
+
             Position = uiReaderCardList.cachedState.descriptionPos;
-            Size = uiReaderCardList.cachedState.descriptionSize;
+            Size = requestedSize;
         }
 
         public override void Draw()

@@ -1,5 +1,6 @@
 ﻿using Dalamud;
 using Dalamud.Game.Gui;
+using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
 using FFTriadBuddy;
@@ -196,9 +197,9 @@ namespace TriadBuddyPlugin
         private void DrawCardsTab()
         {
             bool showOwnedCheckbox = filterMode == 0;
-            searchFilterCard.Draw("", WindowContentWidth);
+            searchFilterCard.Draw("", WindowContentWidth * ImGuiHelpers.GlobalScale);
 
-            if (ImGui.BeginListBox("##cards", new Vector2(WindowContentWidth, ImGui.GetTextLineHeightWithSpacing() * 10)))
+            if (ImGui.BeginListBox("##cards", new Vector2(WindowContentWidth * ImGuiHelpers.GlobalScale, ImGui.GetTextLineHeightWithSpacing() * 10)))
             {
                 for (int idx = 0; idx < listCards.Count; idx++)
                 {
@@ -257,9 +258,9 @@ namespace TriadBuddyPlugin
 
         private void DrawNpcTab()
         {
-            searchFilterNpc.Draw("", WindowContentWidth);
+            searchFilterNpc.Draw("", WindowContentWidth * ImGuiHelpers.GlobalScale);
 
-            if (ImGui.BeginListBox("##npcs", new Vector2(WindowContentWidth, ImGui.GetTextLineHeightWithSpacing() * 10)))
+            if (ImGui.BeginListBox("##npcs", new Vector2(WindowContentWidth * ImGuiHelpers.GlobalScale, ImGui.GetTextLineHeightWithSpacing() * 10)))
             {
                 for (int idx = 0; idx < listNpcs.Count; idx++)
                 {
@@ -342,7 +343,7 @@ namespace TriadBuddyPlugin
                 {
                     var settingsDB = PlayerSettingsDB.Get();
 
-                    ImGui.BeginListBox("##cardReward", new Vector2(WindowContentWidth, ImGui.GetTextLineHeightWithSpacing() * 4.5f));
+                    ImGui.BeginListBox("##cardReward", new Vector2(WindowContentWidth * ImGuiHelpers.GlobalScale, ImGui.GetTextLineHeightWithSpacing() * 4.5f));
                     for (int idx = 0; idx < listNpcReward.Count; idx++)
                     {
                         var (cardOb, cardListIdx) = listNpcReward[idx];
