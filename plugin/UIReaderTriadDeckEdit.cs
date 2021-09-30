@@ -4,20 +4,36 @@ using ImGuiNET;
 using MgAl2O4.Utils;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace TriadBuddyPlugin
 {
     public class UIReaderTriadDeckEdit : IUIReader
     {
+        [StructLayout(LayoutKind.Explicit, Size = 0xD70)]
+        private unsafe struct AddonTriadDeckEdit
+        {
+            [FieldOffset(0x0)] public AtkUnitBase AtkUnitBase;
+
+            [FieldOffset(0xD64)] public byte PageIndex;                 // ignores writes
+            [FieldOffset(0xD68)] public byte CardIndex;                 // can be written to, yay!
+        }
+
+        public UIStateTriadDeckEdit cachedState = new();
+        public Action<bool> OnVisibilityChanged;
+
         public bool IsVisible { get; private set; }
 
         private float blinkAlpha;
         private bool isOptimizerActive;
 
         private List<string> highlightTexPaths = new();
+        private readonly GameGui gameGui;
 
         public UIReaderTriadDeckEdit(GameGui gameGui)
         {
+            this.gameGui = gameGui;
             blinkAlpha = 0.0f;
         }
 
@@ -29,16 +45,18 @@ namespace TriadBuddyPlugin
         public void OnAddonLost()
         {
             IsVisible = false;
+            OnVisibilityChanged?.Invoke(false);
         }
 
         public void OnAddonShown(IntPtr addonPtr)
         {
             IsVisible = true;
+            OnVisibilityChanged?.Invoke(true);
         }
 
         public unsafe void OnAddonUpdate(IntPtr addonPtr)
         {
-            var baseNode = (AtkUnitBase*)addonPtr;
+            var addon = (AddonTriadDeckEdit*)addonPtr;
             blinkAlpha = (blinkAlpha + ImGui.GetIO().DeltaTime) % 1.0f;
 
             // root, 14 children (sibling scan)
@@ -48,7 +66,7 @@ namespace TriadBuddyPlugin
             //                 [2] icon component, 7 children on node list
             //                     [0] image node
 
-            var nodeArrL0 = GUINodeUtils.GetImmediateChildNodes(baseNode->RootNode);
+            var nodeArrL0 = GUINodeUtils.GetImmediateChildNodes(addon->AtkUnitBase.RootNode);
             var nodeA = GUINodeUtils.PickNode(nodeArrL0, 9, 14);
             var nodeB = GUINodeUtils.GetChildNode(nodeA);
             var nodeArrCards = GUINodeUtils.GetImmediateChildNodes(nodeB);
@@ -86,6 +104,10 @@ namespace TriadBuddyPlugin
                     }
                 }
             }
+
+            (cachedState.screenPos, cachedState.screenSize) = GUINodeUtils.GetNodePosAndSize(addon->AtkUnitBase.RootNode);
+            cachedState.pageIndex = addon->PageIndex;
+            cachedState.cardIndex = addon->CardIndex;
         }
 
         public void OnDeckOptimizerVisible(bool isVisible)
@@ -120,5 +142,53 @@ namespace TriadBuddyPlugin
 
             return false;
         }
+
+        public unsafe bool SetPageAndGridView(int pageIndex, int cellIndex)
+        {
+            // doesn't really belong to a ui "reader", but won't be making a class just for calling one function
+
+            // basic sanity checks on values before writing them to memory
+            // this will NOT be enough when filters are active!
+            if (pageIndex < 0 || pageIndex >= GameCardDB.MaxGridPages || cellIndex < 0 || cellIndex >= GameCardDB.MaxGridCells)
+            {
+                return false;
+            }
+
+            // agentPtr is NOT available through deck edit addon here
+            // use GSInfoCardDeck instead
+
+            IntPtr addonPtr = gameGui.GetAddonByName(GetAddonName(), 1);
+            IntPtr agentPtr = gameGui.FindAgentInterface("GSInfoCardDeck");
+
+            if (addonPtr != IntPtr.Zero && agentPtr != IntPtr.Zero)
+            {
+                OnAddonShown(addonPtr);
+
+                var addon = (AddonTriadDeckEdit*)addonPtr;
+                var agent = (UIReaderTriadCardList.AgentTriadCardList*)agentPtr;
+
+                // reset all filters, otherwise page/card won't be correct
+                agent->FilterDeckTypeRarity = 0;
+                agent->FilterDeckSides = 0;
+                agent->FilterDeckSorting = 0;
+                agent->FilterMode = 0;
+
+                agent->PageIndex = pageIndex;
+                addon->CardIndex = (byte)cellIndex;
+
+                return true;
+            }
+
+            return false;
+        }
+    }
+
+    public class UIStateTriadDeckEdit
+    {
+        public Vector2 screenPos;
+        public Vector2 screenSize;
+
+        public byte pageIndex;
+        public byte cardIndex;
     }
 }

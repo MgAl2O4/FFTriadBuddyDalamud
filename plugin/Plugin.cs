@@ -95,6 +95,7 @@ namespace TriadBuddyPlugin
 
             windowSystem.AddWindow(new PluginWindowCardInfo(uiReaderCardList, gameGui));
             windowSystem.AddWindow(new PluginWindowCardSearch(uiReaderCardList, gameGui, configuration));
+            windowSystem.AddWindow(new PluginWindowDeckSearch(uiReaderDeckEdit, gameGui));
 
             // prep plugin hooks
             statusCommand = new(OnCommand);
