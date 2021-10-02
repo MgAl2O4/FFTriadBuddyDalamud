@@ -29,6 +29,7 @@ namespace TriadBuddyPlugin
         private readonly UIReaderTriadCardList uiReaderCardList;
         private readonly UIReaderTriadDeckEdit uiReaderDeckEdit;
         private readonly Solver solver;
+        private readonly StatTracker statTracker;
         private readonly GameDataLoader dataLoader;
         private readonly UIReaderScheduler uiReaderScheduler;
         private readonly PluginOverlays overlays;
@@ -61,6 +62,8 @@ namespace TriadBuddyPlugin
             solver = new Solver();
             solver.profileGS = configuration.CanUseProfileReader ? new UnsafeReaderProfileGS(gameGui) : null;
 
+            statTracker = new StatTracker(configuration);
+
             // prep data scrapers
             uiReaderGame = new UIReaderTriadGame(gameGui);
             uiReaderGame.OnUIStateChanged += (state) => solver.UpdateGame(state);
@@ -72,12 +75,16 @@ namespace TriadBuddyPlugin
             uiReaderCardList = new UIReaderTriadCardList(gameGui);
             uiReaderDeckEdit = new UIReaderTriadDeckEdit(gameGui);
 
+            var uiReaderMatchResults = new UIReaderTriadResults(gameGui);
+            uiReaderMatchResults.OnUpdated += (state) => statTracker.OnMatchFinished(solver, state);
+
             uiReaderScheduler = new UIReaderScheduler(gameGui);
             uiReaderScheduler.AddObservedAddon(uiReaderGame);
             uiReaderScheduler.AddObservedAddon(uiReaderPrep.uiReaderMatchRequest);
             uiReaderScheduler.AddObservedAddon(uiReaderPrep.uiReaderDeckSelect);
             uiReaderScheduler.AddObservedAddon(uiReaderCardList);
             uiReaderScheduler.AddObservedAddon(uiReaderDeckEdit);
+            uiReaderScheduler.AddObservedAddon(uiReaderMatchResults);
 
             var memReaderTriadFunc = new UnsafeReaderTriadCards(sigScanner);
             GameCardDB.Get().memReader = memReaderTriadFunc;
@@ -88,13 +95,15 @@ namespace TriadBuddyPlugin
             statusWindow = new PluginWindowStatus(dataManager, solver, uiReaderGame, uiReaderPrep, configuration);
             windowSystem.AddWindow(statusWindow);
 
+            var npcStatsWindow = new PluginWindowNpcStats(statTracker);
             var deckOptimizerWindow = new PluginWindowDeckOptimize(dataManager, solver, uiReaderDeckEdit);
-            var deckEvalWindow = new PluginWindowDeckEval(solver, uiReaderPrep, deckOptimizerWindow);
+            var deckEvalWindow = new PluginWindowDeckEval(solver, uiReaderPrep, deckOptimizerWindow, npcStatsWindow);
             windowSystem.AddWindow(deckEvalWindow);
             windowSystem.AddWindow(deckOptimizerWindow);
+            windowSystem.AddWindow(npcStatsWindow);
 
             windowSystem.AddWindow(new PluginWindowCardInfo(uiReaderCardList, gameGui));
-            windowSystem.AddWindow(new PluginWindowCardSearch(uiReaderCardList, gameGui, configuration));
+            windowSystem.AddWindow(new PluginWindowCardSearch(uiReaderCardList, gameGui, configuration, npcStatsWindow));
             windowSystem.AddWindow(new PluginWindowDeckSearch(uiReaderDeckEdit, gameGui));
 
             // prep plugin hooks

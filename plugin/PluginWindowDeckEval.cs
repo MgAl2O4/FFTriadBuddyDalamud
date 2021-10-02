@@ -20,18 +20,21 @@ namespace TriadBuddyPlugin
         private readonly UIReaderTriadPrep uiReaderPrep;
         private readonly Solver solver;
         private readonly PluginWindowDeckOptimize optimizerWindow;
+        private readonly PluginWindowNpcStats statsWindow;
 
         private string locEvaluating;
         private string locWinChance;
         private string locCantFind;
         private string locNoProfileDecks;
         private string locOptimize;
+        private string locNpcStats;
 
-        public PluginWindowDeckEval(Solver solver, UIReaderTriadPrep uiReaderPrep, PluginWindowDeckOptimize optimizerWindow) : base("Deck Eval")
+        public PluginWindowDeckEval(Solver solver, UIReaderTriadPrep uiReaderPrep, PluginWindowDeckOptimize optimizerWindow, PluginWindowNpcStats statsWindow) : base("Deck Eval")
         {
             this.solver = solver;
             this.uiReaderPrep = uiReaderPrep;
             this.optimizerWindow = optimizerWindow;
+            this.statsWindow = statsWindow;
 
             uiReaderPrep.OnMatchRequestChanged += OnMatchRequestChanged;
             OnMatchRequestChanged(uiReaderPrep.HasMatchRequestUI);
@@ -66,6 +69,7 @@ namespace TriadBuddyPlugin
             locCantFind = Localization.Localize("DE_Failed", "Err.. Can't find best deck :<");
             locNoProfileDecks = Localization.Localize("DE_NoProfileDecks", "Err.. No decks to evaluate");
             locOptimize = Localization.Localize("DE_Optimize", "Optimize deck");
+            locNpcStats = Localization.Localize("NS_Title", "NPC stats");
         }
 
         private void OnMatchRequestChanged(bool active)
@@ -82,9 +86,17 @@ namespace TriadBuddyPlugin
         public override void PreDraw()
         {
             var btnSize = ImGuiHelpers.GetButtonSize("-");
+            var reqHeight = btnSize.Y + (ImGui.GetStyle().WindowPadding.Y * 2);
+            if (optimizerWindow.CanRunOptimizer())
+            {
+                var framePaddingY = ImGui.GetStyle().FramePadding.Y;
+
+                reqHeight += btnSize.Y;
+                reqHeight += framePaddingY;
+            }
 
             Position = uiReaderPrep.cachedState.screenPos + new Vector2(0, uiReaderPrep.cachedState.screenSize.Y);
-            Size = new Vector2(uiReaderPrep.cachedState.screenSize.X, btnSize.Y + (2 * 10)) / ImGuiHelpers.GlobalScale;
+            Size = new Vector2(uiReaderPrep.cachedState.screenSize.X, reqHeight) / ImGuiHelpers.GlobalScale;
         }
 
         public override void Draw()
@@ -127,9 +139,12 @@ namespace TriadBuddyPlugin
             var hintPosX = windowMin.X + ((windowSize.X - textSize.X) * 0.5f);
 
             var btnStartX = windowSize.X - btnSize.X - (10 * ImGuiHelpers.GlobalScale);
-            var btnStartY = windowMin.Y + ((windowSize.Y - textSize.Y) * 0.5f) - ImGui.GetStyle().FramePadding.Y;
+            var btnStartY = windowMin.Y;
             var optimizeSize = ImGui.CalcTextSize(locOptimize);
             var optimizeStartX = btnStartX - optimizeSize.X - (5 * ImGuiHelpers.GlobalScale);
+
+            var statsSize = ImGui.CalcTextSize(locNpcStats);
+            var statsStartX = btnStartX - statsSize.X - (5 * ImGuiHelpers.GlobalScale);
 
             if (optimizerWindow.CanRunOptimizer())
             {
@@ -139,9 +154,10 @@ namespace TriadBuddyPlugin
             ImGui.SetCursorPos(new Vector2(hintPosX, hintPosY));
             ImGui.TextColored(hintColor, hintText);
 
+            var framePaddingY = ImGui.GetStyle().FramePadding.Y;
             if (optimizerWindow.CanRunOptimizer())
             {
-                ImGui.SetCursorPos(new Vector2(optimizeStartX, hintPosY));
+                ImGui.SetCursorPos(new Vector2(optimizeStartX, btnStartY + framePaddingY));
                 ImGui.TextColored(colorGray, locOptimize);
 
                 ImGui.SetCursorPos(new Vector2(btnStartX, btnStartY));
@@ -149,6 +165,18 @@ namespace TriadBuddyPlugin
                 {
                     optimizerWindow.SetupAndOpen(solver.preGameNpc, solver.preGameMods);
                 }
+
+                btnStartY += btnSize.Y;
+                btnStartY += framePaddingY;
+            }
+
+            ImGui.SetCursorPos(new Vector2(statsStartX, btnStartY + framePaddingY));
+            ImGui.TextColored(colorGray, locNpcStats);
+
+            ImGui.SetCursorPos(new Vector2(btnStartX, btnStartY));
+            if (ImGuiComponents.IconButton(FontAwesomeIcon.ChartLine))
+            {
+                statsWindow.SetupAndOpen(solver.preGameNpc);
             }
         }
 

@@ -18,6 +18,7 @@ namespace TriadBuddyPlugin
         private readonly UIReaderTriadCardList uiReaderCardList;
         private readonly GameGui gameGui;
         private readonly Configuration config;
+        private readonly PluginWindowNpcStats statsWindow;
 
         private List<Tuple<TriadCard, GameCardInfo>> listCards = new();
         private List<Tuple<TriadNpc, GameNpcInfo>> listNpcs = new();
@@ -45,12 +46,15 @@ namespace TriadBuddyPlugin
         private string locNpcReward;
         private string locShowOnMap;
         private string locNoAvail;
+        private string locNpcStats;
+        private string locEstMGP;
 
-        public PluginWindowCardSearch(UIReaderTriadCardList uiReaderCardList, GameGui gameGui, Configuration config) : base("Card Search")
+        public PluginWindowCardSearch(UIReaderTriadCardList uiReaderCardList, GameGui gameGui, Configuration config, PluginWindowNpcStats statsWindow) : base("Card Search")
         {
             this.uiReaderCardList = uiReaderCardList;
             this.gameGui = gameGui;
             this.config = config;
+            this.statsWindow = statsWindow;
 
             var searchFilterCardPtr = ImGuiNative.ImGuiTextFilter_ImGuiTextFilter(null);
             searchFilterCard = new ImGuiTextFilterPtr(searchFilterCardPtr);
@@ -111,6 +115,10 @@ namespace TriadBuddyPlugin
             locNpcReward = Localization.Localize("CI_NpcReward", "NPC reward:");
             locShowOnMap = Localization.Localize("CI_ShowMap", "Show on map");
             locNoAvail = Localization.Localize("CI_NotAvail", "Not available");
+
+            // reuse NpcStats
+            locNpcStats = Localization.Localize("NS_Title", "NPC stats");
+            locEstMGP = Localization.Localize("NS_DropPerMatch", "MPG per match:");
         }
 
         private void UpdateWindowData()
@@ -323,7 +331,7 @@ namespace TriadBuddyPlugin
             {
                 var cursorY = ImGui.GetCursorPosY();
                 ImGui.SetCursorPosY(cursorY - ImGui.GetStyle().FramePadding.Y);
-                if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.Map))
+                if (ImGuiComponents.IconButton(FontAwesomeIcon.Map))
                 {
                     gameGui.OpenMapWithMapLink(npcData.Item2.Location);
                 }
@@ -335,6 +343,26 @@ namespace TriadBuddyPlugin
                 ImGui.SetCursorPosY(cursorY);
                 ImGui.SameLine();
                 ImGui.Text($"{npcData.Item2.Location.PlaceName} {npcData.Item2.Location.CoordinateString}");
+
+                cursorY += ImGui.GetTextLineHeight() + (ImGui.GetStyle().FramePadding.Y * 3);
+                ImGui.SetCursorPosY(cursorY - ImGui.GetStyle().FramePadding.Y);
+                if (ImGuiComponents.IconButton(FontAwesomeIcon.ChartLine))
+                {
+                    statsWindow.SetupAndOpen(npcData.Item1);
+                }
+
+                var hasAvgRewards = StatTracker.GetAverageRewardPerMatchDesc(config, npcData.Item2, out var avgRewardPerMatch);
+                ImGui.SetCursorPosY(cursorY);
+                ImGui.SameLine();
+                ImGui.Text(locNpcStats + (hasAvgRewards ? "," : ""));
+
+                if (hasAvgRewards)
+                {
+                    ImGui.SameLine();
+                    ImGui.Text(locEstMGP);
+                    ImGui.SameLine();
+                    ImGui.Text(avgRewardPerMatch.ToString("0.#"));
+                }
 
                 ImGui.Spacing();
 

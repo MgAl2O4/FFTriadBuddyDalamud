@@ -29,6 +29,8 @@ namespace TriadBuddyPlugin
 
             public uint[] rewardItems;
             public List<int> rewardCardIds = new();
+
+            public int matchFee;
         }
         private Dictionary<uint, ENpcCachedData> mapENpcCache = new();
         private Dictionary<uint, int> mapNpcAchievementId = new();
@@ -213,7 +215,7 @@ namespace TriadBuddyPlugin
                         cardDB.cards.Add(cardOb);
 
                         // create matching entry in extended card info db
-                        var cardInfo = new GameCardInfo() { CardId = cardOb.Id, SortKey = rowData.SortKey };
+                        var cardInfo = new GameCardInfo() { CardId = cardOb.Id, SortKey = rowData.SortKey, SaleValue = rowData.SaleValue };
                         cardInfoDB.mapCards.Add(cardOb.Id, cardInfo);
                     }
                 }
@@ -396,7 +398,7 @@ namespace TriadBuddyPlugin
 
                 // don't add to noc lists just yet, there are some entries with missing locations that need to be filtered out first!
 
-                var newCachedData = new ENpcCachedData() { triadId = npcIdData.TriadNpcId, gameLogicOb = npcOb };
+                var newCachedData = new ENpcCachedData() { triadId = npcIdData.TriadNpcId, gameLogicOb = npcOb, matchFee = rowData.Fee };
                 if (rowData.ItemPossibleReward != null && rowData.ItemPossibleReward.Length > 0)
                 {
                     newCachedData.rewardItems = new uint[rowData.ItemPossibleReward.Length];
@@ -477,6 +479,9 @@ namespace TriadBuddyPlugin
             var sheetItems = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>();
             if (sheetItems != null)
             {
+                var cardsDB = TriadCardDB.Get();
+                var gameCardDB = GameCardDB.Get();
+
                 foreach (var kvp in mapENpcCache)
                 {
                     if (kvp.Value.rewardItems == null)
@@ -489,9 +494,15 @@ namespace TriadBuddyPlugin
                         var itemRow = itemId == 0 ? null : sheetItems.GetRow(itemId);
                         if (itemRow != null)
                         {
-                            var cardOb = TriadCardDB.Get().FindById((int)itemRow.AdditionalData);
+                            var cardOb = cardsDB.FindById((int)itemRow.AdditionalData);
                             if (cardOb != null)
                             {
+                                var cardInfo = gameCardDB.FindById(cardOb.Id);
+                                if (cardInfo != null)
+                                {
+                                    cardInfo.ItemId = itemId;
+                                }
+
                                 kvp.Value.rewardCardIds.Add(cardOb.Id);
                             }
                             else
@@ -552,6 +563,7 @@ namespace TriadBuddyPlugin
                     PluginLog.Log($"Failed to find achievId for triadId:{kvp.Value.triadId}");
                 }
 
+                gameNpcOb.matchFee = kvp.Value.matchFee;
                 if (kvp.Value.mapCoords != null)
                 {
                     gameNpcOb.Location = new Dalamud.Game.Text.SeStringHandling.Payloads.MapLinkPayload(kvp.Value.territoryId, kvp.Value.mapId, kvp.Value.mapCoords[0], kvp.Value.mapCoords[1]);

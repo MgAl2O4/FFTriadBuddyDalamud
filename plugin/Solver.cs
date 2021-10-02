@@ -31,6 +31,7 @@ namespace TriadBuddyPlugin
         private ScannerTriad.GameState cachedScreenState;
         public ScannerTriad.GameState DebugScreenState => cachedScreenState;
 
+        public TriadNpc lastGameNpc;
         public TriadNpc currentNpc;
         public TriadCard moveCard => screenMemory.deckBlue?.GetCard(moveCardIdx);
         public int moveCardIdx;
@@ -93,6 +94,11 @@ namespace TriadBuddyPlugin
             {
                 // not really an error state, ui reader will push null state when game is finished
                 currentNpc = null;
+            }
+
+            if (currentNpc != null)
+            {
+                lastGameNpc = currentNpc;
             }
 
             cachedScreenState = screenOb;
@@ -213,6 +219,8 @@ namespace TriadBuddyPlugin
                     preGameMods.Add(ruleOb);
                 }
             }
+
+            lastGameNpc = preGameNpc;
 
             bool canReadFromProfile = profileGS != null && !profileGS.HasErrors;
             bool canProcessDecks = !parseCtx.HasErrors &&

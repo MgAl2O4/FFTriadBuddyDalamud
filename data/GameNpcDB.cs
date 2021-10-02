@@ -9,6 +9,8 @@ namespace TriadBuddyPlugin
         public int triadId;
         public int achievementId;
 
+        public int matchFee;
+
         public MapLinkPayload Location;
         public List<int> rewardCards = new();
 

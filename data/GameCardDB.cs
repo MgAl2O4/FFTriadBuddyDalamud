@@ -22,6 +22,10 @@ namespace TriadBuddyPlugin
 
         public int CardId;
         public int SortKey;
+        public int SaleValue;
+
+        // available only when it's an NPC fight reward
+        public uint ItemId;
 
         public List<int> RewardNpcs = new();
 
