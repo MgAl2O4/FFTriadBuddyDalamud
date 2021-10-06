@@ -119,6 +119,23 @@ namespace TriadBuddyPlugin
                         moveBoardIdx = (moveCardIdx < 0) ? -1 : solverResult.Item1;
                         moveWinChance = solverResult.Item3;
 
+                        if (screenMemory.gameState.forcedCardIdx >= 0)
+                        {
+                            // swap + chaos may cause selecting wrong instance of duplicated card
+                            // deck.GetCardIndex() finds first match
+                            var deckCardOb = screenMemory.deckBlue.GetCard(screenMemory.gameState.forcedCardIdx);
+                            if (deckCardOb != solverResult.Item2)
+                            {
+                                var solverCardDesc = solverResult.Item2 != null ? solverResult.Item2.Name.GetCodeName() : "??";
+                                var forcedCardDesc = deckCardOb != null ? deckCardOb.Name.GetCodeName() : "??";
+                                Dalamud.Logging.PluginLog.Warning($"Solver selected card [{moveCardIdx}]:{solverCardDesc}, but game wants: [{screenMemory.gameState.forcedCardIdx}]:{forcedCardDesc} !");
+                            }
+                            else
+                            {
+                                moveCardIdx = screenMemory.gameState.forcedCardIdx;
+                            }
+                        }
+
                         Logger.WriteLine("  suggested move: [{0}] {1} {2} (expected: {3})",
                             moveBoardIdx, ETriadCardOwner.Blue,
                             solverResult.Item2 != null ? solverResult.Item2.Name.GetCodeName() : "??",
