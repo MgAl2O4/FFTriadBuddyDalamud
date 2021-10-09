@@ -38,6 +38,7 @@ namespace TriadBuddyPlugin
 
             SizeConstraints = new WindowSizeConstraints() { MinimumSize = new Vector2(WindowContentWidth + 20, 0), MaximumSize = new Vector2(WindowContentWidth + 20, 1000) };
 
+            ForceMainWindow = true;
             RespectCloseHotkey = false;
             Flags = ImGuiWindowFlags.NoDecoration |
                 //ImGuiWindowFlags.NoResize |

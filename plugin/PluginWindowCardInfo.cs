@@ -40,6 +40,7 @@ namespace TriadBuddyPlugin
             PositionCondition = ImGuiCond.None;
             SizeCondition = ImGuiCond.None;
             RespectCloseHotkey = false;
+            ForceMainWindow = true;
 
             Flags = ImGuiWindowFlags.NoDecoration |
                 ImGuiWindowFlags.NoResize |
