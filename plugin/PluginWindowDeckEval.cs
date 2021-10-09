@@ -28,6 +28,7 @@ namespace TriadBuddyPlugin
         private string locNoProfileDecks;
         private string locOptimize;
         private string locNpcStats;
+        private string locStatusPvPMatch;
 
         public PluginWindowDeckEval(Solver solver, UIReaderTriadPrep uiReaderPrep, PluginWindowDeckOptimize optimizerWindow, PluginWindowNpcStats statsWindow) : base("Deck Eval")
         {
@@ -71,6 +72,7 @@ namespace TriadBuddyPlugin
             locNoProfileDecks = Localization.Localize("DE_NoProfileDecks", "Err.. No decks to evaluate");
             locOptimize = Localization.Localize("DE_Optimize", "Optimize deck");
             locNpcStats = Localization.Localize("NS_Title", "NPC stats");
+            locStatusPvPMatch = Localization.Localize("ST_StatusPvP", "PvP match");
         }
 
         private void OnMatchRequestChanged(bool active)
@@ -105,7 +107,12 @@ namespace TriadBuddyPlugin
             Vector4 hintColor = colorTxt;
             string hintText = "";
 
-            if (solver.preGameDecks.Count == 0)
+            if (solver.preGameNpc == null)
+            {
+                hintColor = colorDraw;
+                hintText = locStatusPvPMatch;
+            }
+            else if (solver.preGameDecks.Count == 0)
             {
                 // no profile decks created vs profile reader failed
                 hintColor = solver.HasAllProfileDecksEmpty ? colorTxt : colorDraw;
@@ -131,6 +138,7 @@ namespace TriadBuddyPlugin
                 }
             }
 
+            var hasNpc = solver.preGameNpc != null;
             var btnSize = ImGuiHelpers.GetButtonSize("-");
             var textSize = ImGui.CalcTextSize(hintText);
             var windowMin = ImGui.GetWindowContentRegionMin();
@@ -147,7 +155,7 @@ namespace TriadBuddyPlugin
             var statsSize = ImGui.CalcTextSize(locNpcStats);
             var statsStartX = btnStartX - statsSize.X - (5 * ImGuiHelpers.GlobalScale);
 
-            if (optimizerWindow.CanRunOptimizer())
+            if (optimizerWindow.CanRunOptimizer() && hasNpc)
             {
                 hintPosX = Math.Max(windowMin.X + (10 * ImGuiHelpers.GlobalScale), Math.Min(hintPosX, optimizeStartX - (20 * ImGuiHelpers.GlobalScale) - textSize.X));
             }
@@ -155,29 +163,32 @@ namespace TriadBuddyPlugin
             ImGui.SetCursorPos(new Vector2(hintPosX, hintPosY));
             ImGui.TextColored(hintColor, hintText);
 
-            var framePaddingY = ImGui.GetStyle().FramePadding.Y;
-            if (optimizerWindow.CanRunOptimizer())
+            if (hasNpc)
             {
-                ImGui.SetCursorPos(new Vector2(optimizeStartX, btnStartY + framePaddingY));
-                ImGui.TextColored(colorGray, locOptimize);
-
-                ImGui.SetCursorPos(new Vector2(btnStartX, btnStartY));
-                if (ImGuiComponents.IconButton(FontAwesomeIcon.Search))
+                var framePaddingY = ImGui.GetStyle().FramePadding.Y;
+                if (optimizerWindow.CanRunOptimizer())
                 {
-                    optimizerWindow.SetupAndOpen(solver.preGameNpc, solver.preGameMods);
+                    ImGui.SetCursorPos(new Vector2(optimizeStartX, btnStartY + framePaddingY));
+                    ImGui.TextColored(colorGray, locOptimize);
+
+                    ImGui.SetCursorPos(new Vector2(btnStartX, btnStartY));
+                    if (ImGuiComponents.IconButton(FontAwesomeIcon.Search))
+                    {
+                        optimizerWindow.SetupAndOpen(solver.preGameNpc, solver.preGameMods);
+                    }
+
+                    btnStartY += btnSize.Y;
+                    btnStartY += framePaddingY;
                 }
 
-                btnStartY += btnSize.Y;
-                btnStartY += framePaddingY;
-            }
+                ImGui.SetCursorPos(new Vector2(statsStartX, btnStartY + framePaddingY));
+                ImGui.TextColored(colorGray, locNpcStats);
 
-            ImGui.SetCursorPos(new Vector2(statsStartX, btnStartY + framePaddingY));
-            ImGui.TextColored(colorGray, locNpcStats);
-
-            ImGui.SetCursorPos(new Vector2(btnStartX, btnStartY));
-            if (ImGuiComponents.IconButton(FontAwesomeIcon.ChartLine))
-            {
-                statsWindow.SetupAndOpen(solver.preGameNpc);
+                ImGui.SetCursorPos(new Vector2(btnStartX, btnStartY));
+                if (ImGuiComponents.IconButton(FontAwesomeIcon.ChartLine))
+                {
+                    statsWindow.SetupAndOpen(solver.preGameNpc);
+                }
             }
         }
 

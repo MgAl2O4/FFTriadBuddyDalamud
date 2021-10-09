@@ -226,7 +226,12 @@ namespace TriadBuddyPlugin
         {
             // don't report status here, just log stuff out
             var parseCtx = new GameUIParser();
-            preGameNpc = parseCtx.ParseNpc(state.npc);
+            preGameNpc = parseCtx.ParseNpc(state.npc, false);
+            if (preGameNpc == null)
+            {
+                parseCtx.OnFailedNpcSilent(state.npc);
+            }
+
             preGameMods.Clear();
             foreach (var rule in state.rules)
             {
