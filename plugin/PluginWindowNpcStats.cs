@@ -129,9 +129,9 @@ namespace TriadBuddyPlugin
                             ImGui.Text(string.Format(locDropCard, cardOb.Name.GetLocalized(), kvp.Value));
                             sumNetGain += kvp.Value * cardInfo.SaleValue;
 
-                            if (numMatches > 0)
+                            if (savedStats.NumWins > 0)
                             {
-                                float dropPct = 1.0f * kvp.Value / numMatches;
+                                float dropPct = 1.0f * kvp.Value / savedStats.NumWins;
 
                                 ImGui.SameLine();
                                 ImGui.TextColored(colorValue, dropPct.ToString("P1").Replace("%", "%%"));
