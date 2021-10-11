@@ -121,7 +121,7 @@ namespace TriadBuddyPlugin
             else if (solver.preGameProgress < 1.0f)
             {
                 hintColor = colorTxt;
-                hintText = string.Format("{0} {1:P0}", locEvaluating, solver.preGameProgress).Replace("%", "%%");
+                hintText = string.Format("{0} {1:P0}", locEvaluating, solver.preGameProgress); // no more: .Replace("%", "%%");
             }
             else
             {
@@ -129,7 +129,7 @@ namespace TriadBuddyPlugin
                 {
                     hintColor = GetChanceColor(bestDeckData.chance);
                     hintText = $"{bestDeckData.name} -- ";
-                    hintText += string.Format(locWinChance, bestDeckData.chance.winChance).Replace("%", "%%");
+                    hintText += string.Format(locWinChance, bestDeckData.chance.winChance); // no more: .Replace("%", "%%");
                 }
                 else
                 {
@@ -160,8 +160,11 @@ namespace TriadBuddyPlugin
                 hintPosX = Math.Max(windowMin.X + (10 * ImGuiHelpers.GlobalScale), Math.Min(hintPosX, optimizeStartX - (20 * ImGuiHelpers.GlobalScale) - textSize.X));
             }
 
+            // use TextUnformatted here, hint text contains user created string (deck name) and can blow up imgui (e.g. deadly '%' chars)
             ImGui.SetCursorPos(new Vector2(hintPosX, hintPosY));
-            ImGui.TextColored(hintColor, hintText);
+            ImGui.PushStyleColor(ImGuiCol.Text, hintColor);
+            ImGui.TextUnformatted(hintText);
+            ImGui.PopStyleColor();
 
             if (hasNpc)
             {
