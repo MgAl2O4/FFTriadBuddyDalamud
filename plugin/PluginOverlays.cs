@@ -10,7 +10,7 @@ namespace TriadBuddyPlugin
         public const uint colorWin = 0xFF00FF00;
         public const uint colorDraw = 0xFF00D7FF;
         public const uint colorLose = 0xFF0000FF;
-        public const uint colorBoard = 0xFFFFFF00;
+        public const uint colorBoard = 0xFFFF7C00;
 
         public readonly UIReaderTriadGame uiReaderGame;
         public readonly UIReaderTriadPrep uiReaderPrep;
@@ -83,8 +83,8 @@ namespace TriadBuddyPlugin
                 var drawBoardPos = boardCardPos + ImGuiHelpers.MainViewport.Pos;
 
                 var drawList = ImGui.GetForegroundDrawList(ImGuiHelpers.MainViewport);
-                drawList.AddRect(drawCardPos, drawCardPos + deckCardSize, gameCardColor, 5.0f, ImDrawFlags.RoundCornersAll, 5.0f);
-                drawList.AddRect(drawBoardPos, drawBoardPos + boardCardSize, colorBoard, 5.0f, ImDrawFlags.RoundCornersAll, 5.0f);
+                drawList.AddRect(drawCardPos, drawCardPos + deckCardSize, gameCardColor, 5.0f, ImDrawFlags.RoundCornersAll, 5.0f * ImGuiHelpers.GlobalScale);
+                drawList.AddRect(drawBoardPos, drawBoardPos + boardCardSize, colorBoard, 5.0f, ImDrawFlags.RoundCornersAll, 5.0f * ImGuiHelpers.GlobalScale);
             }
         }
 
