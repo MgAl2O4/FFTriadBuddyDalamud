@@ -105,7 +105,7 @@ namespace TriadBuddyPlugin
                 var deckState = uiReaderPrep.cachedState.decks[idx];
                 if (solver.preGameDecks.TryGetValue(deckState.id, out var deckData))
                 {
-                    bool isSolverReady = deckData.chance.compScore > 0;
+                    bool isSolverReady = deckData.chance.score > 0;
                     var hintText = !isSolverReady ? "..." : deckData.chance.winChance.ToString("P0");
                     uint hintColor = !isSolverReady ? 0xFFFFFFFF : GetChanceColor(deckData.chance);
 
@@ -124,7 +124,7 @@ namespace TriadBuddyPlugin
             }
         }
 
-        public uint GetChanceColor(TriadGameResultChance chance)
+        public uint GetChanceColor(SolverResult chance)
         {
             return (chance.expectedResult == ETriadGameState.BlueWins) ? colorWin :
                 (chance.expectedResult == ETriadGameState.BlueDraw) ? colorDraw :

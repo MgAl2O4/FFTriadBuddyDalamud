@@ -40,7 +40,7 @@ namespace TriadBuddyPlugin
         private float optimizerStatsTimeRemaining;
 
         private bool hasDeckSolverResult;
-        private TriadGameResultChance deckWinChance;
+        private SolverResult deckWinChance;
         private TriadDeck cachedSolverDeck;
 
         private Dictionary<int, TextureWrap> mapCardImages = new();

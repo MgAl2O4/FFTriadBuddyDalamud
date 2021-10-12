@@ -36,7 +36,7 @@ namespace TriadBuddyPlugin
         public TriadCard moveCard => screenMemory.deckBlue?.GetCard(moveCardIdx);
         public int moveCardIdx;
         public int moveBoardIdx;
-        public TriadGameResultChance moveWinChance;
+        public SolverResult moveWinChance;
         public bool hasMove;
 
         // deck selection
@@ -45,7 +45,7 @@ namespace TriadBuddyPlugin
             public string name;
             public int id;
             public TriadDeck solverDeck;
-            public TriadGameResultChance chance;
+            public SolverResult chance;
         }
 
         public TriadNpc preGameNpc;
@@ -66,7 +66,7 @@ namespace TriadBuddyPlugin
 
         public Solver()
         {
-            TriadGameSession.StaticInitialize();
+            TriadGameSimulation.StaticInitialize();
         }
 
         public async void UpdateGame(UIStateTriadGame stateOb)
@@ -107,38 +107,37 @@ namespace TriadBuddyPlugin
                 var updateFlags = screenMemory.OnNewScan(screenOb, currentNpc);
                 if (updateFlags != TriadGameScreenMemory.EUpdateFlags.None)
                 {
-                    if (screenMemory.deckBlue != null && screenMemory.gameState != null && screenMemory.gameSession != null)
+                    if (screenMemory.deckBlue != null && screenMemory.gameState != null && screenMemory.gameSolver != null)
                     {
                         pauseOptimizerForSolver = true;
                         UpdateDeckOptimizerPause();
 
-                        var solverResult = await UpdateGameRunSolver();
+                        var nextMoveInfo = await UpdateGameRunSolver();
 
                         hasMove = true;
-                        moveCardIdx = screenMemory.deckBlue.GetCardIndex(solverResult.Item2);
-                        moveBoardIdx = (moveCardIdx < 0) ? -1 : solverResult.Item1;
-                        moveWinChance = solverResult.Item3;
+                        moveCardIdx = nextMoveInfo.Item1;
+                        moveBoardIdx = (moveCardIdx < 0) ? -1 : nextMoveInfo.Item2;
+                        moveWinChance = nextMoveInfo.Item3;
 
-                        if (screenMemory.gameState.forcedCardIdx >= 0)
+                        var solverCardOb = screenMemory.deckBlue.GetCard(moveCardIdx);
+                        if ((screenMemory.gameState.forcedCardIdx >= 0) && (moveCardIdx != screenMemory.gameState.forcedCardIdx))
                         {
-                            // swap + chaos may cause selecting wrong instance of duplicated card
-                            // deck.GetCardIndex() finds first match
-                            var deckCardOb = screenMemory.deckBlue.GetCard(screenMemory.gameState.forcedCardIdx);
-                            if (deckCardOb != solverResult.Item2)
-                            {
-                                var solverCardDesc = solverResult.Item2 != null ? solverResult.Item2.Name.GetCodeName() : "??";
-                                var forcedCardDesc = deckCardOb != null ? deckCardOb.Name.GetCodeName() : "??";
-                                Dalamud.Logging.PluginLog.Warning($"Solver selected card [{moveCardIdx}]:{solverCardDesc}, but game wants: [{screenMemory.gameState.forcedCardIdx}]:{forcedCardDesc} !");
-                            }
-                            else
-                            {
-                                moveCardIdx = screenMemory.gameState.forcedCardIdx;
-                            }
+                            // swap + chaos may cause selecting wrong instance of duplicated card?
+                            // it really, really shouldn't unless solver's agent is broken
+
+                            var forcedCardOb = screenMemory.deckBlue.GetCard(screenMemory.gameState.forcedCardIdx);
+
+                            var solverCardDesc = solverCardOb != null ? solverCardOb.Name.GetCodeName() : "??";
+                            var forcedCardDesc = forcedCardOb != null ? forcedCardOb.Name.GetCodeName() : "??";
+                            Dalamud.Logging.PluginLog.Warning($"Solver selected card [{moveCardIdx}]:{solverCardDesc}, but game wants: [{screenMemory.gameState.forcedCardIdx}]:{forcedCardDesc} !");
+
+                            moveCardIdx = screenMemory.gameState.forcedCardIdx;
+                            solverCardOb = forcedCardOb;
                         }
 
                         Logger.WriteLine("  suggested move: [{0}] {1} {2} (expected: {3})",
                             moveBoardIdx, ETriadCardOwner.Blue,
-                            solverResult.Item2 != null ? solverResult.Item2.Name.GetCodeName() : "??",
+                            solverCardOb != null ? solverCardOb.Name.GetCodeName() : "??",
                             moveWinChance.expectedResult);
 
                         pauseOptimizerForSolver = false;
@@ -159,10 +158,10 @@ namespace TriadBuddyPlugin
             }
         }
 
-        private Task<Tuple<int, TriadCard, TriadGameResultChance>> UpdateGameRunSolver()
+        private Task<Tuple<int, int, SolverResult>> UpdateGameRunSolver()
         {
-            screenMemory.gameSession.SolverFindBestMove(screenMemory.gameState, out int solverBoardPos, out TriadCard solverTriadCard, out var solverWinChance);
-            return Task.FromResult(new Tuple<int, TriadCard, TriadGameResultChance>(solverBoardPos, solverTriadCard, solverWinChance));
+            screenMemory.gameSolver.FindNextMove(screenMemory.gameState, out int bestCardIdx, out int bestBoardPos, out var solverResult);
+            return Task.FromResult(new Tuple<int, int, SolverResult>(bestCardIdx, bestBoardPos, solverResult));
         }
 
         public (List<TriadCard>, List<TriadCard>) GetScreenRedDeckDebug()
@@ -211,12 +210,12 @@ namespace TriadBuddyPlugin
             return (knownCards, unknownCards);
         }
 
-        public delegate void SolveDeckDelegate(TriadGameResultChance winChance);
+        public delegate void SolveDeckDelegate(SolverResult winChance);
 
         private class DeckSolverContext
         {
-            public TriadGameSession session;
-            public TriadGameData gameData;
+            public TriadGameSolver solver;
+            public TriadGameSimulationState gameState;
             public SolveDeckDelegate callback;
             public int deckId;
             public int passId;
@@ -288,25 +287,17 @@ namespace TriadBuddyPlugin
 
                 foreach (var kvp in preGameDecks)
                 {
-                    var session = new TriadGameSession();
-                    foreach (var mod in preGameMods)
-                    {
-                        var modCopy = (TriadGameModifier)Activator.CreateInstance(mod.GetType());
-                        modCopy.OnMatchInit();
+                    var deckSolver = new TriadGameSolver();
+                    deckSolver.InitializeSimulation(preGameMods);
 
-                        session.modifiers.Add(modCopy);
-                    }
-
-                    session.UpdateSpecialRules();
-
-                    var gameData = session.StartGame(kvp.Value.solverDeck, preGameNpc.Deck, ETriadGameState.InProgressRed);
-                    var calcContext = new DeckSolverContext() { session = session, gameData = gameData, deckId = kvp.Value.id, passId = preGameId };
+                    var gameState = deckSolver.StartSimulation(kvp.Value.solverDeck, preGameNpc.Deck, ETriadGameState.InProgressRed);
+                    var calcContext = new DeckSolverContext() { solver = deckSolver, gameState = gameState, deckId = kvp.Value.id, passId = preGameId };
 
                     Action<object> solverAction = (ctxOb) =>
                     {
                         var ctx = ctxOb as DeckSolverContext;
-                        ctx.session.SolverFindBestMove(ctx.gameData, out int bestNextPos, out TriadCard bestNextCard, out TriadGameResultChance bestChance);
-                        OnSolvedDeck(ctx.passId, ctx.deckId, bestChance);
+                        ctx.solver.FindNextMove(ctx.gameState, out _, out _, out var solverResult);
+                        OnSolvedDeck(ctx.passId, ctx.deckId, solverResult);
                     };
 
                     new TaskFactory().StartNew(solverAction, calcContext);
@@ -371,7 +362,7 @@ namespace TriadBuddyPlugin
             return deckData;
         }
 
-        private void OnSolvedDeck(int passId, int deckId, TriadGameResultChance winChance)
+        private void OnSolvedDeck(int passId, int deckId, SolverResult winChance)
         {
             if (preGameId != passId)
             {
@@ -386,13 +377,13 @@ namespace TriadBuddyPlugin
                     preGameSolved++;
 
                     // TODO: broadcast? (this is still worker thread!)
-                    Logger.WriteLine($"deck[{deckId}]:'{deckData.name}', result:{winChance.expectedResult}, win%:{winChance.winChance:P0}, draw%:{winChance.drawChance:P0}");
+                    Logger.WriteLine($"deck[{deckId}]:'{deckData.name}', {winChance}");
 
                     float bestScore = 0;
                     int bestId = -1;
                     foreach (var kvp in preGameDecks)
                     {
-                        float testScore = kvp.Value.chance.compScore;
+                        float testScore = kvp.Value.chance.score;
                         if (bestId < 0 || testScore > bestScore)
                         {
                             bestId = kvp.Key;
@@ -428,33 +419,11 @@ namespace TriadBuddyPlugin
                 return;
             }
 
-            var session = new TriadGameSession();
-            foreach (var mod in npc.Rules)
-            {
-                if (mod != null)
-                {
-                    var modCopy = (TriadGameModifier)Activator.CreateInstance(mod.GetType());
-                    modCopy.OnMatchInit();
+            var deckSolver = new TriadGameSolver();
+            deckSolver.InitializeSimulation(npc.Rules, regionMods);
 
-                    session.modifiers.Add(modCopy);
-                }
-            }
-
-            foreach (var mod in regionMods)
-            {
-                if (mod != null)
-                {
-                    var modCopy = (TriadGameModifier)Activator.CreateInstance(mod.GetType());
-                    modCopy.OnMatchInit();
-
-                    session.modifiers.Add(modCopy);
-                }
-            }
-
-            session.UpdateSpecialRules();
-
-            var gameData = session.StartGame(deck, npc.Deck, ETriadGameState.InProgressRed);
-            var calcContext = new DeckSolverContext() { session = session, gameData = gameData, callback = callback };
+            var gameState = deckSolver.StartSimulation(deck, npc.Deck, ETriadGameState.InProgressRed);
+            var calcContext = new DeckSolverContext() { solver = deckSolver, gameState = gameState, callback = callback };
 
             pauseOptimizerForOptimizedEval = true;
             UpdateDeckOptimizerPause();
@@ -462,9 +431,8 @@ namespace TriadBuddyPlugin
             Action<object> solverAction = (ctxOb) =>
             {
                 var ctx = ctxOb as DeckSolverContext;
-                ctx.session.SolverFindBestMove(ctx.gameData, out int bestNextPos, out TriadCard bestNextCard, out TriadGameResultChance bestChance);
-
-                callback?.Invoke(bestChance);
+                ctx.solver.FindNextMove(ctx.gameState, out _, out _, out var solverResult);
+                callback?.Invoke(solverResult);
 
                 pauseOptimizerForOptimizedEval = false;
                 UpdateDeckOptimizerPause();

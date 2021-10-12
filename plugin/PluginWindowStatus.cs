@@ -299,7 +299,7 @@ namespace TriadBuddyPlugin
             ImGui.SameLine();
 
             string modDesc = "";
-            foreach (var mod in solver.DebugScreenMemory.gameSession.modifiers)
+            foreach (var mod in solver.DebugScreenMemory.gameSolver.simulation.modifiers)
             {
                 if (modDesc.Length > 0) { modDesc += ", "; }
                 modDesc += mod.GetLocalizedName();

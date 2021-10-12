@@ -195,7 +195,7 @@ namespace TriadBuddyPlugin
             }
         }
 
-        public Vector4 GetChanceColor(TriadGameResultChance chance)
+        public Vector4 GetChanceColor(SolverResult chance)
         {
             return (chance.expectedResult == ETriadGameState.BlueWins) ? colorWin :
                 (chance.expectedResult == ETriadGameState.BlueDraw) ? colorDraw :
