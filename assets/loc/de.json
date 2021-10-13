@@ -29,7 +29,7 @@
 	"NS_DropCardName": { "message": "{0} Karte: {1}" },
 	"NS_DropIncludesSelling": { "message": "Beinhaltet MGP vom Kartenverkauf" },
 	"NS_DropMGPAvg": { "message": "MGP: {0}" },
-	"NS_DropPerMatch": { "message": "MPG pro Spiel:" },
+	"NS_DropPerMatch": { "message": "MGP pro Spiel:" },
 	"NS_DropStats": { "message": "Belohnungsstatistik:" },
 	"NS_GameStats": { "message": "Spielstatistiken:" },
 	"NS_GameStatsDraws": { "message": "{0} Spiele unentschieden" },

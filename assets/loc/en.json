@@ -36,7 +36,7 @@
 	"NS_DropStats": { "message": "Reward stats:" },
 	"NS_DropMGPAvg": { "message": "MGP: {0}" },
 	"NS_DropCardName": { "message": "{0} card: {1}" },
-	"NS_DropPerMatch": { "message": "MPG per match:" },
+	"NS_DropPerMatch": { "message": "MGP per match:" },
 	"NS_DropIncludesSelling": { "message": "Includes MGP from selling cards" },
 	"ST_BoardXCenter": { "message": "center" },
 	"ST_BoardXLeft": { "message": "left" },

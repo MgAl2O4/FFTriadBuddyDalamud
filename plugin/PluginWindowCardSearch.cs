@@ -119,7 +119,7 @@ namespace TriadBuddyPlugin
 
             // reuse NpcStats
             locNpcStats = Localization.Localize("NS_Title", "NPC stats");
-            locEstMGP = Localization.Localize("NS_DropPerMatch", "MPG per match:");
+            locEstMGP = Localization.Localize("NS_DropPerMatch", "MGP per match:");
         }
 
         private void UpdateWindowData()
