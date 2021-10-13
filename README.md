@@ -13,11 +13,6 @@ Pretty pictures / feature list:
 Standalone tool can be found here: https://github.com/MgAl2O4/FFTriadBuddy
 
 
-# Experimental setup
-No longer required, it's now part of offical plugin list, yay!  
-If you were using experimental 3rd party repo setup before, feel free to remove it now.
-
-
 ## Translation
 
 You can help with translation here: https://crowdin.com/project/fftriadbuddy. Project files:  
