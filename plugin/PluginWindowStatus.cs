@@ -313,6 +313,13 @@ namespace TriadBuddyPlugin
             ImGui.SameLine();
             ImGui.Text($"{solver.DebugScreenMemory.swappedBlueCardIdx}");
 
+            // solver chances
+            ImGui.PushFont(UiBuilder.IconFont);
+            ImGui.Text($"{FontAwesomeIcon.Question.ToIconString()}");
+            ImGui.PopFont();
+            ImGui.SameLine();
+            ImGui.TextUnformatted(solver.moveWinChance.ToString());
+
             // cards
             const uint colorBlue = 0x80ff9400;
             const uint colorRed = 0x800000ff;

@@ -109,6 +109,11 @@ namespace TriadBuddyPlugin
                 {
                     if (screenMemory.deckBlue != null && screenMemory.gameState != null && screenMemory.gameSolver != null)
                     {
+#if DEBUG
+                        // turn on verbose debugging when checking solver's behavior
+                        screenMemory.gameSolver.agent.debugFlags = TriadGameAgent.DebugFlags.ShowMoveStart | TriadGameAgent.DebugFlags.ShowMoveDetails;
+#endif // DEBUG
+
                         pauseOptimizerForSolver = true;
                         UpdateDeckOptimizerPause();
 
