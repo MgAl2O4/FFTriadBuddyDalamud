@@ -12,6 +12,9 @@ Pretty pictures / feature list:
 
 Standalone tool can be found here: https://github.com/MgAl2O4/FFTriadBuddy
 
+## Experimental setup
+If you were using custom repo path to get this plugin, you will start seeing loading errors. Custom repo is now removed from GitHub and plugin is part of Dalamud's official plugin list.  
+Remove old path from your settings, no longer needed, plugin will continue to work and update itself.
 
 ## Translation
 
