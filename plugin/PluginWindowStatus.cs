@@ -53,6 +53,8 @@ namespace TriadBuddyPlugin
         private string locBoardCenter;
         private string locDebugMode;
         private string locConfigSolverHints;
+        private string locConfigOptimizerCPU;
+        private string locConfigOptimizerCPUHint;
 
         public PluginWindowStatus(DataManager dataManager, Solver solver, UIReaderTriadGame uiReaderGame, UIReaderTriadPrep uiReaderPrep, Configuration config) : base("Triad Buddy")
         {
@@ -102,7 +104,9 @@ namespace TriadBuddyPlugin
             locBoardY2 = Localization.Localize("ST_BoardYBottom", "bottom");
             locBoardCenter = Localization.Localize("ST_BoardXYCenter", "center");
             locDebugMode = Localization.Localize("ST_DebugMode", "Show debug details");
-            locConfigSolverHints = Localization.Localize("ST_DebugMode", "Show solver hints in game");
+            locConfigSolverHints = Localization.Localize("CFG_GameToggleHints", "Show solver hints in game");
+            locConfigOptimizerCPU = Localization.Localize("CFG_OptimizerParallelLoad", "CPU usage for Deck Optimizer");
+            locConfigOptimizerCPUHint = Localization.Localize("CFG_OptimizerParallelLoadHint", "Controls number of logical processors used for calculations. Does not reduce load of individual CPUs!");
         }
 
         public override void OnOpen()
@@ -147,11 +151,26 @@ namespace TriadBuddyPlugin
             bool hasChanges = false;
 
             var showSolverHintsInGameCopy = config.ShowSolverHintsInGame;
+            var deckOptimizerCPUCopy = (int)(100 * config.DeckOptimizerCPU);
+
             hasChanges = ImGui.Checkbox(locConfigSolverHints, ref showSolverHintsInGameCopy) || hasChanges;
+
+            ImGui.Spacing();
+            ImGui.Text(locConfigOptimizerCPU);
+            ImGui.SameLine();
+            ImGuiComponents.HelpMarker(locConfigOptimizerCPUHint);
+            ImGui.SameLine();
+            int maxProcessors = Math.Max(1, Environment.ProcessorCount);
+            int numProcessors = Math.Max(1, (int)(maxProcessors * deckOptimizerCPUCopy * 0.01f));
+            ImGui.TextColored(colorInactive, $"({numProcessors} / {maxProcessors})");
+
+            hasChanges = ImGui.SliderInt("##optimizerCPU", ref deckOptimizerCPUCopy, 1, 100, "%d%%") || hasChanges;
+            ImGui.SameLine();
 
             if (hasChanges)
             {
                 config.ShowSolverHintsInGame = showSolverHintsInGameCopy;
+                config.DeckOptimizerCPU = deckOptimizerCPUCopy * 0.01f;
                 config.Save();
             }
         }

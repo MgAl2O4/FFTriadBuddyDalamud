@@ -1,4 +1,7 @@
 {
+	"CFG_GameToggleHints": { "message": "Zeige Solver-Tipps im Spiel" },
+	"CFG_OptimizerParallelLoad": { "message": "CPU-Auslastung für Deck Optimierer" },
+	"CFG_OptimizerParallelLoadHint": { "message": "Steuert die Anzahl der für Berechnungen verwendeten logischen Prozessoren. Reduziert nicht die Last einzelner CPUs!" },
 	"CI_NotAvail": { "message": "Nicht verfügbar" },
 	"CI_NpcReward": { "message": "NSC Belohnung:" },
 	"CI_ShowMap": { "message": "Auf der Karte anzeigen" },
@@ -19,6 +22,7 @@
 	"DO_CollectionPage": { "message": "Sammlungsseite: {0}" },
 	"DO_DeckBuilderPage": { "message": "Deck Editor Seite: {0}" },
 	"DO_DeckScore": { "message": "Deck-Punkte:" },
+	"DO_Guess": { "message": "Erraten" },
 	"DO_Npc": { "message": "Nsc:" },
 	"DO_RegionRules": { "message": "Regionsregeln:" },
 	"DO_Start": { "message": "Deck optimieren" },
@@ -52,7 +56,6 @@
 	"ST_GameMove": { "message": "Solver.Bewegen:" },
 	"ST_GameMoveDisabled": { "message": "deaktiviert" },
 	"ST_GameNpc": { "message": "Solver.NSC:" },
-	"ST_GameToggleHints": { "message": "Zeige Solver-Tipps im Spiel" },
 	"ST_PrepNpc": { "message": "Prep.NSC:" },
 	"ST_PrepRules": { "message": "Prep.Regeln:" },
 	"ST_Status": { "message": "Status:" },

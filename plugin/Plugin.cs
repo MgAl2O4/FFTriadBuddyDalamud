@@ -96,8 +96,9 @@ namespace TriadBuddyPlugin
             windowSystem.AddWindow(statusWindow);
 
             var npcStatsWindow = new PluginWindowNpcStats(statTracker);
-            var deckOptimizerWindow = new PluginWindowDeckOptimize(dataManager, solver, uiReaderDeckEdit);
+            var deckOptimizerWindow = new PluginWindowDeckOptimize(dataManager, solver, uiReaderDeckEdit, configuration);
             var deckEvalWindow = new PluginWindowDeckEval(solver, uiReaderPrep, deckOptimizerWindow, npcStatsWindow);
+            deckOptimizerWindow.OnConfigRequested += () => OnOpenConfig();
             windowSystem.AddWindow(deckEvalWindow);
             windowSystem.AddWindow(deckOptimizerWindow);
             windowSystem.AddWindow(npcStatsWindow);

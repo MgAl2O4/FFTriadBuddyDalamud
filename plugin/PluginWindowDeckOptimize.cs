@@ -1,6 +1,7 @@
 ﻿using Dalamud;
 using Dalamud.Data;
 using Dalamud.Interface;
+using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
 using FFTriadBuddy;
@@ -20,6 +21,9 @@ namespace TriadBuddyPlugin
         private DataManager dataManager;
         private Solver solver;
         private UIReaderTriadDeckEdit uiReaderDeckEdit;
+        private Configuration config;
+
+        public Action OnConfigRequested;
 
         private TriadDeckOptimizer deckOptimizer;
         private List<TriadGameModifier> regionMods = new();
@@ -43,6 +47,10 @@ namespace TriadBuddyPlugin
         private SolverResult deckWinChance;
         private TriadDeck cachedSolverDeck;
 
+        private bool canUseBestDeck;
+        private TriadDeck bestDeck;
+        private SolverResult bestWinChance;
+
         private Dictionary<int, TextureWrap> mapCardImages = new();
         private TextureWrap cardBackgroundImage;
 
@@ -61,12 +69,14 @@ namespace TriadBuddyPlugin
         private string locDeckEditPage;
         private string locOptimizeStart;
         private string locOptimizeAbort;
+        private string locOptimizeGuess;
 
-        public PluginWindowDeckOptimize(DataManager dataManager, Solver solver, UIReaderTriadDeckEdit uiReaderDeckEdit) : base("Deck Optimizer")
+        public PluginWindowDeckOptimize(DataManager dataManager, Solver solver, UIReaderTriadDeckEdit uiReaderDeckEdit, Configuration config) : base("Deck Optimizer")
         {
             this.dataManager = dataManager;
             this.solver = solver;
             this.uiReaderDeckEdit = uiReaderDeckEdit;
+            this.config = config;
 
             deckOptimizer = (solver != null) ? solver.deckOptimizer : new TriadDeckOptimizer();
             deckOptimizer.OnFoundDeck += DeckOptimizer_OnFoundDeck;
@@ -126,6 +136,7 @@ namespace TriadBuddyPlugin
             locDeckEditPage = Localization.Localize("DO_DeckBuilderPage", "Deck builder page: {0}");
             locOptimizeStart = Localization.Localize("DO_Start", "Optimize deck");
             locOptimizeAbort = Localization.Localize("DO_Abort", "Abort");
+            locOptimizeGuess = Localization.Localize("DO_Guess", "Guess");
         }
 
         public bool CanRunOptimizer()
@@ -147,6 +158,10 @@ namespace TriadBuddyPlugin
 
             regionMods.Clear();
             regionModsDesc = null;
+
+            canUseBestDeck = false;
+            bestDeck = null;
+            bestWinChance = SolverResult.Zero;
 
             this.npc = npc;
             if (npc != null)
@@ -212,6 +227,7 @@ namespace TriadBuddyPlugin
             }
 
             UpdateTick();
+            var orgPos = ImGui.GetCursorPos();
 
             // header
             ImGui.Text(locNpc);
@@ -230,6 +246,13 @@ namespace TriadBuddyPlugin
             var imageBoxOffsetX = Math.Max(0, textWidthMax - imageBoxIndentX);
 
             var currentPos = ImGui.GetCursorPos();
+
+            ImGui.SetCursorPos(new Vector2(ImGui.GetWindowContentRegionWidth() - (20 * ImGuiHelpers.GlobalScale), orgPos.Y));
+            if (ImGuiComponents.IconButton(FontAwesomeIcon.Cog))
+            {
+                OnConfigRequested?.Invoke();
+            }
+
             // card images are not scaled and neither is dummy filler!
             ImGui.Dummy(cardImageBox);
             ImGui.SameLine();
@@ -268,6 +291,23 @@ namespace TriadBuddyPlugin
                 {
                     ImGui.Text(locWinChance);
                     ImGui.TextColored(colorResultData, deckWinChance.winChance.ToString("P0").Replace("%", "%%"));
+
+                    if (canUseBestDeck && !isOptimizerRunning)
+                    {
+                        if (ImGuiComponents.IconButton(FontAwesomeIcon.RedoAlt))
+                        {
+                            DeckOptimizer_OnFoundDeck(bestDeck, bestWinChance.winChance);
+                            pendingCardsUpdateTimeRemaining = 0.0f;
+
+                            deckWinChance = bestWinChance;
+                            canUseBestDeck = false;
+                        }
+
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.SetTooltip(bestWinChance.winChance.ToString("P0").Replace("%", "%%"));
+                        }
+                    }
                 }
                 else
                 {
@@ -291,6 +331,15 @@ namespace TriadBuddyPlugin
             ImGui.SetCursorPos(new Vector2(currentPos.X, footerPosY));
             if (!isOptimizerRunning)
             {
+                var textSize = ImGui.CalcTextSize(locOptimizeGuess);
+                textSize.X += 75.0f * ImGuiHelpers.GlobalScale;
+                if (ImGui.Button(locOptimizeGuess, new Vector2(textSize.X, 0)))
+                {
+                    OptimizerGuess();
+                }
+
+                ImGui.SameLine();
+
                 if (ImGui.Button(locOptimizeStart, new Vector2(-1, 0)))
                 {
                     StartOptimizer();
@@ -404,6 +453,7 @@ namespace TriadBuddyPlugin
             }
 
             deckOptimizer.Initialize(npc, regionMods.ToArray(), lockedCards);
+            deckOptimizer.parallelLoadPct = (config.DeckOptimizerCPU >= 1.0f) ? -1 : config.DeckOptimizerCPU;
 
             optimizerStatsTimeRemaining = 0;
             pendingCardsUpdateTimeRemaining = 0;
@@ -435,10 +485,39 @@ namespace TriadBuddyPlugin
                 solver.SolveOptimizedDeck(cachedSolverDeck, npc, regionMods, (chance) =>
                 {
                     // this is invoked from worker thread!
-                    hasDeckSolverResult = true;
+                    if (bestDeck == null || chance.IsBetterThan(bestWinChance))
+                    {
+                        bestDeck = new TriadDeck(cachedSolverDeck.knownCards);
+                        bestWinChance = deckWinChance;
+                    }
+
+                    canUseBestDeck = bestWinChance.IsBetterThan(chance) && !cachedSolverDeck.Equals(bestDeck);
                     deckWinChance = chance;
+                    hasDeckSolverResult = true;
                 });
             }
+        }
+
+        private void OptimizerGuess()
+        {
+            if (!CanRunOptimizer())
+            {
+                PluginLog.Error("Failed to start deck optimizer");
+                return;
+            }
+
+            // TODO: do i want to add UI selectors for locked cards? probably not.
+            var lockedCards = new List<TriadCard>();
+            for (int idx = 0; idx < 5; idx++)
+            {
+                lockedCards.Add(null);
+            }
+
+            deckOptimizer.Initialize(npc, regionMods.ToArray(), lockedCards);
+            deckOptimizer.GuessDeck(lockedCards);
+
+            DeckOptimizer_OnFoundDeck(deckOptimizer.optimizedDeck, 0.0f);
+            RunDeckSolver();
         }
 
         public override void OnClose()

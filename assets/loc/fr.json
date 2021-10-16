@@ -1,4 +1,7 @@
 {
+	"CFG_GameToggleHints": { "message": "Afficher les indices du solveur durant une partie" },
+	"CFG_OptimizerParallelLoad": { "message": "Utilisation du CPU pour l'optimisation des decks" },
+	"CFG_OptimizerParallelLoadHint": { "message": "Contrôle le nombre de processeurs logiques utilisés pour les calculs. Ne réduit pas la charge des processeurs individuels !" },
 	"CI_NotAvail": { "message": "Indisponible" },
 	"CI_NpcReward": { "message": "Récompense du PNJ :" },
 	"CI_ShowMap": { "message": "Afficher sur la carte" },
@@ -19,6 +22,7 @@
 	"DO_CollectionPage": { "message": "Page de collection : {0}" },
 	"DO_DeckBuilderPage": { "message": "Éditeur de deck : {0}" },
 	"DO_DeckScore": { "message": "Score du deck :" },
+	"DO_Guess": { "message": "Deviner" },
 	"DO_Npc": { "message": "PNJ :" },
 	"DO_RegionRules": { "message": "Règles de la région :" },
 	"DO_Start": { "message": "Optimiser le deck" },
@@ -52,7 +56,6 @@
 	"ST_GameMove": { "message": "Solveur.Coup :" },
 	"ST_GameMoveDisabled": { "message": "désactivé" },
 	"ST_GameNpc": { "message": "Solveur.PNJ :" },
-	"ST_GameToggleHints": { "message": "Afficher les indices du solveur durant une partie" },
 	"ST_PrepNpc": { "message": "Prép.PNJ :" },
 	"ST_PrepRules": { "message": "Prép.Règles :" },
 	"ST_Status": { "message": "État :" },

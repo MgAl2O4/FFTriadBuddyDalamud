@@ -12,6 +12,7 @@ namespace TriadBuddyPlugin
 
         public bool ShowSolverHintsInGame { get; set; } = true;
         public bool CanUseProfileReader { get; set; } = true;
+        public float DeckOptimizerCPU { get; set; } = 1.0f;
 
         public bool CheckCardNpcMatchOnly { get; set; } = false;
         public bool CheckCardNotOwnedOnly { get; set; } = false;

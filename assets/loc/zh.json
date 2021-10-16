@@ -1,4 +1,7 @@
 {
+	"CFG_GameToggleHints": { "message": "在游戏中显示求解器提示" },
+	"CFG_OptimizerParallelLoad": { "message": "牌组优化器的 CPU 使用" },
+	"CFG_OptimizerParallelLoadHint": { "message": "控制用于计算的逻辑处理器数量。不会减少单个CPU的负荷！" },
 	"CI_NotAvail": { "message": "暂无数据" },
 	"CI_NpcReward": { "message": "NPC奖励:" },
 	"CI_ShowMap": { "message": "在地图上显示" },
@@ -19,6 +22,7 @@
 	"DO_CollectionPage": { "message": "收藏页面: {0}" },
 	"DO_DeckBuilderPage": { "message": "卡组编辑页面: {0}" },
 	"DO_DeckScore": { "message": "牌组评分:" },
+	"DO_Guess": { "message": "猜测" },
 	"DO_Npc": { "message": "NPC:" },
 	"DO_RegionRules": { "message": "流行规则:" },
 	"DO_Start": { "message": "优化牌组" },
@@ -52,7 +56,6 @@
 	"ST_GameMove": { "message": "求解器.移动:" },
 	"ST_GameMoveDisabled": { "message": "禁用" },
 	"ST_GameNpc": { "message": "求解器.NPC:" },
-	"ST_GameToggleHints": { "message": "在游戏中显示求解器提示" },
 	"ST_PrepNpc": { "message": "准备.NPC:" },
 	"ST_PrepRules": { "message": "准备.规则:" },
 	"ST_Status": { "message": "状态:" },
