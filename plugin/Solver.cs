@@ -295,7 +295,7 @@ namespace TriadBuddyPlugin
                     var deckSolver = new TriadGameSolver();
                     deckSolver.InitializeSimulation(preGameMods);
 
-                    var gameState = deckSolver.StartSimulation(kvp.Value.solverDeck, preGameNpc.Deck, ETriadGameState.InProgressRed);
+                    var gameState = deckSolver.StartSimulation(kvp.Value.solverDeck, preGameNpc.Deck, ETriadGameState.InProgressBlue);
                     var calcContext = new DeckSolverContext() { solver = deckSolver, gameState = gameState, deckId = kvp.Value.id, passId = preGameId };
 
                     Action<object> solverAction = (ctxOb) =>
@@ -427,7 +427,7 @@ namespace TriadBuddyPlugin
             var deckSolver = new TriadGameSolver();
             deckSolver.InitializeSimulation(npc.Rules, regionMods);
 
-            var gameState = deckSolver.StartSimulation(deck, npc.Deck, ETriadGameState.InProgressRed);
+            var gameState = deckSolver.StartSimulation(deck, npc.Deck, ETriadGameState.InProgressBlue);
             var calcContext = new DeckSolverContext() { solver = deckSolver, gameState = gameState, callback = callback };
 
             pauseOptimizerForOptimizedEval = true;
