@@ -96,6 +96,7 @@ namespace TriadBuddyPlugin
             if (result)
             {
                 FinalizeNpcList();
+                FixLocalizedNameCasing();
 
                 PluginLog.Log($"Loaded game data for cards:{cardDB.cards.Count}, npcs:{npcDB.npcs.Count}");
                 IsDataReady = true;
@@ -495,6 +496,25 @@ namespace TriadBuddyPlugin
                         if (itemRow != null)
                         {
                             var cardOb = cardsDB.FindById((int)itemRow.AdditionalData);
+                            if (cardOb == null)
+                            {
+                                // try to match card by bname, remove known prefix/suffix
+                                var cardName = itemRow.Name.ToString().Replace("-Karte", "");
+                                cardOb = (cardName.Length < 2) ? null : cardsDB.cards.Find(x => (x != null) && x.Name.GetLocalized().Equals(cardName, StringComparison.InvariantCultureIgnoreCase));
+
+                                if (cardOb == null)
+                                {
+                                    cardName = itemRow.Singular.ToString().Replace("-Karte", "");
+                                    cardOb = (cardName.Length < 2) ? null : cardsDB.cards.Find(x => (x != null) && x.Name.GetLocalized().Equals(cardName, StringComparison.InvariantCultureIgnoreCase));
+
+                                    if (cardOb == null)
+                                    {
+                                        cardName = itemRow.Plural.ToString().Replace("-Karten", "");
+                                        cardOb = (cardName.Length < 2) ? null : cardsDB.cards.Find(x => (x != null) && x.Name.GetLocalized().Equals(cardName, StringComparison.InvariantCultureIgnoreCase));
+                                    }
+                                }
+                            }
+
                             if (cardOb != null)
                             {
                                 var cardInfo = gameCardDB.FindById(cardOb.Id);
@@ -507,7 +527,8 @@ namespace TriadBuddyPlugin
                             }
                             else
                             {
-                                PluginLog.Error($"Failed to parse npc reward data! npc:{kvp.Value.triadId}, rewardId:{itemId}");
+                                var npcName = (kvp.Value.gameLogicOb != null) ? kvp.Value.gameLogicOb.Name.GetLocalized() : "??";
+                                PluginLog.Error($"Failed to parse npc reward data! npc:{kvp.Value.triadId} ({npcName}), rewardId:{itemId} ({itemRow.Name} | {itemRow.Singular})");
                             }
                         }
                     }
@@ -586,6 +607,49 @@ namespace TriadBuddyPlugin
                 }
 
                 gameNpcDB.mapNpcs.Add(gameNpcOb.npcId, gameNpcOb);
+            }
+        }
+
+        private void FixLocalizedNameCasing()
+        {
+            var locDB = LocalizationDB.Get();
+            var excludedList = new string[] { "the", "goe", "van", "des", "sas", "yae", "tol", "der", "rem" };
+
+            var fixLists = new List<LocString>[] { locDB.LocCardNames, locDB.LocNpcNames };
+            foreach (var list in fixLists)
+            {
+                foreach (var entry in list)
+                {
+                    string[] tokens = entry.Text.Split(' ');
+                    int numChangedTokens = 0;
+
+                    for (int idx = 0; idx < tokens.Length; idx++)
+                    {
+                        if (tokens[idx].Length > 2 && Array.IndexOf(excludedList, tokens[idx]) < 0)
+                        {
+                            if (tokens[idx][1] == '\'')
+                            {
+                                // don't touch, i have no idea how french capitalization work
+                                continue;
+                            }
+
+                            bool hasLowerCase = char.IsLower(tokens[idx], 0);
+                            if (hasLowerCase)
+                            {
+                                var newToken = tokens[idx].Substring(0, 1).ToUpper() + tokens[idx].Substring(1);
+                                tokens[idx] = newToken;
+                                numChangedTokens++;
+                            }
+                        }
+                    }
+
+                    if (numChangedTokens > 0)
+                    {
+                        var newText = string.Join(' ', tokens);
+                        //PluginLog.Log($"fixed casing: '{entry.Text}' => '{newText}'");
+                        entry.Text = newText;
+                    }
+                }
             }
         }
 
