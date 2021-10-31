@@ -266,21 +266,7 @@ namespace TriadBuddyPlugin
                 var drawPos = currentPos + cardImagePos[idx] + centerOffset;
                 drawPos.X += Math.Max(0, imageBoxOffsetX - centerOffset.X);
 
-                ImGui.SetCursorPos(drawPos);
-                ImGui.Image(cardBackgroundImage.ImGuiHandle, cardImageSize, cardBackgroundUV0, cardBackgroundUV1);
-
-                var cardImage = (shownCardIds != null) ? GetCardTexture(shownCardIds[idx]) : null;
-                if (cardImage != null)
-                {
-                    ImGui.SetCursorPos(drawPos);
-                    ImGui.Image(cardImage.ImGuiHandle, cardImageSize);
-
-                    if (ImGui.IsItemHovered())
-                    {
-                        bool isDeckEditorOpen = uiReaderDeckEdit?.IsVisible ?? false;
-                        ImGui.SetTooltip(isDeckEditorOpen ? shownCardTooltipsDeckEdit[idx] : shownCardTooltipsCollection[idx]);
-                    }
-                }
+                DrawCard(drawPos, (shownCardIds != null) ? shownCardIds[idx] : -1, idx);
             }
 
             // stat block
@@ -354,6 +340,70 @@ namespace TriadBuddyPlugin
                 if (ImGui.Button(locOptimizeAbort, new Vector2(-1, 0)))
                 {
                     AbortOptimizer();
+                }
+            }
+        }
+
+        private void DrawCard(Vector2 drawPos, int cardId, int tooltipIdx)
+        {
+            ImGui.SetCursorPos(drawPos);
+            ImGui.Image(cardBackgroundImage.ImGuiHandle, cardImageSize, cardBackgroundUV0, cardBackgroundUV1);
+
+            var cardImage = (cardId >= 0) ? GetCardTexture(cardId) : null;
+            if (cardImage != null)
+            {
+                ImGui.SetCursorPos(drawPos);
+                var drawOffset = ImGui.GetCursorScreenPos();
+
+                ImGui.Image(cardImage.ImGuiHandle, cardImageSize);
+
+                if (ImGui.IsItemHovered())
+                {
+                    bool isDeckEditorOpen = uiReaderDeckEdit?.IsVisible ?? false;
+                    ImGui.SetTooltip(isDeckEditorOpen ? shownCardTooltipsDeckEdit[tooltipIdx] : shownCardTooltipsCollection[tooltipIdx]);
+                }
+
+                var cardOb = TriadCardDB.Get().FindById(cardId);
+                if (cardOb != null)
+                {
+                    var textU = cardOb.Sides[(int)ETriadGameSide.Up].ToString("X");
+                    var textD = cardOb.Sides[(int)ETriadGameSide.Down].ToString("X");
+                    var textL = cardOb.Sides[(int)ETriadGameSide.Left].ToString("X");
+                    var textR = cardOb.Sides[(int)ETriadGameSide.Right].ToString("X");
+
+                    var textSizeU = ImGui.CalcTextSize(textU);
+                    var textSizeD = ImGui.CalcTextSize(textD);
+                    var textSizeL = ImGui.CalcTextSize(textL);
+                    var textSizeR = ImGui.CalcTextSize(textR);
+                    var textSizePadding = ImGui.CalcTextSize("#");
+
+                    var padding = 0 * ImGuiHelpers.GlobalScale;
+                    var relativeDrawY = cardImageSize.Y * 3 / 4;
+                    if (relativeDrawY + padding + textSizeD.Y > cardImageSize.Y)
+                    {
+                        relativeDrawY = cardImageSize.Y - textSizeD.Y - padding;
+                    }
+
+                    var useCenterX = drawPos.X + (cardImageSize.X * 0.5f);
+                    var useCenterY = drawPos.Y + relativeDrawY;
+
+                    drawOffset -= drawPos;
+                    ImGui.GetWindowDrawList().AddRectFilled(
+                        new Vector2(drawOffset.X + useCenterX - padding - textSizePadding.X * 2, drawOffset.Y + useCenterY - padding - textSizePadding.Y),
+                        new Vector2(drawOffset.X + useCenterX + padding + textSizePadding.X * 2, drawOffset.Y + useCenterY + padding + textSizePadding.Y),
+                        0x80000000);
+
+                    ImGui.SetCursorPos(new Vector2(useCenterX - (textSizeU.X * 0.5f), useCenterY - padding - textSizeU.Y));
+                    ImGui.Text(textU);
+
+                    ImGui.SetCursorPos(new Vector2(useCenterX - (textSizeD.X * 0.5f), useCenterY + padding));
+                    ImGui.Text(textD);
+
+                    ImGui.SetCursorPos(new Vector2(useCenterX + padding + textSizePadding.X, useCenterY - (textSizeL.Y * 0.5f)));
+                    ImGui.Text(textL);
+
+                    ImGui.SetCursorPos(new Vector2(useCenterX - padding - textSizePadding.X - textSizeR.X, useCenterY - (textSizeR.Y * 0.5f)));
+                    ImGui.Text(textR);
                 }
             }
         }
