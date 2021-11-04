@@ -560,6 +560,9 @@ namespace TriadBuddyPlugin
                         // normal and annoying.
                         // PluginLog.Log($"Failed to add triad[{cacheOb.triadId}], enpc[{kvp.Key}], name:{cacheOb.gameLogicOb.Name.GetLocalized()} - no location found!");
                     }
+
+                    // npc.Id is their index in data array, refresh it
+                    cacheOb.gameLogicOb.Id = (cacheOb.mapId != 0) ? cacheOb.gameLogicIdx : -1;
                 }
             }
 
