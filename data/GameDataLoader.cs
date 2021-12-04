@@ -623,6 +623,11 @@ namespace TriadBuddyPlugin
             {
                 foreach (var entry in list)
                 {
+                    if (entry == null || string.IsNullOrEmpty(entry.Text))
+                    {
+                        continue;
+                    }
+
                     string[] tokens = entry.Text.Split(' ');
                     int numChangedTokens = 0;
 
