@@ -62,7 +62,7 @@ namespace TriadBuddyPlugin
             locDropStats = Localization.Localize("NS_DropStats", "Reward stats:");
             locDropMGP = Localization.Localize("NS_DropMGPAvg", "MGP: {0}");
             locDropCard = Localization.Localize("NS_DropCardName", "{0} card: {1}");
-            locEstMGP = Localization.Localize("NS_DropPerMatch", "MPG per match:");
+            locEstMGP = Localization.Localize("NS_DropPerMatch", "MGP per match:");
             locEstMGPHint = Localization.Localize("NS_DropIncludesSelling", "Includes MGP from selling cards");
         }
 
