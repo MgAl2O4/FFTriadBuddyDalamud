@@ -1,6 +1,7 @@
 ﻿using Dalamud.Game.Gui;
 using Dalamud.Logging;
 using FFTriadBuddy;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using MgAl2O4.Utils;
 using System;
@@ -25,6 +26,7 @@ namespace TriadBuddyPlugin
             [FieldOffset(0x28e)] public byte NumSideL;
             [FieldOffset(0x290)] public int CardIconId;                 // texture id for button (82100+) or 0 when missing
 
+            [FieldOffset(0x314)] public byte FilterMode;                // 0xD = all, 0x2 = only owned, 0xC = only missing
             [FieldOffset(0x500)] public byte PageIndex;                 // ignores writes
             [FieldOffset(0x504)] public byte CardIndex;                 // can be written to, yay!
         }
@@ -85,6 +87,15 @@ namespace TriadBuddyPlugin
         public void OnAddonShown(IntPtr addonPtr)
         {
             cachedAddonAgentPtr = (addonPtr != IntPtr.Zero) ? gameGui.FindAgentInterface(addonPtr) : IntPtr.Zero;
+
+            if (cachedAddonAgentPtr == IntPtr.Zero)
+            {
+                // failsafe, likely to break with patch
+                cachedAddonAgentPtr = LoadFailsafeAgent(gameGui);
+#if DEBUG
+                PluginLog.Log($"using agentPtr from failsafe: {(ulong)cachedAddonAgentPtr:X}");
+#endif // DEBUG
+            }
         }
 
         public unsafe void OnAddonUpdate(IntPtr addonPtr)
@@ -103,10 +114,14 @@ namespace TriadBuddyPlugin
             (cachedState.screenPos, cachedState.screenSize) = GUINodeUtils.GetNodePosAndSize(addon->AtkUnitBase.RootNode);
             (cachedState.descriptionPos, cachedState.descriptionSize) = GUINodeUtils.GetNodePosAndSize(descNode);
 
-            var addonAgent = (AgentTriadCardList*)cachedAddonAgentPtr;
+            byte newFilterMode =
+                (addon->FilterMode == 0x2) ? (byte)1 :
+                (addon->FilterMode == 0xC) ? (byte)2 :
+                (byte)0;
+
             if (cachedState.pageIndex != addon->PageIndex ||
                 cachedState.cardIndex != addon->CardIndex ||
-                cachedState.filterMode != addonAgent->FilterMode ||
+                cachedState.filterMode != newFilterMode ||
                 cachedState.numU != addon->NumSideU)
             {
                 cachedState.numU = addon->NumSideU;
@@ -118,12 +133,29 @@ namespace TriadBuddyPlugin
                 cachedState.iconId = addon->CardIconId;
                 cachedState.pageIndex = addon->PageIndex;
                 cachedState.cardIndex = addon->CardIndex;
-                cachedState.filterMode = addonAgent->FilterMode;
+                cachedState.filterMode = newFilterMode;
 
                 OnUIStateChanged?.Invoke(cachedState);
             }
 
             SetStatus(Status.NoErrors);
+        }
+
+        public static unsafe IntPtr LoadFailsafeAgent(GameGui gameGui)
+        {
+            const uint agentId = 176;
+
+            var uiModule = (UIModule*)gameGui.GetUIModule();
+            if (uiModule != null)
+            {
+                var agentModule = uiModule->GetAgentModule();
+                if (agentModule != null)
+                {
+                    return new IntPtr(agentModule->GetAgentByInternalID(agentId));
+                }
+            }
+
+            return IntPtr.Zero;
         }
 
         public unsafe bool SetPageAndGridView(int pageIndex, int cellIndex)

@@ -159,6 +159,10 @@ namespace TriadBuddyPlugin
 
             IntPtr addonPtr = gameGui.GetAddonByName(GetAddonName(), 1);
             IntPtr agentPtr = gameGui.FindAgentInterface("GSInfoCardDeck");
+            if (agentPtr == IntPtr.Zero)
+            {
+                agentPtr = UIReaderTriadCardList.LoadFailsafeAgent(gameGui);
+            }
 
             if (addonPtr != IntPtr.Zero && agentPtr != IntPtr.Zero)
             {
