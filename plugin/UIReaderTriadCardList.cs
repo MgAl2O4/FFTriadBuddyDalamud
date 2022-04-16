@@ -143,15 +143,17 @@ namespace TriadBuddyPlugin
 
         public static unsafe IntPtr LoadFailsafeAgent(GameGui gameGui)
         {
-            const uint agentId = 176;
-
             var uiModule = (UIModule*)gameGui.GetUIModule();
             if (uiModule != null)
             {
                 var agentModule = uiModule->GetAgentModule();
                 if (agentModule != null)
                 {
-                    return new IntPtr(agentModule->GetAgentByInternalID(agentId));
+                    var agentPtr = agentModule->GetAgentByInternalId(FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentId.GoldSaucer);
+                    if (agentPtr != null)
+                    {
+                        return new IntPtr(agentPtr);
+                    }
                 }
             }
 
