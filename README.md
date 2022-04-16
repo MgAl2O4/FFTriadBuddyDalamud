@@ -12,9 +12,11 @@ Pretty pictures / feature list:
 
 Standalone tool can be found here: https://github.com/MgAl2O4/FFTriadBuddy
 
-## Experimental setup
-If you were using custom repo path to get this plugin, you will start seeing loading errors. Custom repo is now removed from GitHub and plugin is part of Dalamud's official plugin list.  
-Remove old path from your settings, no longer needed, plugin will continue to work and update itself.
+## PvP / Tournament support
+
+Solver is based around known NPC decks. Tournaments break that rule and allow much wider selection of cards, making all predictions garbage.  
+Yes, you can copy project and turn off PvP check - license allows to modify code as much as you like. However, solver will not magically start planning for unexpected cards and you may as well place stuff on board randomly. If you wish to have true PvP support, please be ready to redo entire solver as well. You have been warned :)
+
 
 ## Translation
 
