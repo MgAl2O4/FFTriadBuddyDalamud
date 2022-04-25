@@ -44,6 +44,7 @@ namespace TriadBuddyPlugin
         public UnsafeReaderTriadCards memReader;
         public Dictionary<int, GameCardInfo> mapCards = new();
         public List<int> ownedCardIds = new();
+        private int maxCardId = 0;
 
         public static GameCardDB Get() { return instance; }
 
@@ -57,12 +58,25 @@ namespace TriadBuddyPlugin
             return null;
         }
 
+        public void OnLoaded()
+        {
+            // find & cache max available card Id
+            // can't trust number of entries since list is no longer continuous
+            maxCardId = 0;
+            foreach (var kvp in mapCards)
+            {
+                if (maxCardId < kvp.Key)
+                {
+                    maxCardId = kvp.Key;
+                }
+            }
+        }
+
         public void Refresh()
         {
-            int maxId = mapCards.Count;
             ownedCardIds.Clear();
 
-            if (memReader == null || memReader.HasErrors || maxId <= 0)
+            if (memReader == null || memReader.HasErrors || maxCardId <= 0)
             {
                 return;
             }
@@ -70,7 +84,7 @@ namespace TriadBuddyPlugin
             // consider switching to memory read for bulk checks? not that UI itself cares about it...
             // check IsTriadCardOwned() for details, uiState+0x15ce5 is a byte array of szie 0x29 used as a bitmask with cardId => buffer[id / 8] & (1 << (id % 8))
 
-            for (int id = 1; id <= maxId; id++)
+            for (int id = 1; id <= maxCardId; id++)
             {
                 bool isOwned = memReader.IsCardOwned(id);
                 if (isOwned)

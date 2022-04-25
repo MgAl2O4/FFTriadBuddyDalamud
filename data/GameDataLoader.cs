@@ -97,6 +97,7 @@ namespace TriadBuddyPlugin
             {
                 FinalizeNpcList();
                 FixLocalizedNameCasing();
+                cardInfoDB.OnLoaded();
 
                 PluginLog.Log($"Loaded game data for cards:{cardDB.cards.Count}, npcs:{npcDB.npcs.Count}");
                 IsDataReady = true;
