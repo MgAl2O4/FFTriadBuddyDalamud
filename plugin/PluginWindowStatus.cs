@@ -194,8 +194,10 @@ namespace TriadBuddyPlugin
                 uiReaderGame.HasErrors || solver.HasErrors ? colorErr :
                 colorOk;
 
+            var availRegionWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetWindowContentRegionMin().X;
+
             ImGui.TextColored(statusColor, statusDesc);
-            ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - (50 * ImGuiHelpers.GlobalScale));
+            ImGui.SameLine(availRegionWidth - (50 * ImGuiHelpers.GlobalScale));
 
             if (ImGuiComponents.IconButton(FontAwesomeIcon.Bug))
             {
@@ -206,7 +208,7 @@ namespace TriadBuddyPlugin
                 ImGui.SetTooltip(locDebugMode);
             }
 
-            ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - (20 * ImGuiHelpers.GlobalScale));
+            ImGui.SameLine(availRegionWidth - (20 * ImGuiHelpers.GlobalScale));
             if (ImGuiComponents.IconButton(FontAwesomeIcon.Cog))
             {
                 showConfigs = true;

@@ -246,8 +246,9 @@ namespace TriadBuddyPlugin
             var imageBoxOffsetX = Math.Max(0, textWidthMax - imageBoxIndentX);
 
             var currentPos = ImGui.GetCursorPos();
+            var availRegionWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetWindowContentRegionMin().X;
 
-            ImGui.SetCursorPos(new Vector2(ImGui.GetWindowContentRegionWidth() - (20 * ImGuiHelpers.GlobalScale), orgPos.Y));
+            ImGui.SetCursorPos(new Vector2(availRegionWidth - (20 * ImGuiHelpers.GlobalScale), orgPos.Y));
             if (ImGuiComponents.IconButton(FontAwesomeIcon.Cog))
             {
                 OnConfigRequested?.Invoke();
@@ -258,7 +259,7 @@ namespace TriadBuddyPlugin
             ImGui.SameLine();
             ImGui.Dummy(new Vector2(75 * 2, 1));
 
-            var centerOffset = new Vector2((ImGui.GetWindowContentRegionWidth() - cardImageBox.X) / 2, 10 * ImGuiHelpers.GlobalScale);
+            var centerOffset = new Vector2((availRegionWidth - cardImageBox.X) / 2, 10 * ImGuiHelpers.GlobalScale);
             var footerPosY = currentPos.Y + cardImageBox.Y + (20 * ImGuiHelpers.GlobalScale);
 
             for (int idx = 0; idx < cardImagePos.Length; idx++)
@@ -333,7 +334,7 @@ namespace TriadBuddyPlugin
             }
             else
             {
-                ImGui.SetNextItemWidth(ImGui.GetWindowContentRegionWidth() * 0.75f);
+                ImGui.SetNextItemWidth(availRegionWidth * 0.75f);
                 ImGui.ProgressBar(optimizerProgress, Vector2.Zero);
                 ImGui.SameLine();
 
