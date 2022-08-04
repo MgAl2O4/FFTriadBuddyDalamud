@@ -1,16 +1,23 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-	<AssemblyName>TriadBuddy</AssemblyName>
+    <Authors>MgAl2O4</Authors>
+    <Version>1.7.0.0</Version>
+    <Description>Triple triad solver</Description>
+    <Copyright>(c) 2022 MgAl2O4</Copyright>
+    <PackageProjectUrl>https://github.com//MgAl2O4/FFTriadBuddyDalamud</PackageProjectUrl>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <TargetFramework>net6.0-windows</TargetFramework>
     <Platforms>x64</Platforms>
     <LangVersion>9.0</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
-    <AssemblyVersion>1.7.0.0</AssemblyVersion>
-	<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-	<DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,9 +40,6 @@
 
   <ItemGroup>
     <PackageReference Include="DalamudPackager" Version="2.1.7" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Reference Include="Dalamud">
       <HintPath>$(DalamudLibPath)Dalamud.dll</HintPath>
       <Private>false</Private>
@@ -64,7 +68,7 @@
 
   <ItemGroup>
     <None Update="TriadBuddy.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
