@@ -69,8 +69,8 @@ namespace TriadBuddyPlugin
                 // .text: 83 fa 09 77 1d 41 83 f8 04
                 // SetCardInDeck(void* GSProfileData, uint deckIdx, uint cardIdx, ushort cardId)
                 // 
-                // GSProfileData = uiModule.vf28()
-                //     e.g. used by GoldSaucerInfo addon in .text: 48 8b f1 48 8b 49 10 48 8b 01 ff 90 e0
+                // GSProfileData = uiModule.vf29()
+                //     e.g. used by GoldSaucerInfo addon in .text: 0f 94 c0 88 46 58 48 8b 74 24 38 48 83 c4 20
                 //     SaveDeckToProfile(void* agentPtr)
                 //
                 //     5.58: addr = uiModulePtr + 0x90dd0, this function is just getter for member var holding pointer
@@ -79,7 +79,7 @@ namespace TriadBuddyPlugin
                 if (uiModulePtr != IntPtr.Zero)
                 {
                     // would be a nice place to use gameGui.address.GetVirtualFunction<> :(
-                    var getGSProfileDataPtr = new IntPtr(((UIModule*)uiModulePtr)->vfunc[28]);
+                    var getGSProfileDataPtr = new IntPtr(((UIModule*)uiModulePtr)->vfunc[29]);
                     var getGSProfileData = Marshal.GetDelegateForFunctionPointer<GetGSProfileDataDelegate>(getGSProfileDataPtr);
 
                     var profileData = getGSProfileData(uiModulePtr);
