@@ -230,23 +230,24 @@ namespace TriadBuddyPlugin
         {
             // don't report status here, just log stuff out
             var parseCtx = new GameUIParser();
-            preGameNpc = parseCtx.ParseNpc(state.npc, false);
-            if (preGameNpc == null)
+
+            var newPreGameNpc = parseCtx.ParseNpc(state.npc, false);
+            if (newPreGameNpc == null)
             {
                 parseCtx.OnFailedNpcSilent(state.npc);
             }
 
-            preGameMods.Clear();
+            var newPreGameMods = new List<TriadGameModifier>();
             foreach (var rule in state.rules)
             {
                 var ruleOb = parseCtx.ParseModifier(rule, false);
                 if (ruleOb != null && !(ruleOb is TriadGameModifierNone))
                 {
-                    preGameMods.Add(ruleOb);
+                    newPreGameMods.Add(ruleOb);
                 }
             }
 
-            lastGameNpc = preGameNpc;
+            lastGameNpc = newPreGameNpc;
 
             bool canReadFromProfile = profileGS != null && !profileGS.HasErrors;
             bool canProcessDecks = !parseCtx.HasErrors &&
@@ -257,14 +258,9 @@ namespace TriadBuddyPlugin
 
             if (canProcessDecks)
             {
-                // bump pass id, pending workers from previous update won't try to write their results
-                preGameId++;
-                preGameDecks.Clear();
-                preGameBestId = -1;
-                preGameSolved = 0;
-
                 var profileDecks = canReadFromProfile ? profileGS.GetPlayerDecks() : null;
                 int numDecks = (profileDecks != null) ? profileDecks.Length : state.decks.Count;
+                var newPreGameDecks = new Dictionary<int, DeckData>();
 
                 TriadDeck anyDeckOb = null;
                 for (int deckIdx = 0; deckIdx < numDecks; deckIdx++)
@@ -277,10 +273,27 @@ namespace TriadBuddyPlugin
 
                     if (!parseCtx.HasErrors && deckData != null)
                     {
-                        preGameDecks.Add(deckData.id, deckData);
+                        newPreGameDecks.Add(deckData.id, deckData);
                         anyDeckOb = deckData.solverDeck;
                     }
                 }
+
+                // check if actually have something to do
+                bool needsDeckEval = IsDeckEvalDataChanged(newPreGameNpc, newPreGameMods, newPreGameDecks);
+                if (!needsDeckEval)
+                {
+                    Logger.WriteLine("ignore deck eval, same input data");
+                    return;
+                }
+
+                preGameNpc = newPreGameNpc;
+                preGameMods = newPreGameMods;
+                preGameDecks = newPreGameDecks;
+
+                // bump pass id, pending workers from previous update won't try to write their results
+                preGameId++;
+                preGameBestId = -1;
+                preGameSolved = 0;
 
                 // initialize screenMemory.playerDeck, see comment in OnSolvedDeck() for details
                 preGameAllProfileDecksEmpty = (profileDecks != null) && (anyDeckOb == null);
@@ -311,6 +324,47 @@ namespace TriadBuddyPlugin
                 pauseOptimizerForDeckEval = preGameDecks.Count > 0;
                 UpdateDeckOptimizerPause();
             }
+        }
+
+        private bool IsDeckEvalDataChanged(TriadNpc testNpc, List<TriadGameModifier> testMods, Dictionary<int, DeckData> testDecks)
+        {
+            if (testNpc != preGameNpc)
+            {
+                return true;
+            }
+
+            if (testMods.Count != preGameMods.Count)
+            {
+                return true;
+            }
+
+            for (int idx = 0; idx < testMods.Count; idx++)
+            {
+                if (testMods[idx] != preGameMods[idx])
+                {
+                    return true;
+                }
+            }
+
+            if (testDecks.Count != preGameDecks.Count)
+            {
+                return true;
+            }
+
+            foreach (var kvp in testDecks)
+            {
+                if (!preGameDecks.TryGetValue(kvp.Key, out DeckData deckData))
+                {
+                    return true;
+                }
+
+                if (!deckData.solverDeck.Equals(kvp.Value.solverDeck))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private DeckData ParseDeckDataFromProfile(UnsafeReaderProfileGS.PlayerDeck deckOb, GameUIParser ctx)
