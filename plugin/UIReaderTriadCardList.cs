@@ -26,9 +26,9 @@ namespace TriadBuddyPlugin
             [FieldOffset(0x28e)] public byte NumSideL;
             [FieldOffset(0x290)] public int CardIconId;                 // texture id for button (82100+) or 0 when missing
 
-            [FieldOffset(0x314)] public byte FilterMode;                // 0xD = all, 0x2 = only owned, 0xC = only missing
-            [FieldOffset(0x500)] public byte PageIndex;                 // ignores writes
-            [FieldOffset(0x504)] public byte CardIndex;                 // can be written to, yay!
+            [FieldOffset(0x31c)] public byte FilterMode;                // 0xD = all, 0x3 = only owned, 0xC = only missing
+            [FieldOffset(0x50c)] public byte PageIndex;                 // ignores writes
+            [FieldOffset(0x514)] public byte CardIndex;                 // can be written to, yay!
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 0x110)]               // it's around 0x200?
@@ -115,7 +115,7 @@ namespace TriadBuddyPlugin
             (cachedState.descriptionPos, cachedState.descriptionSize) = GUINodeUtils.GetNodePosAndSize(descNode);
 
             byte newFilterMode =
-                (addon->FilterMode == 0x2) ? (byte)1 :
+                (addon->FilterMode == 0x3) ? (byte)1 :
                 (addon->FilterMode == 0xC) ? (byte)2 :
                 (byte)0;
 
