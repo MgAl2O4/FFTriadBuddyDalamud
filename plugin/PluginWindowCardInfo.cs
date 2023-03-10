@@ -72,6 +72,12 @@ namespace TriadBuddyPlugin
             bool canShow = (uiReaderCardList != null) && uiReaderCardList.IsVisible && (uiReaderCardList.cachedState?.iconId == 0);
             if (canShow)
             {
+                if (!IsOpen)
+                {
+                    // force refresh owned cards, required for parsing id based on collection index
+                    GameCardDB.Get().Refresh();
+                }
+
                 var parseCtx = new GameUIParser();
                 selectedCard = uiReaderCardList.cachedState.ToTriadCard(parseCtx);
 

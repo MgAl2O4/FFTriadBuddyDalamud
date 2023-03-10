@@ -246,7 +246,14 @@ namespace TriadBuddyPlugin
 
         public TriadCard ToTriadCard(GameUIParser ctx)
         {
-            return ctx.ParseCard(numU, numL, numD, numR, GameDataLoader.ConvertToTriadType(type), GameDataLoader.ConvertToTriadRarity(rarity), false);
+            var matchOb = ctx.ParseCard(numU, numL, numD, numR, (ETriadCardType)type, (ETriadCardRarity)rarity, false);
+            if (matchOb == null || matchOb.SameNumberId >= 0)
+            {
+                // number match is increasing unreliable, use grid location instead
+                return ctx.ParseCardByGridLocation(pageIndex, cardIndex, filterMode);
+            }
+
+            return matchOb;
         }
     }
 }

@@ -58,6 +58,28 @@ namespace TriadBuddyPlugin
             return null;
         }
 
+        public GameCardInfo FindByGridLocation(int pageIdx, int cellIdx, int filterMode) 
+        {
+            if (pageIdx < 0 || cellIdx < 0 || filterMode < 0 || filterMode > 2)
+            {
+                return null;
+            }
+
+            foreach (var kvp in mapCards)
+            {
+                if (kvp.Value != null)
+                {
+                    var pos = kvp.Value.Collection[filterMode];
+                    if (pos.PageIndex == pageIdx && pos.CellIndex == cellIdx)
+                    {
+                        return kvp.Value;
+                    }
+                }
+            }
+
+            return null;
+        }
+
         public void OnLoaded()
         {
             // find & cache max available card Id

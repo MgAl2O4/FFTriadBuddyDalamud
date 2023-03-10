@@ -35,7 +35,7 @@ namespace TriadBuddyPlugin
                 if (matchOb.SameNumberId >= 0)
                 {
                     // ambiguous match, use texture for exact Id
-                    matchOb = ParseCard(texPath, false);
+                    matchOb = ParseCardByTexture(texPath, false);
                 }
             }
 
@@ -53,17 +53,37 @@ namespace TriadBuddyPlugin
             if (matchOb == null && markFailed)
             {
                 OnFailedCard($"[{numU}-{numL}-{numD}-{numR}], type:{type}, rarity:{rarity}");
+                return null;
             }
 
             return matchOb;
         }
 
-        public TriadCard ParseCard(string texPath, bool markFailed = true)
+        public TriadCard ParseCardByTexture(string texPath, bool markFailed = true)
         {
             var matchOb = cards.FindByTexture(texPath);
             if (matchOb == null && markFailed)
             {
                 OnFailedCard(texPath);
+            }
+
+            return matchOb;
+        }
+
+        public TriadCard ParseCardByGridLocation(int pageIdx, int cellIdx, int filterMode, bool markFailed = true)
+        {
+            var matchInfoOb = GameCardDB.Get().FindByGridLocation(pageIdx, cellIdx, filterMode);
+            if (matchInfoOb == null && markFailed)
+            {
+                OnFailedCard($"page:{pageIdx}, cell:{cellIdx}, mode:{filterMode}");
+                return null;
+            }
+
+            var matchOb = cards.FindById(matchInfoOb.CardId);
+            if (matchInfoOb == null && markFailed)
+            {
+                OnFailedCard($"page:{pageIdx}, cell:{cellIdx}, mode:{filterMode}, id:{matchInfoOb.CardId}");
+                return null;
             }
 
             return matchOb;
