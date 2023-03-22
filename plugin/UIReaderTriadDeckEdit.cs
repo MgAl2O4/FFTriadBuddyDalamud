@@ -16,11 +16,13 @@ namespace TriadBuddyPlugin
         {
             [FieldOffset(0x0)] public AtkUnitBase AtkUnitBase;
 
-            [FieldOffset(0xD64)] public byte PageIndex;                 // ignores writes
-            [FieldOffset(0xD68)] public byte CardIndex;                 // can be written to, yay!
+            [FieldOffset(0xD70)] public byte PageIndex;                 // ignores writes
+            [FieldOffset(0xD74)] public byte PageIndex2;                // ignores writes
+            [FieldOffset(0xD78)] public byte CardIndex;                 // ignores writes
         }
 
         public UIStateTriadDeckEdit cachedState = new();
+        public UnsafeReaderTriadDeck unsafeDeck;
         public Action<bool> OnVisibilityChanged;
 
         public bool IsVisible { get; private set; }
@@ -177,8 +179,11 @@ namespace TriadBuddyPlugin
                 agent->FilterDeckSorting = 0;
                 agent->FilterMode = 0;
 
-                agent->PageIndex = pageIndex;
-                addon->CardIndex = (byte)cellIndex;
+                // TODO: select page? doesn't react to mem writes anymore :<
+                addon->PageIndex = (byte)pageIndex;
+                addon->PageIndex2 = addon->PageIndex;
+
+                unsafeDeck.SetSelectedCard(addonPtr, cellIndex);
 
                 return true;
             }

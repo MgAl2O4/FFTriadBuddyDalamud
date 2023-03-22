@@ -90,6 +90,8 @@ namespace TriadBuddyPlugin
             GameCardDB.Get().memReader = memReaderTriadFunc;
             GameNpcDB.Get().memReader = memReaderTriadFunc;
 
+            uiReaderDeckEdit.unsafeDeck = new UnsafeReaderTriadDeck(sigScanner);
+
             // prep UI
             overlays = new PluginOverlays(solver, uiReaderGame, uiReaderPrep, configuration);
             statusWindow = new PluginWindowStatus(dataManager, solver, uiReaderGame, uiReaderPrep, configuration);

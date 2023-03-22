@@ -34,7 +34,7 @@ namespace TriadBuddyPlugin
         [StructLayout(LayoutKind.Explicit, Size = 0x110)]               // it's around 0x200?
         public unsafe struct AgentTriadCardList
         {
-            [FieldOffset(0x100)] public int PageIndex;                  // can be written to, yay!
+            [FieldOffset(0x100)] public int PageIndex;                  // ignores writes
             [FieldOffset(0x108)] public int CardIndex;                  // ignores writes
             [FieldOffset(0x10c)] public byte FilterMode;                // 0 = all, 1 = only owned, 2 = only missing
 
