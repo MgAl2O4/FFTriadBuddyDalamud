@@ -179,9 +179,8 @@ namespace TriadBuddyPlugin
                 agent->FilterDeckSorting = 0;
                 agent->FilterMode = 0;
 
-                // TODO: select page? doesn't react to mem writes anymore :<
-                addon->PageIndex = (byte)pageIndex;
-                addon->PageIndex2 = addon->PageIndex;
+                agent->PageIndex = (byte)pageIndex;
+                unsafeDeck.RefreshUI(agentPtr);
 
                 unsafeDeck.SetSelectedCard(addonPtr, cellIndex);
 
