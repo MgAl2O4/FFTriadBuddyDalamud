@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <Authors>MgAl2O4</Authors>
-    <Version>1.8.0.1</Version>
+    <Version>1.8.0.2</Version>
     <Description>Triple triad solver</Description>
     <Copyright>(c) 2023 MgAl2O4</Copyright>
     <PackageProjectUrl>https://github.com//MgAl2O4/FFTriadBuddyDalamud</PackageProjectUrl>
@@ -26,7 +26,8 @@
     <None Remove="assets\loc\es.json" />
     <None Remove="assets\loc\fr.json" />
     <None Remove="assets\loc\ja.json" />
-    <None Remove="assets\loc\zh.json" />
+	<None Remove="assets\loc\ko.json" />
+	<None Remove="assets\loc\zh.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -35,7 +36,8 @@
     <EmbeddedResource Include="assets\loc\es.json" />
     <EmbeddedResource Include="assets\loc\fr.json" />
     <EmbeddedResource Include="assets\loc\ja.json" />
-    <EmbeddedResource Include="assets\loc\zh.json" />
+	<EmbeddedResource Include="assets\loc\ko.json" />
+	<EmbeddedResource Include="assets\loc\zh.json" />
   </ItemGroup>
 
   <ItemGroup>
