@@ -29,6 +29,7 @@ namespace TriadBuddyPlugin
         private string locOptimize;
         private string locNpcStats;
         private string locStatusPvPMatch;
+        private bool hasCachedLocStrings;
 
         public PluginWindowDeckEval(Solver solver, UIReaderTriadPrep uiReaderPrep, PluginWindowDeckOptimize optimizerWindow, PluginWindowNpcStats statsWindow) : base("Deck Eval")
         {
@@ -55,8 +56,7 @@ namespace TriadBuddyPlugin
                 ImGuiWindowFlags.NoFocusOnAppearing |
                 ImGuiWindowFlags.NoNav;
 
-            Plugin.CurrentLocManager.LocalizationChanged += (_) => CacheLocalization();
-            CacheLocalization();
+            Plugin.CurrentLocManager.LocalizationChanged += (_) => { hasCachedLocStrings = false; };
         }
 
         public void Dispose()
@@ -64,8 +64,11 @@ namespace TriadBuddyPlugin
             // meh
         }
 
-        private void CacheLocalization()
+        private void UpdateLocalizationCache()
         {
+            if (hasCachedLocStrings) { return; }
+            hasCachedLocStrings = true;
+
             locEvaluating = Localization.Localize("DE_Evaluating", "Evaluating decks...");
             locWinChance = Localization.Localize("DE_WinChance", "win {0:P0}");
             locCantFind = Localization.Localize("DE_Failed", "Err.. Can't find best deck :<");
@@ -104,6 +107,8 @@ namespace TriadBuddyPlugin
 
         public override void Draw()
         {
+            UpdateLocalizationCache();
+
             Vector4 hintColor = colorTxt;
             string hintText = "";
 

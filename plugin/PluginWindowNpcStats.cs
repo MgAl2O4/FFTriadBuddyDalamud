@@ -28,6 +28,7 @@ namespace TriadBuddyPlugin
         private string locDropCard;
         private string locEstMGP;
         private string locEstMGPHint;
+        private bool hasCachedLocStrings;
 
         public PluginWindowNpcStats(StatTracker statTracker) : base("NPC stats")
         {
@@ -40,8 +41,7 @@ namespace TriadBuddyPlugin
             Flags = ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoScrollbar;
             RespectCloseHotkey = false;
 
-            Plugin.CurrentLocManager.LocalizationChanged += (_) => CacheLocalization();
-            CacheLocalization();
+            Plugin.CurrentLocManager.LocalizationChanged += (_) => { hasCachedLocStrings = false; };
         }
 
         public void Dispose()
@@ -49,8 +49,11 @@ namespace TriadBuddyPlugin
             // meh
         }
 
-        private void CacheLocalization()
+        private void UpdateLocalizationCache()
         {
+            if (hasCachedLocStrings) { return; }
+            hasCachedLocStrings = true;
+
             locTitle = Localization.Localize("NS_Title", "NPC stats");
             locNumTracked = Localization.Localize("NS_NumMacthes", "Num tracked matches: {0}");
             locBtnReset = Localization.Localize("NS_Reset", "Reset");
@@ -86,6 +89,7 @@ namespace TriadBuddyPlugin
             var colorName = new Vector4(0.9f, 0.9f, 0.2f, 1);
             var colorValue = new Vector4(0.2f, 0.9f, 0.9f, 1);
             var colorGray = new Vector4(0.6f, 0.6f, 0.6f, 1);
+            UpdateLocalizationCache();
 
             if (npcInfo != null)
             {

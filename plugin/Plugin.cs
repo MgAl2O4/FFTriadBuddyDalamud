@@ -110,7 +110,7 @@ namespace TriadBuddyPlugin
             windowSystem.AddWindow(new PluginWindowDeckSearch(uiReaderDeckEdit, gameGui, configuration));
 
             // prep plugin hooks
-            statusCommand = new(OnCommand);
+            statusCommand = new(OnCommand) { HelpMessage = string.Format(Localization.Localize("Cmd_Status", "Show state of {0} plugin"), Name) };
             commandManager.AddHandler("/triadbuddy", statusCommand);
 
             pluginInterface.LanguageChanged += OnLanguageChanged;
@@ -118,10 +118,6 @@ namespace TriadBuddyPlugin
             pluginInterface.UiBuilder.OpenConfigUi += OnOpenConfig;
 
             framework.Update += Framework_OnUpdateEvent;
-
-            // keep at the end to update everything created here
-            locManager.LocalizationChanged += (_) => CacheLocalization();
-            CacheLocalization();
         }
 
         private void OnLanguageChanged(string langCode)
@@ -135,10 +131,7 @@ namespace TriadBuddyPlugin
             {
                 locManager.SetupWithFallbacks();
             }
-        }
 
-        private void CacheLocalization()
-        {
             statusCommand.HelpMessage = string.Format(Localization.Localize("Cmd_Status", "Show state of {0} plugin"), Name);
         }
 

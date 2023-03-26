@@ -56,6 +56,7 @@ namespace TriadBuddyPlugin
         private string locConfigDeckEditHighlights;
         private string locConfigOptimizerCPU;
         private string locConfigOptimizerCPUHint;
+        private bool hasCachedLocStrings;
 
         public PluginWindowStatus(DataManager dataManager, Solver solver, UIReaderTriadGame uiReaderGame, UIReaderTriadPrep uiReaderPrep, Configuration config) : base("Triad Buddy")
         {
@@ -71,8 +72,7 @@ namespace TriadBuddyPlugin
 
             Flags = ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoScrollbar;
 
-            Plugin.CurrentLocManager.LocalizationChanged += (_) => CacheLocalization();
-            CacheLocalization();
+            Plugin.CurrentLocManager.LocalizationChanged += (_) => { hasCachedLocStrings = false; };
         }
 
         public void Dispose()
@@ -83,8 +83,11 @@ namespace TriadBuddyPlugin
             }
         }
 
-        private void CacheLocalization()
+        private void UpdateLocalizationCache()
         {
+            if (hasCachedLocStrings) { return; }
+            hasCachedLocStrings = true;
+
             locStatus = Localization.Localize("ST_Status", "Status:");
             locStatusNotActive = Localization.Localize("ST_StatusNotActive", "Minigame not active");
             locStatusPvPMatch = Localization.Localize("ST_StatusPvP", "PvP match");
@@ -128,6 +131,8 @@ namespace TriadBuddyPlugin
 
         public override void Draw()
         {
+            UpdateLocalizationCache();
+
             if (showConfigs)
             {
                 DrawConfiguration();

@@ -26,6 +26,7 @@ namespace TriadBuddyPlugin
         private string locNpcReward;
         private string locShowOnMap;
         private string locNoAvail;
+        private bool hasCachedLocStrings;
 
         public PluginWindowCardInfo(UIReaderTriadCardList uiReaderCardList, GameGui gameGui) : base("Card Info")
         {
@@ -51,8 +52,7 @@ namespace TriadBuddyPlugin
                 ImGuiWindowFlags.NoFocusOnAppearing |
                 ImGuiWindowFlags.NoNav;
 
-            Plugin.CurrentLocManager.LocalizationChanged += (_) => CacheLocalization();
-            CacheLocalization();
+            Plugin.CurrentLocManager.LocalizationChanged += (_) => { hasCachedLocStrings = false; };
         }
 
         public void Dispose()
@@ -60,8 +60,11 @@ namespace TriadBuddyPlugin
             // meh
         }
 
-        private void CacheLocalization()
+        private void UpdateLocalizationCache()
         {
+            if (hasCachedLocStrings) { return; }
+            hasCachedLocStrings = true;
+
             locNpcReward = Localization.Localize("CI_NpcReward", "NPC reward:");
             locShowOnMap = Localization.Localize("CI_ShowMap", "Show on map");
             locNoAvail = Localization.Localize("CI_NotAvail", "Not available");
@@ -111,6 +114,8 @@ namespace TriadBuddyPlugin
         {
             if (selectedCard != null)
             {
+                UpdateLocalizationCache();
+
                 var colorName = new Vector4(0.9f, 0.9f, 0.2f, 1);
                 var colorGray = new Vector4(0.6f, 0.6f, 0.6f, 1);
 

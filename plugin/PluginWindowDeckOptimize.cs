@@ -70,6 +70,7 @@ namespace TriadBuddyPlugin
         private string locOptimizeStart;
         private string locOptimizeAbort;
         private string locOptimizeGuess;
+        private bool hasCachedLocStrings;
 
         public PluginWindowDeckOptimize(DataManager dataManager, Solver solver, UIReaderTriadDeckEdit uiReaderDeckEdit, Configuration config) : base("Deck Optimizer")
         {
@@ -95,8 +96,7 @@ namespace TriadBuddyPlugin
             SizeCondition = ImGuiCond.None;
             Flags = ImGuiWindowFlags.AlwaysAutoResize;
 
-            Plugin.CurrentLocManager.LocalizationChanged += (langCode) => CacheLocalization();
-            CacheLocalization();
+            Plugin.CurrentLocManager.LocalizationChanged += (langCode) => { hasCachedLocStrings = false; };
         }
 
         private void DeckOptimizer_OnFoundDeck(TriadDeck deck, float estWinChance)
@@ -124,8 +124,11 @@ namespace TriadBuddyPlugin
             }
         }
 
-        private void CacheLocalization()
+        private void UpdateLocalizationCache()
         {
+            if (hasCachedLocStrings) { return; }
+            hasCachedLocStrings = true;
+
             WindowName = Localization.Localize("DO_Title", "Deck Optimizer");
             locNpc = Localization.Localize("DO_Npc", "Npc:");
             locRegionRules = Localization.Localize("DO_RegionRules", "Region rules:");
@@ -226,6 +229,7 @@ namespace TriadBuddyPlugin
                 return;
             }
 
+            UpdateLocalizationCache();
             UpdateTick();
             var orgPos = ImGui.GetCursorPos();
 

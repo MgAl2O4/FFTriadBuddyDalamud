@@ -48,6 +48,7 @@ namespace TriadBuddyPlugin
         private string locNoAvail;
         private string locNpcStats;
         private string locEstMGP;
+        private bool hasCachedLocStrings;
 
         public PluginWindowCardSearch(UIReaderTriadCardList uiReaderCardList, GameGui gameGui, Configuration config, PluginWindowNpcStats statsWindow) : base("Card Search")
         {
@@ -92,8 +93,7 @@ namespace TriadBuddyPlugin
                 ImGuiWindowFlags.NoFocusOnAppearing |
                 ImGuiWindowFlags.NoNav;
 
-            Plugin.CurrentLocManager.LocalizationChanged += (_) => CacheLocalization();
-            CacheLocalization();
+            Plugin.CurrentLocManager.LocalizationChanged += (_) => { hasCachedLocStrings = false; };
         }
 
         public void Dispose()
@@ -102,8 +102,11 @@ namespace TriadBuddyPlugin
             ImGuiNative.ImGuiTextFilter_destroy(searchFilterNpc.NativePtr);
         }
 
-        private void CacheLocalization()
+        private void UpdateLocalizationCache()
         {
+            if (hasCachedLocStrings) { return; }
+            hasCachedLocStrings = true;
+
             locNpcOnly = Localization.Localize("CS_NpcOnly", "NPC matches only");
             locNotOwnedOnly = Localization.Localize("CS_NotOwnedOnly", "Not owned only");
             locFilterActive = Localization.Localize("CS_FilterActive", "(Collection filtering is active)");
@@ -187,6 +190,8 @@ namespace TriadBuddyPlugin
         {
             if (ImGui.BeginTabBar("##CollectionSearch", ImGuiTabBarFlags.None))
             {
+                UpdateLocalizationCache();
+
                 if (ImGui.BeginTabItem(locTabCards))
                 {
                     DrawCardsTab();
