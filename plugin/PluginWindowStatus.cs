@@ -53,6 +53,7 @@ namespace TriadBuddyPlugin
         private string locBoardCenter;
         private string locDebugMode;
         private string locConfigSolverHints;
+        private string locConfigDeckEditHighlights;
         private string locConfigOptimizerCPU;
         private string locConfigOptimizerCPUHint;
 
@@ -105,6 +106,7 @@ namespace TriadBuddyPlugin
             locBoardCenter = Localization.Localize("ST_BoardXYCenter", "center");
             locDebugMode = Localization.Localize("ST_DebugMode", "Show debug details");
             locConfigSolverHints = Localization.Localize("CFG_GameToggleHints", "Show solver hints in game");
+            locConfigDeckEditHighlights = Localization.Localize("CFG_DeckEditHighlights", "Show highlights in deck edit");
             locConfigOptimizerCPU = Localization.Localize("CFG_OptimizerParallelLoad", "CPU usage for Deck Optimizer");
             locConfigOptimizerCPUHint = Localization.Localize("CFG_OptimizerParallelLoadHint", "Controls number of logical processors used for calculations. Does not reduce load of individual CPUs!");
         }
@@ -151,9 +153,11 @@ namespace TriadBuddyPlugin
             bool hasChanges = false;
 
             var showSolverHintsInGameCopy = config.ShowSolverHintsInGame;
+            var showDeckEditHighlightsCopy = config.ShowDeckEditHighlights;
             var deckOptimizerCPUCopy = (int)(100 * config.DeckOptimizerCPU);
 
             hasChanges = ImGui.Checkbox(locConfigSolverHints, ref showSolverHintsInGameCopy) || hasChanges;
+            hasChanges = ImGui.Checkbox(locConfigDeckEditHighlights, ref showDeckEditHighlightsCopy) || hasChanges;
 
             ImGui.Spacing();
             ImGui.Text(locConfigOptimizerCPU);
@@ -170,6 +174,7 @@ namespace TriadBuddyPlugin
             if (hasChanges)
             {
                 config.ShowSolverHintsInGame = showSolverHintsInGameCopy;
+                config.ShowDeckEditHighlights = showDeckEditHighlightsCopy;
                 config.DeckOptimizerCPU = deckOptimizerCPUCopy * 0.01f;
                 config.Save();
             }

@@ -11,6 +11,7 @@ namespace TriadBuddyPlugin
         public int Version { get; set; } = 0;
 
         public bool ShowSolverHintsInGame { get; set; } = true;
+        public bool ShowDeckEditHighlights { get; set; } = true;
         public bool CanUseProfileReader { get; set; } = true;
         public float DeckOptimizerCPU { get; set; } = 1.0f;
 

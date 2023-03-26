@@ -28,8 +28,9 @@ namespace TriadBuddyPlugin
         public bool IsVisible { get; private set; }
 
         private float blinkAlpha;
+        private float searchSyncBlinkRemaining;
         private bool isOptimizerActive;
-
+        
         private List<string> highlightTexPaths = new();
         private readonly GameGui gameGui;
 
@@ -59,7 +60,16 @@ namespace TriadBuddyPlugin
         public unsafe void OnAddonUpdate(IntPtr addonPtr)
         {
             var addon = (AddonTriadDeckEdit*)addonPtr;
-            blinkAlpha = (blinkAlpha + ImGui.GetIO().DeltaTime) % 1.0f;
+            var deltaTime = ImGui.GetIO().DeltaTime;
+            var hasHighlights = isOptimizerActive;
+
+            blinkAlpha = (blinkAlpha + deltaTime) % 1.0f;
+
+            if (searchSyncBlinkRemaining > 0)
+            {
+                searchSyncBlinkRemaining -= deltaTime;
+                hasHighlights = true;
+            }
 
             // root, 14 children (sibling scan)
             //     [9] res node, card icon grid + fancy stuff
@@ -81,7 +91,7 @@ namespace TriadBuddyPlugin
 
                     if (nodeImage != null)
                     {
-                        if (!isOptimizerActive)
+                        if (!hasHighlights)
                         {
                             // no optimizer: reset highlights
                             nodeImage->MultiplyBlue = 100;
@@ -143,6 +153,15 @@ namespace TriadBuddyPlugin
             }
 
             return false;
+        }
+
+        public void SetSearchResultHighlight(int[] cardIds)
+        {
+            if (!isOptimizerActive)
+            {
+                SetHighlightedCards(cardIds);
+                searchSyncBlinkRemaining = 1.0f;
+            }
         }
 
         public unsafe bool SetPageAndGridView(int pageIndex, int cellIndex)

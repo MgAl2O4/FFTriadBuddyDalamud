@@ -15,16 +15,21 @@ namespace TriadBuddyPlugin
 
         private readonly UIReaderTriadDeckEdit uiReaderDeckEdit;
         private readonly GameGui gameGui;
+        private readonly Configuration config;
 
         private List<Tuple<TriadCard, GameCardInfo>> listCards = new();
 
         private int selectedCardIdx;
         private ImGuiTextFilterPtr searchFilter;
+        
+        private int prevNumFiltered;
+        private int prevNumCards;
 
-        public PluginWindowDeckSearch(UIReaderTriadDeckEdit uiReaderDeckEdit, GameGui gameGui) : base("Deck Search")
+        public PluginWindowDeckSearch(UIReaderTriadDeckEdit uiReaderDeckEdit, GameGui gameGui, Configuration config) : base("Deck Search")
         {
             this.uiReaderDeckEdit = uiReaderDeckEdit;
             this.gameGui = gameGui;
+            this.config = config;
 
             var searchFilterPtr = ImGuiNative.ImGuiTextFilter_ImGuiTextFilter(null);
             searchFilter = new ImGuiTextFilterPtr(searchFilterPtr);
@@ -104,7 +109,8 @@ namespace TriadBuddyPlugin
         public override void Draw()
         {
             searchFilter.Draw("", WindowContentWidth * ImGuiHelpers.GlobalScale);
-
+            
+            var filteredCards = new List<int>();
             if (ImGui.BeginListBox("##cards", new Vector2(WindowContentWidth * ImGuiHelpers.GlobalScale, ImGui.GetTextLineHeightWithSpacing() * 10)))
             {
                 for (int idx = 0; idx < listCards.Count; idx++)
@@ -125,9 +131,21 @@ namespace TriadBuddyPlugin
                         {
                             ImGui.SetItemDefaultFocus();
                         }
+
+                        filteredCards.Add(cardOb.Id);
                     }
                 }
                 ImGui.EndListBox();
+            }
+
+            bool hasFilteredCardsChanges = (prevNumCards != listCards.Count) || (prevNumFiltered != filteredCards.Count);
+            bool hasSomeCardsFiltered = (filteredCards.Count > 0) && (filteredCards.Count != listCards.Count);
+            if (hasFilteredCardsChanges && hasSomeCardsFiltered && config.ShowDeckEditHighlights)
+            {
+                prevNumCards = listCards.Count;
+                prevNumFiltered = filteredCards.Count;
+
+                uiReaderDeckEdit.SetSearchResultHighlight(filteredCards.ToArray());
             }
         }
 
@@ -140,6 +158,11 @@ namespace TriadBuddyPlugin
 
                 //Dalamud.Logging.PluginLog.Log($"Card selection! {cardOb.Name.GetLocalized()} => page:{collectionPos.PageIndex}, cell:{collectionPos.CellIndex}");
                 uiReaderDeckEdit.SetPageAndGridView(collectionPos.PageIndex, collectionPos.CellIndex);
+
+                if (config.ShowDeckEditHighlights)
+                {
+                    uiReaderDeckEdit.SetSearchResultHighlight(new int[] { cardOb.Id });
+                }
             }
         }
     }
