@@ -12,7 +12,7 @@ namespace TriadBuddyPlugin
             this.config = config;
         }
 
-        public void OnMatchFinished(Solver solver, UIStateTriadResults uiState)
+        public void OnMatchFinished(SolverGame solver, UIStateTriadResults uiState)
         {
             if (!GameNpcDB.Get().mapNpcs.TryGetValue(solver.lastGameNpc?.Id ?? -1, out var npcInfo))
             {

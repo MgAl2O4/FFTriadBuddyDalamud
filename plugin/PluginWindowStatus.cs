@@ -16,7 +16,6 @@ namespace TriadBuddyPlugin
     {
         private readonly UIReaderTriadGame uiReaderGame;
         private readonly UIReaderTriadPrep uiReaderPrep;
-        private readonly Solver solver;
         private readonly DataManager dataManager;
         private readonly Configuration config;
 
@@ -58,10 +57,9 @@ namespace TriadBuddyPlugin
         private string locConfigOptimizerCPUHint;
         private bool hasCachedLocStrings;
 
-        public PluginWindowStatus(DataManager dataManager, Solver solver, UIReaderTriadGame uiReaderGame, UIReaderTriadPrep uiReaderPrep, Configuration config) : base("Triad Buddy")
+        public PluginWindowStatus(DataManager dataManager, UIReaderTriadGame uiReaderGame, UIReaderTriadPrep uiReaderPrep, Configuration config) : base("Triad Buddy")
         {
             this.dataManager = dataManager;
-            this.solver = solver;
             this.uiReaderGame = uiReaderGame;
             this.uiReaderPrep = uiReaderPrep;
             this.config = config;
@@ -191,17 +189,17 @@ namespace TriadBuddyPlugin
             ImGui.Text(locStatus);
             ImGui.SameLine();
 
-            bool isPvPMatch = (uiReaderGame.status == UIReaderTriadGame.Status.PvPMatch) || (solver.status == Solver.Status.FailedToParseNpc);
+            bool isPvPMatch = (uiReaderGame.status == UIReaderTriadGame.Status.PvPMatch) || (SolverUtils.solverGame.status == SolverGame.Status.FailedToParseNpc);
             var statusDesc =
                 isPvPMatch ? locStatusPvPMatch :
                 uiReaderGame.HasErrors ? uiReaderGame.status.ToString() :
-                solver.HasErrors ? solver.status.ToString() :
+                SolverUtils.solverGame.HasErrors ? SolverUtils.solverGame.status.ToString() :
                 !uiReaderGame.IsVisible ? locStatusNotActive :
                 locStatusActive;
 
             var statusColor =
                 isPvPMatch ? colorYellow :
-                uiReaderGame.HasErrors || solver.HasErrors ? colorErr :
+                uiReaderGame.HasErrors || SolverUtils.solverGame.HasErrors ? colorErr :
                 colorOk;
 
             var availRegionWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetWindowContentRegionMin().X;
@@ -246,11 +244,11 @@ namespace TriadBuddyPlugin
             {
                 var rulesDesc = "--";
 
-                var npcDesc = (solver.preGameNpc != null) ? solver.preGameNpc.Name.GetLocalized() : uiReaderPrep.cachedState.npc;
-                if (solver.preGameMods.Count > 0)
+                var npcDesc = (SolverUtils.solverPreGameDecks.preGameNpc != null) ? SolverUtils.solverPreGameDecks.preGameNpc.Name.GetLocalized() : uiReaderPrep.cachedState.npc;
+                if (SolverUtils.solverPreGameDecks.preGameMods.Count > 0)
                 {
                     rulesDesc = "";
-                    foreach (var ruleOb in solver.preGameMods)
+                    foreach (var ruleOb in SolverUtils.solverPreGameDecks.preGameMods)
                     {
                         if (rulesDesc.Length > 0) { rulesDesc += ", "; }
                         rulesDesc += ruleOb.GetLocalizedName();
@@ -273,7 +271,7 @@ namespace TriadBuddyPlugin
             {
                 ImGui.Text(locGameNpc);
                 ImGui.SameLine();
-                ImGui.TextColored(colorYellow, (solver.currentNpc != null) ? solver.currentNpc.Name.GetLocalized() : "--");
+                ImGui.TextColored(colorYellow, (SolverUtils.solverGame.currentNpc != null) ? SolverUtils.solverGame.currentNpc.Name.GetLocalized() : "--");
 
                 ImGui.Text(locGameMove);
                 ImGui.SameLine();
@@ -282,22 +280,22 @@ namespace TriadBuddyPlugin
                 {
                     ImGui.TextColored(colorYellow, locGameMoveDisabled);
                 }
-                else if (solver.hasMove)
+                else if (SolverUtils.solverGame.hasMove)
                 {
                     var useColor =
-                        (solver.moveWinChance.expectedResult == ETriadGameState.BlueWins) ? colorOk :
-                        (solver.moveWinChance.expectedResult == ETriadGameState.BlueDraw) ? colorYellow :
+                        (SolverUtils.solverGame.moveWinChance.expectedResult == ETriadGameState.BlueWins) ? colorOk :
+                        (SolverUtils.solverGame.moveWinChance.expectedResult == ETriadGameState.BlueDraw) ? colorYellow :
                         colorErr;
 
-                    string humanCard = (solver.moveCard != null) ? solver.moveCard.Name.GetLocalized() : "??";
-                    int boardX = solver.moveBoardIdx % 3;
-                    int boardY = solver.moveBoardIdx / 3;
+                    string humanCard = (SolverUtils.solverGame.moveCard != null) ? SolverUtils.solverGame.moveCard.Name.GetLocalized() : "??";
+                    int boardX = SolverUtils.solverGame.moveBoardIdx % 3;
+                    int boardY = SolverUtils.solverGame.moveBoardIdx / 3;
                     string humanBoardX = boardX == 0 ? locBoardX0 : (boardX == 1) ? locBoardX1 : locBoardX2;
                     string humanBoardY = boardY == 0 ? locBoardY0 : (boardY == 1) ? locBoardY1 : locBoardY2;
-                    string humanBoard = (solver.moveBoardIdx == 4) ? locBoardCenter : $"{humanBoardY}, {humanBoardX}";
+                    string humanBoard = (SolverUtils.solverGame.moveBoardIdx == 4) ? locBoardCenter : $"{humanBoardY}, {humanBoardX}";
 
                     // 1 based indexing for humans, disgusting
-                    ImGui.TextColored(useColor, $"[{solver.moveCardIdx + 1}] {humanCard} => {humanBoard}");
+                    ImGui.TextColored(useColor, $"[{SolverUtils.solverGame.moveCardIdx + 1}] {humanCard} => {humanBoard}");
                 }
                 else
                 {
@@ -318,7 +316,7 @@ namespace TriadBuddyPlugin
         {
             // mostly for debugging purposes, try avoiding localized texts
             // visualize current uistate 
-            if (solver == null || solver.DebugScreenMemory == null)
+            if (SolverUtils.solverGame == null || SolverUtils.solverGame.DebugScreenMemory == null)
             {
                 return;
             }
@@ -330,7 +328,7 @@ namespace TriadBuddyPlugin
             ImGui.SameLine();
 
             string modDesc = "";
-            foreach (var mod in solver.DebugScreenMemory.gameSolver.simulation.modifiers)
+            foreach (var mod in SolverUtils.solverGame.DebugScreenMemory.gameSolver.simulation.modifiers)
             {
                 if (modDesc.Length > 0) { modDesc += ", "; }
                 modDesc += mod.GetLocalizedName();
@@ -342,14 +340,14 @@ namespace TriadBuddyPlugin
             ImGui.Text($"{FontAwesomeIcon.ArrowsAltH.ToIconString()}");
             ImGui.PopFont();
             ImGui.SameLine();
-            ImGui.Text($"{solver.DebugScreenMemory.swappedBlueCardIdx}");
+            ImGui.Text($"{SolverUtils.solverGame.DebugScreenMemory.swappedBlueCardIdx}");
 
             // solver chances
             ImGui.PushFont(UiBuilder.IconFont);
             ImGui.Text($"{FontAwesomeIcon.Question.ToIconString()}");
             ImGui.PopFont();
             ImGui.SameLine();
-            ImGui.TextUnformatted(solver.moveWinChance.ToString());
+            ImGui.TextUnformatted(SolverUtils.solverGame.moveWinChance.ToString());
 
             // cards
             const uint colorBlue = 0x80ff9400;
@@ -371,7 +369,7 @@ namespace TriadBuddyPlugin
                 for (int idxX = 0; idxX < 3; idxX++)
                 {
                     int cellId = idxX + (idxY * 3);
-                    var boardCellOb = solver.DebugScreenMemory.gameState.board[cellId];
+                    var boardCellOb = SolverUtils.solverGame.DebugScreenMemory.gameState.board[cellId];
                     uint useColor = (boardCellOb == null) ? colorNope :
                         (boardCellOb.owner == ETriadCardOwner.Blue) ? colorBlue :
                         (boardCellOb.owner == ETriadCardOwner.Red) ? colorRed :
@@ -385,8 +383,8 @@ namespace TriadBuddyPlugin
             }
 
             // - red: unknown cards
-            var redDeckInst = solver.DebugScreenMemory.deckRed;
-            var (redKnownCards, redUnknownCards) = solver.GetScreenRedDeckDebug();
+            var redDeckInst = SolverUtils.solverGame.DebugScreenMemory.deckRed;
+            var (redKnownCards, redUnknownCards) = SolverUtils.solverGame.GetScreenRedDeckDebug();
 
             pos = linePos[0] + new Vector2(redDeckOffsetX, 0);
             var posDeckStartX = pos.X;
@@ -423,11 +421,11 @@ namespace TriadBuddyPlugin
             // - red: ui state
             pos = linePos[2] + new Vector2(redDeckOffsetX, 0);
             DrawPaddedIcon(ref pos, FontAwesomeIcon.Eye, colorRed);
-            if (solver.DebugScreenState != null)
+            if (SolverUtils.solverGame.DebugScreenState != null)
             {
                 for (int idx = 0; idx < 5; idx++)
                 {
-                    var cardOb = solver.DebugScreenState.redDeck[idx];
+                    var cardOb = SolverUtils.solverGame.DebugScreenState.redDeck[idx];
                     DrawPaddedCardHelper(ref pos, cardOb, cardOb != null && !cardOb.IsValid() ? colorHidden : colorRed);
                 }
             }
@@ -436,12 +434,12 @@ namespace TriadBuddyPlugin
             DrawPaddedNewline(ref pos);
             pos = new Vector2(posDeckStartX, pos.Y + 10);
             DrawPaddedIcon(ref pos, FontAwesomeIcon.Check, colorBlue);
-            if (solver.DebugScreenMemory.deckBlue != null)
+            if (SolverUtils.solverGame.DebugScreenMemory.deckBlue != null)
             {
-                int forcedCardIdx = solver.DebugScreenMemory.gameState?.forcedCardIdx ?? -1;
+                int forcedCardIdx = SolverUtils.solverGame.DebugScreenMemory.gameState?.forcedCardIdx ?? -1;
                 for (int idx = 0; idx < 5; idx++)
                 {
-                    var cardOb = solver.DebugScreenMemory.deckBlue.GetCard(idx);
+                    var cardOb = SolverUtils.solverGame.DebugScreenMemory.deckBlue.GetCard(idx);
                     DrawPaddedCardHelper(ref pos, cardOb, idx == forcedCardIdx ? colorForced : colorBlue);
                 }
             }

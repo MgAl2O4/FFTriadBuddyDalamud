@@ -28,7 +28,6 @@ namespace TriadBuddyPlugin
         private readonly UIReaderTriadPrep uiReaderPrep;
         private readonly UIReaderTriadCardList uiReaderCardList;
         private readonly UIReaderTriadDeckEdit uiReaderDeckEdit;
-        private readonly Solver solver;
         private readonly StatTracker statTracker;
         private readonly GameDataLoader dataLoader;
         private readonly UIReaderScheduler uiReaderScheduler;
@@ -59,24 +58,24 @@ namespace TriadBuddyPlugin
             dataLoader = new GameDataLoader();
             dataLoader.StartAsyncWork(dataManager);
 
-            solver = new Solver();
-            solver.profileGS = configuration.CanUseProfileReader ? new UnsafeReaderProfileGS(gameGui) : null;
+            SolverUtils.CreateSolvers();
+            SolverUtils.solverPreGameDecks.profileGS = configuration.CanUseProfileReader ? new UnsafeReaderProfileGS(gameGui) : null;
 
             statTracker = new StatTracker(configuration);
 
             // prep data scrapers
             uiReaderGame = new UIReaderTriadGame(gameGui);
-            uiReaderGame.OnUIStateChanged += (state) => solver.UpdateGame(state);
+            uiReaderGame.OnUIStateChanged += (state) => SolverUtils.solverGame.UpdateGame(state);
 
             uiReaderPrep = new UIReaderTriadPrep(gameGui);
-            uiReaderPrep.shouldScanDeckData = (solver.profileGS == null) || solver.profileGS.HasErrors;
-            uiReaderPrep.OnUIStateChanged += (state) => solver.UpdateDecks(state);
+            uiReaderPrep.shouldScanDeckData = (SolverUtils.solverPreGameDecks.profileGS == null) || SolverUtils.solverPreGameDecks.profileGS.HasErrors;
+            uiReaderPrep.OnUIStateChanged += (state) => SolverUtils.solverPreGameDecks.UpdateDecks(state);
 
             uiReaderCardList = new UIReaderTriadCardList(gameGui);
             uiReaderDeckEdit = new UIReaderTriadDeckEdit(gameGui);
 
             var uiReaderMatchResults = new UIReaderTriadResults(gameGui);
-            uiReaderMatchResults.OnUpdated += (state) => statTracker.OnMatchFinished(solver, state);
+            uiReaderMatchResults.OnUpdated += (state) => statTracker.OnMatchFinished(SolverUtils.solverGame, state);
 
             uiReaderScheduler = new UIReaderScheduler(gameGui);
             uiReaderScheduler.AddObservedAddon(uiReaderGame);
@@ -93,13 +92,13 @@ namespace TriadBuddyPlugin
             uiReaderDeckEdit.unsafeDeck = new UnsafeReaderTriadDeck(sigScanner);
 
             // prep UI
-            overlays = new PluginOverlays(solver, uiReaderGame, uiReaderPrep, configuration);
-            statusWindow = new PluginWindowStatus(dataManager, solver, uiReaderGame, uiReaderPrep, configuration);
+            overlays = new PluginOverlays(uiReaderGame, uiReaderPrep, configuration);
+            statusWindow = new PluginWindowStatus(dataManager, uiReaderGame, uiReaderPrep, configuration);
             windowSystem.AddWindow(statusWindow);
 
             var npcStatsWindow = new PluginWindowNpcStats(statTracker);
-            var deckOptimizerWindow = new PluginWindowDeckOptimize(dataManager, solver, uiReaderDeckEdit, configuration);
-            var deckEvalWindow = new PluginWindowDeckEval(solver, uiReaderPrep, deckOptimizerWindow, npcStatsWindow);
+            var deckOptimizerWindow = new PluginWindowDeckOptimize(dataManager, SolverUtils.solverDeckOptimize, uiReaderDeckEdit, configuration);
+            var deckEvalWindow = new PluginWindowDeckEval(SolverUtils.solverPreGameDecks, uiReaderPrep, deckOptimizerWindow, npcStatsWindow);
             deckOptimizerWindow.OnConfigRequested += () => OnOpenConfig();
             windowSystem.AddWindow(deckEvalWindow);
             windowSystem.AddWindow(deckOptimizerWindow);

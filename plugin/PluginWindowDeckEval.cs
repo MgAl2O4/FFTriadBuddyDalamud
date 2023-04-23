@@ -18,7 +18,7 @@ namespace TriadBuddyPlugin
         private readonly Vector4 colorGray = new Vector4(0.6f, 0.6f, 0.6f, 1);
 
         private readonly UIReaderTriadPrep uiReaderPrep;
-        private readonly Solver solver;
+        private readonly SolverPreGameDecks solver;
         private readonly PluginWindowDeckOptimize optimizerWindow;
         private readonly PluginWindowNpcStats statsWindow;
 
@@ -31,7 +31,7 @@ namespace TriadBuddyPlugin
         private string locStatusPvPMatch;
         private bool hasCachedLocStrings;
 
-        public PluginWindowDeckEval(Solver solver, UIReaderTriadPrep uiReaderPrep, PluginWindowDeckOptimize optimizerWindow, PluginWindowNpcStats statsWindow) : base("Deck Eval")
+        public PluginWindowDeckEval(SolverPreGameDecks solver, UIReaderTriadPrep uiReaderPrep, PluginWindowDeckOptimize optimizerWindow, PluginWindowNpcStats statsWindow) : base("Deck Eval")
         {
             this.solver = solver;
             this.uiReaderPrep = uiReaderPrep;

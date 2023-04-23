@@ -14,7 +14,6 @@ namespace TriadBuddyPlugin
 
         public readonly UIReaderTriadGame uiReaderGame;
         public readonly UIReaderTriadPrep uiReaderPrep;
-        public readonly Solver solver;
         public readonly Configuration config;
 
         // overlay: game board
@@ -26,14 +25,13 @@ namespace TriadBuddyPlugin
         // overlay: deck selection
         private bool hasDeckSelection;
 
-        public PluginOverlays(Solver solver, UIReaderTriadGame uiReaderGame, UIReaderTriadPrep uiReaderPrep, Configuration config)
+        public PluginOverlays(UIReaderTriadGame uiReaderGame, UIReaderTriadPrep uiReaderPrep, Configuration config)
         {
-            this.solver = solver;
             this.uiReaderGame = uiReaderGame;
             this.uiReaderPrep = uiReaderPrep;
             this.config = config;
 
-            solver.OnMoveChanged += OnSolverMove;
+            SolverUtils.solverGame.OnMoveChanged += OnSolverMove;
             uiReaderPrep.OnDeckSelectionChanged += (active) => hasDeckSelection = active;
         }
 
@@ -42,9 +40,9 @@ namespace TriadBuddyPlugin
             hasGameOverlay = foundMove;
             if (foundMove)
             {
-                gameBoardIdx = solver.moveBoardIdx;
-                gameCardIdx = solver.moveCardIdx;
-                gameCardColor = GetChanceColor(solver.moveWinChance);
+                gameBoardIdx = SolverUtils.solverGame.moveBoardIdx;
+                gameCardIdx = SolverUtils.solverGame.moveCardIdx;
+                gameCardColor = GetChanceColor(SolverUtils.solverGame.moveWinChance);
             }
             else
             {
@@ -103,7 +101,7 @@ namespace TriadBuddyPlugin
             for (int idx = 0; idx < uiReaderPrep.cachedState.decks.Count; idx++)
             {
                 var deckState = uiReaderPrep.cachedState.decks[idx];
-                if (solver.preGameDecks.TryGetValue(deckState.id, out var deckData))
+                if (SolverUtils.solverPreGameDecks.preGameDecks.TryGetValue(deckState.id, out var deckData))
                 {
                     bool isSolverReady = deckData.chance.score > 0;
                     var hintText = !isSolverReady ? "..." : deckData.chance.winChance.ToString("P0");

@@ -19,7 +19,7 @@ namespace TriadBuddyPlugin
         private readonly Vector4 colorResultData = new Vector4(0.0f, 0.9f, 0.9f, 1);
 
         private DataManager dataManager;
-        private Solver solver;
+        private SolverDeckOptimize solver;
         private UIReaderTriadDeckEdit uiReaderDeckEdit;
         private Configuration config;
 
@@ -72,7 +72,7 @@ namespace TriadBuddyPlugin
         private string locOptimizeGuess;
         private bool hasCachedLocStrings;
 
-        public PluginWindowDeckOptimize(DataManager dataManager, Solver solver, UIReaderTriadDeckEdit uiReaderDeckEdit, Configuration config) : base("Deck Optimizer")
+        public PluginWindowDeckOptimize(DataManager dataManager, SolverDeckOptimize solver, UIReaderTriadDeckEdit uiReaderDeckEdit, Configuration config) : base("Deck Optimizer")
         {
             this.dataManager = dataManager;
             this.solver = solver;
