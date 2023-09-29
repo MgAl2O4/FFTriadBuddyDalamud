@@ -1,12 +1,11 @@
 ﻿using Dalamud;
-using Dalamud.Data;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Internal;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
-using Dalamud.Logging;
 using FFTriadBuddy;
 using ImGuiNET;
-using ImGuiScene;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -18,7 +17,6 @@ namespace TriadBuddyPlugin
         private readonly Vector4 colorSetupData = new Vector4(0.9f, 0.9f, 0.0f, 1);
         private readonly Vector4 colorResultData = new Vector4(0.0f, 0.9f, 0.9f, 1);
 
-        private DataManager dataManager;
         private SolverDeckOptimize solver;
         private UIReaderTriadDeckEdit uiReaderDeckEdit;
         private Configuration config;
@@ -51,8 +49,8 @@ namespace TriadBuddyPlugin
         private TriadDeck bestDeck;
         private SolverResult bestWinChance;
 
-        private Dictionary<int, TextureWrap> mapCardImages = new();
-        private TextureWrap cardBackgroundImage;
+        private Dictionary<int, IDalamudTextureWrap> mapCardImages = new();
+        private IDalamudTextureWrap cardBackgroundImage;
 
         private Vector2 cardBackgroundUV0 = new(0.0f, 0.0f);
         private Vector2 cardBackgroundUV1 = new(1.0f, 1.0f);
@@ -72,9 +70,8 @@ namespace TriadBuddyPlugin
         private string locOptimizeGuess;
         private bool hasCachedLocStrings;
 
-        public PluginWindowDeckOptimize(DataManager dataManager, SolverDeckOptimize solver, UIReaderTriadDeckEdit uiReaderDeckEdit, Configuration config) : base("Deck Optimizer")
+        public PluginWindowDeckOptimize(SolverDeckOptimize solver, UIReaderTriadDeckEdit uiReaderDeckEdit, Configuration config) : base("Deck Optimizer")
         {
-            this.dataManager = dataManager;
             this.solver = solver;
             this.uiReaderDeckEdit = uiReaderDeckEdit;
             this.config = config;
@@ -82,7 +79,7 @@ namespace TriadBuddyPlugin
             deckOptimizer = (solver != null) ? solver.deckOptimizer : new TriadDeckOptimizer();
             deckOptimizer.OnFoundDeck += DeckOptimizer_OnFoundDeck;
 
-            cardBackgroundImage = dataManager.GetImGuiTexture("ui/uld/CardTripleTriad.tex");
+            cardBackgroundImage = Service.textureProvider.GetTextureFromGame("ui/uld/CardTripleTriad.tex");
             cardBackgroundUV1.Y = (cardBackgroundImage != null) ? (cardImageSize.Y / cardBackgroundImage.Height) : 1.0f;
 
             cardImagePos[0] = new Vector2(0, 0);
@@ -208,7 +205,7 @@ namespace TriadBuddyPlugin
             uiReaderDeckEdit?.SetHighlightedCards(shownCardIds);
         }
 
-        private TextureWrap GetCardTexture(int cardId)
+        private IDalamudTextureWrap GetCardTexture(int cardId)
         {
             if (mapCardImages.TryGetValue(cardId, out var texWrap))
             {
@@ -216,7 +213,7 @@ namespace TriadBuddyPlugin
             }
 
             uint iconId = TriadCardDB.GetCardTextureId(cardId);
-            var newTexWrap = dataManager.GetImGuiTextureIcon(iconId);
+            var newTexWrap = Service.textureProvider.GetIcon(iconId);
             mapCardImages.Add(cardId, newTexWrap);
 
             return newTexWrap;
@@ -496,7 +493,7 @@ namespace TriadBuddyPlugin
         {
             if (!CanRunOptimizer())
             {
-                PluginLog.Error("Failed to start deck optimizer");
+                Service.logger.Error("Failed to start deck optimizer");
                 return;
             }
 
@@ -557,7 +554,7 @@ namespace TriadBuddyPlugin
         {
             if (!CanRunOptimizer())
             {
-                PluginLog.Error("Failed to start deck optimizer");
+                Service.logger.Error("Failed to start deck optimizer");
                 return;
             }
 

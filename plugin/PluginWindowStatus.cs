@@ -1,11 +1,11 @@
 ﻿using Dalamud;
-using Dalamud.Data;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Internal;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using FFTriadBuddy;
 using ImGuiNET;
-using ImGuiScene;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -16,13 +16,12 @@ namespace TriadBuddyPlugin
     {
         private readonly UIReaderTriadGame uiReaderGame;
         private readonly UIReaderTriadPrep uiReaderPrep;
-        private readonly DataManager dataManager;
         private readonly Configuration config;
 
         public bool showConfigs = false;
         private bool showDebugDetails;
         private float orgDrawPosX;
-        private Dictionary<int, TextureWrap> mapCardImages = new();
+        private Dictionary<int, IDalamudTextureWrap> mapCardImages = new();
         private const float debugCellSize = 30.0f;
         private const float debugCellPading = 4.0f;
 
@@ -57,9 +56,8 @@ namespace TriadBuddyPlugin
         private string locConfigOptimizerCPUHint;
         private bool hasCachedLocStrings;
 
-        public PluginWindowStatus(DataManager dataManager, UIReaderTriadGame uiReaderGame, UIReaderTriadPrep uiReaderPrep, Configuration config) : base("Triad Buddy")
+        public PluginWindowStatus(UIReaderTriadGame uiReaderGame, UIReaderTriadPrep uiReaderPrep, Configuration config) : base("Triad Buddy")
         {
-            this.dataManager = dataManager;
             this.uiReaderGame = uiReaderGame;
             this.uiReaderPrep = uiReaderPrep;
             this.config = config;
@@ -494,7 +492,7 @@ namespace TriadBuddyPlugin
             pos.Y += debugCellSize + debugCellPading * 2;
         }
 
-        private TextureWrap GetCardTexture(int cardId)
+        private IDalamudTextureWrap GetCardTexture(int cardId)
         {
             if (mapCardImages.TryGetValue(cardId, out var texWrap))
             {
@@ -502,7 +500,7 @@ namespace TriadBuddyPlugin
             }
 
             uint iconId = TriadCardDB.GetCardIconTextureId(cardId);
-            var newTexWrap = dataManager.GetImGuiTextureIcon(iconId);
+            var newTexWrap = Service.textureProvider.GetIcon(iconId);
             mapCardImages.Add(cardId, newTexWrap);
 
             return newTexWrap;

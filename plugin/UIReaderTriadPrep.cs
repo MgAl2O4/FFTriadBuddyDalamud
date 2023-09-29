@@ -1,5 +1,4 @@
-﻿using Dalamud.Game.Gui;
-using FFXIVClientStructs.FFXIV.Component.GUI;
+﻿using FFXIVClientStructs.FFXIV.Component.GUI;
 using MgAl2O4.Utils;
 using System;
 using System.Collections.Generic;
@@ -22,14 +21,11 @@ namespace TriadBuddyPlugin
         public UIReaderTriadPrepMatchRequest uiReaderMatchRequest = new();
         public UIReaderTriadPrepDeckSelect uiReaderDeckSelect = new();
 
-        private GameGui gameGui;
         private bool hasRequestUI;
         private bool hasDeckSelectionUI;
 
-        public UIReaderTriadPrep(GameGui gameGui)
+        public UIReaderTriadPrep()
         {
-            this.gameGui = gameGui;
-
             uiReaderMatchRequest.parentReader = this;
             uiReaderDeckSelect.parentReader = this;
         }

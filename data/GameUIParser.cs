@@ -1,5 +1,4 @@
-﻿using Dalamud.Logging;
-using FFTriadBuddy;
+﻿using FFTriadBuddy;
 using System;
 
 namespace TriadBuddyPlugin
@@ -91,7 +90,7 @@ namespace TriadBuddyPlugin
 
         public void OnFailedCard(string desc)
         {
-            PluginLog.Error($"failed to match card: {desc}");
+            Service.logger.Error($"failed to match card: {desc}");
             hasFailedCard = true;
         }
 
@@ -108,7 +107,7 @@ namespace TriadBuddyPlugin
 
         public void OnFailedModifier(string desc)
         {
-            PluginLog.Error($"failed to match rule: {desc}");
+            Service.logger.Error($"failed to match rule: {desc}");
             hasFailedModifier = true;
         }
 
@@ -140,7 +139,7 @@ namespace TriadBuddyPlugin
 
         public void OnFailedNpc(string desc)
         {
-            PluginLog.Error($"failed to match npc: {string.Join(", ", desc)}");
+            Service.logger.Error($"failed to match npc: {string.Join(", ", desc)}");
             hasFailedNpc = true;
         }
 
@@ -150,7 +149,7 @@ namespace TriadBuddyPlugin
             if (lastLoggedNpc != desc)
             {
                 lastLoggedNpc = desc;
-                PluginLog.Log($"failed to match npc: {string.Join(", ", desc)}, is it pvp?");
+                Service.logger.Info($"failed to match npc: {string.Join(", ", desc)}, is it pvp?");
             }
 
             // always mark as failure though

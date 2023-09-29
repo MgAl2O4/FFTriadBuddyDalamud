@@ -1,6 +1,4 @@
-﻿using Dalamud.Game.Gui;
-using Dalamud.Logging;
-using FFXIVClientStructs.FFXIV.Component.GUI;
+﻿using FFXIVClientStructs.FFXIV.Component.GUI;
 using MgAl2O4.Utils;
 using System;
 using System.Collections.Generic;
@@ -85,13 +83,7 @@ namespace TriadBuddyPlugin
 
         public event Action<UIStateTriadGame> OnUIStateChanged;
 
-        private GameGui gameGui;
         private IntPtr addonPtr;
-
-        public UIReaderTriadGame(GameGui gameGui)
-        {
-            this.gameGui = gameGui;
-        }
 
         public string GetAddonName()
         {
@@ -177,7 +169,7 @@ namespace TriadBuddyPlugin
                 status = newStatus;
                 if (HasErrors)
                 {
-                    PluginLog.Error("ui reader error: " + newStatus);
+                    Service.logger.Error("ui reader error: " + newStatus);
                 }
             }
         }
@@ -220,7 +212,7 @@ namespace TriadBuddyPlugin
             {
                 foreach (var testNode in nodeArrNameL2)
                 {
-                    var isVisible = (testNode != null) ? (testNode->Flags & 0x10) == 0x10 : false;
+                    var isVisible = (testNode != null) ? (testNode->NodeFlags & NodeFlags.Visible) == NodeFlags.Visible : false;
                     if (isVisible)
                     {
                         numParsed++;

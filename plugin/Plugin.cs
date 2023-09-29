@@ -1,10 +1,6 @@
 ﻿using Dalamud;
-using Dalamud.Data;
-using Dalamud.Game;
 using Dalamud.Game.Command;
-using Dalamud.Game.Gui;
 using Dalamud.Interface.Windowing;
-using Dalamud.Logging;
 using Dalamud.Plugin;
 using MgAl2O4.Utils;
 using System;
@@ -15,10 +11,6 @@ namespace TriadBuddyPlugin
     {
         public string Name => "Triad Buddy";
 
-        private readonly DalamudPluginInterface pluginInterface;
-        private readonly CommandManager commandManager;
-        private readonly Framework framework;
-        private readonly DataManager dataManager;
         private readonly WindowSystem windowSystem = new("TriadBuddy");
 
         private readonly PluginWindowStatus statusWindow;
@@ -39,15 +31,15 @@ namespace TriadBuddyPlugin
 
         private Configuration configuration { get; init; }
 
-        public Plugin(DalamudPluginInterface pluginInterface, Framework framework, CommandManager commandManager, GameGui gameGui, DataManager dataManager, SigScanner sigScanner)
+        public Plugin(DalamudPluginInterface pluginInterface)
         {
-            this.pluginInterface = pluginInterface;
-            this.commandManager = commandManager;
-            this.dataManager = dataManager;
-            this.framework = framework;
+            pluginInterface.Create<Service>();
+            MgAl2O4.Utils.Logger.logger = Service.logger;
 
-            configuration = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-            configuration.Initialize(pluginInterface);
+            Service.plugin = this;
+
+            Service.pluginConfig = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+            Service.pluginConfig.Initialize(pluginInterface);
 
             // prep utils
             var myAssemblyName = GetType().Assembly.GetName().Name;
@@ -56,28 +48,28 @@ namespace TriadBuddyPlugin
             CurrentLocManager = locManager;
 
             dataLoader = new GameDataLoader();
-            dataLoader.StartAsyncWork(dataManager);
+            dataLoader.StartAsyncWork();
 
             SolverUtils.CreateSolvers();
-            SolverUtils.solverPreGameDecks.profileGS = configuration.CanUseProfileReader ? new UnsafeReaderProfileGS(gameGui) : null;
+            SolverUtils.solverPreGameDecks.profileGS = configuration.CanUseProfileReader ? new UnsafeReaderProfileGS() : null;
 
             statTracker = new StatTracker(configuration);
 
             // prep data scrapers
-            uiReaderGame = new UIReaderTriadGame(gameGui);
+            uiReaderGame = new UIReaderTriadGame();
             uiReaderGame.OnUIStateChanged += (state) => SolverUtils.solverGame.UpdateGame(state);
 
-            uiReaderPrep = new UIReaderTriadPrep(gameGui);
+            uiReaderPrep = new UIReaderTriadPrep();
             uiReaderPrep.shouldScanDeckData = (SolverUtils.solverPreGameDecks.profileGS == null) || SolverUtils.solverPreGameDecks.profileGS.HasErrors;
             uiReaderPrep.OnUIStateChanged += (state) => SolverUtils.solverPreGameDecks.UpdateDecks(state);
 
-            uiReaderCardList = new UIReaderTriadCardList(gameGui);
-            uiReaderDeckEdit = new UIReaderTriadDeckEdit(gameGui);
+            uiReaderCardList = new UIReaderTriadCardList();
+            uiReaderDeckEdit = new UIReaderTriadDeckEdit();
 
-            var uiReaderMatchResults = new UIReaderTriadResults(gameGui);
+            var uiReaderMatchResults = new UIReaderTriadResults();
             uiReaderMatchResults.OnUpdated += (state) => statTracker.OnMatchFinished(SolverUtils.solverGame, state);
 
-            uiReaderScheduler = new UIReaderScheduler(gameGui);
+            uiReaderScheduler = new UIReaderScheduler(Service.gameGui);
             uiReaderScheduler.AddObservedAddon(uiReaderGame);
             uiReaderScheduler.AddObservedAddon(uiReaderPrep.uiReaderMatchRequest);
             uiReaderScheduler.AddObservedAddon(uiReaderPrep.uiReaderDeckSelect);
@@ -85,38 +77,38 @@ namespace TriadBuddyPlugin
             uiReaderScheduler.AddObservedAddon(uiReaderDeckEdit);
             uiReaderScheduler.AddObservedAddon(uiReaderMatchResults);
 
-            var memReaderTriadFunc = new UnsafeReaderTriadCards(sigScanner);
+            var memReaderTriadFunc = new UnsafeReaderTriadCards();
             GameCardDB.Get().memReader = memReaderTriadFunc;
             GameNpcDB.Get().memReader = memReaderTriadFunc;
 
-            uiReaderDeckEdit.unsafeDeck = new UnsafeReaderTriadDeck(sigScanner);
+            uiReaderDeckEdit.unsafeDeck = new UnsafeReaderTriadDeck();
 
             // prep UI
             overlays = new PluginOverlays(uiReaderGame, uiReaderPrep, configuration);
-            statusWindow = new PluginWindowStatus(dataManager, uiReaderGame, uiReaderPrep, configuration);
+            statusWindow = new PluginWindowStatus(uiReaderGame, uiReaderPrep, configuration);
             windowSystem.AddWindow(statusWindow);
 
             var npcStatsWindow = new PluginWindowNpcStats(statTracker);
-            var deckOptimizerWindow = new PluginWindowDeckOptimize(dataManager, SolverUtils.solverDeckOptimize, uiReaderDeckEdit, configuration);
+            var deckOptimizerWindow = new PluginWindowDeckOptimize(SolverUtils.solverDeckOptimize, uiReaderDeckEdit, configuration);
             var deckEvalWindow = new PluginWindowDeckEval(SolverUtils.solverPreGameDecks, uiReaderPrep, deckOptimizerWindow, npcStatsWindow);
             deckOptimizerWindow.OnConfigRequested += () => OnOpenConfig();
             windowSystem.AddWindow(deckEvalWindow);
             windowSystem.AddWindow(deckOptimizerWindow);
             windowSystem.AddWindow(npcStatsWindow);
 
-            windowSystem.AddWindow(new PluginWindowCardInfo(uiReaderCardList, gameGui));
-            windowSystem.AddWindow(new PluginWindowCardSearch(uiReaderCardList, gameGui, configuration, npcStatsWindow));
-            windowSystem.AddWindow(new PluginWindowDeckSearch(uiReaderDeckEdit, gameGui, configuration));
+            windowSystem.AddWindow(new PluginWindowCardInfo(uiReaderCardList));
+            windowSystem.AddWindow(new PluginWindowCardSearch(uiReaderCardList, configuration, npcStatsWindow));
+            windowSystem.AddWindow(new PluginWindowDeckSearch(uiReaderDeckEdit, configuration));
 
             // prep plugin hooks
             statusCommand = new(OnCommand) { HelpMessage = string.Format(Localization.Localize("Cmd_Status", "Show state of {0} plugin"), Name) };
-            commandManager.AddHandler("/triadbuddy", statusCommand);
+            Service.commandManager.AddHandler("/triadbuddy", statusCommand);
 
             pluginInterface.LanguageChanged += OnLanguageChanged;
             pluginInterface.UiBuilder.Draw += OnDraw;
             pluginInterface.UiBuilder.OpenConfigUi += OnOpenConfig;
 
-            framework.Update += Framework_OnUpdateEvent;
+            Service.framework.RunOnTick(Framework_OnUpdateEvent);
         }
 
         private void OnLanguageChanged(string langCode)
@@ -136,9 +128,8 @@ namespace TriadBuddyPlugin
 
         public void Dispose()
         {
-            commandManager.RemoveHandler("/triadbuddy");
+            Service.commandManager.RemoveHandler("/triadbuddy");
             windowSystem.RemoveAllWindows();
-            framework.Update -= Framework_OnUpdateEvent;
         }
 
         private void OnCommand(string command, string args)
@@ -158,19 +149,19 @@ namespace TriadBuddyPlugin
             statusWindow.IsOpen = true;
         }
 
-        private void Framework_OnUpdateEvent(Framework framework)
+        private void Framework_OnUpdateEvent()
         {
             try
             {
                 if (dataLoader.IsDataReady)
                 {
-                    float deltaSeconds = (float)framework.UpdateDelta.TotalSeconds;
+                    float deltaSeconds = (float)Service.framework.UpdateDelta.TotalSeconds;
                     uiReaderScheduler.Update(deltaSeconds);
                 }
             }
             catch (Exception ex)
             {
-                PluginLog.Error(ex, "state update failed");
+                Service.logger.Error(ex, "state update failed");
             }
         }
     }

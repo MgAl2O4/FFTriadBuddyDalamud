@@ -1,7 +1,7 @@
 ﻿using Dalamud;
-using Dalamud.Game.Gui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using FFTriadBuddy;
 using ImGuiNET;
@@ -16,7 +16,6 @@ namespace TriadBuddyPlugin
         private const float WindowContentWidth = 270.0f;
 
         private readonly UIReaderTriadCardList uiReaderCardList;
-        private readonly GameGui gameGui;
         private readonly Configuration config;
         private readonly PluginWindowNpcStats statsWindow;
 
@@ -50,10 +49,9 @@ namespace TriadBuddyPlugin
         private string locEstMGP;
         private bool hasCachedLocStrings;
 
-        public PluginWindowCardSearch(UIReaderTriadCardList uiReaderCardList, GameGui gameGui, Configuration config, PluginWindowNpcStats statsWindow) : base("Card Search")
+        public PluginWindowCardSearch(UIReaderTriadCardList uiReaderCardList, Configuration config, PluginWindowNpcStats statsWindow) : base("Card Search")
         {
             this.uiReaderCardList = uiReaderCardList;
-            this.gameGui = gameGui;
             this.config = config;
             this.statsWindow = statsWindow;
 
@@ -339,7 +337,7 @@ namespace TriadBuddyPlugin
                 ImGui.SetCursorPosY(cursorY - ImGui.GetStyle().FramePadding.Y);
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.Map))
                 {
-                    gameGui.OpenMapWithMapLink(npcData.Item2.Location);
+                    Service.gameGui.OpenMapWithMapLink(npcData.Item2.Location);
                 }
                 if (ImGui.IsItemHovered())
                 {
@@ -428,7 +426,7 @@ namespace TriadBuddyPlugin
 
                 var collectionPos = cardInfo.Collection[(int)filterEnum];
 
-                //PluginLog.Log($"Card selection! {cardOb.Name.GetLocalized()}, filter:{filterEnum} ({filterMode}) => page:{collectionPos.PageIndex}, cell:{collectionPos.CellIndex}");
+                //Service.logger.Info($"Card selection! {cardOb.Name.GetLocalized()}, filter:{filterEnum} ({filterMode}) => page:{collectionPos.PageIndex}, cell:{collectionPos.CellIndex}");
                 uiReaderCardList.SetPageAndGridView(collectionPos.PageIndex, collectionPos.CellIndex);
             }
         }

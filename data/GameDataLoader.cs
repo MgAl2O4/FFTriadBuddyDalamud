@@ -1,6 +1,4 @@
-﻿using Dalamud.Data;
-using Dalamud.Logging;
-using FFTriadBuddy;
+﻿using FFTriadBuddy;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -35,7 +33,7 @@ namespace TriadBuddyPlugin
         private Dictionary<uint, ENpcCachedData> mapENpcCache = new();
         private Dictionary<uint, int> mapNpcAchievementId = new();
 
-        public void StartAsyncWork(DataManager dataManager)
+        public void StartAsyncWork()
         {
             Task.Run(async () =>
             {
@@ -51,18 +49,18 @@ namespace TriadBuddyPlugin
                     bool needsRetry = false;
                     try
                     {
-                        ParseGameData(dataManager);
+                        ParseGameData();
                     }
                     catch (Exception ex)
                     {
                         needsRetry = retryIdx > 1;
-                        PluginLog.Warning(ex, "exception while parsing! retry:{0}", needsRetry);
+                        Service.logger.Warning(ex, "exception while parsing! retry:{0}", needsRetry);
                     }
 
                     if (needsRetry)
                     {
                         await Task.Delay(2000);
-                        PluginLog.Log("retrying game data parsers...");
+                        Service.logger.Info("retrying game data parsers...");
                     }
                     else
                     {
@@ -72,7 +70,7 @@ namespace TriadBuddyPlugin
             });
         }
 
-        private void ParseGameData(DataManager dataManager)
+        private void ParseGameData()
         {
             var cardInfoDB = GameCardDB.Get();
             var cardDB = TriadCardDB.Get();
@@ -85,13 +83,13 @@ namespace TriadBuddyPlugin
             mapNpcAchievementId.Clear();
 
             bool result = true;
-            result = result && ParseRules(dataManager);
-            result = result && ParseCardTypes(dataManager);
-            result = result && ParseCards(dataManager);
-            result = result && ParseNpcs(dataManager);
-            result = result && ParseNpcAchievements(dataManager);
-            result = result && ParseNpcLocations(dataManager);
-            result = result && ParseCardRewards(dataManager);
+            result = result && ParseRules();
+            result = result && ParseCardTypes();
+            result = result && ParseCards();
+            result = result && ParseNpcs();
+            result = result && ParseNpcAchievements();
+            result = result && ParseNpcLocations();
+            result = result && ParseCardRewards();
 
             if (result)
             {
@@ -99,7 +97,7 @@ namespace TriadBuddyPlugin
                 FixLocalizedNameCasing();
                 cardInfoDB.OnLoaded();
 
-                PluginLog.Log($"Loaded game data for cards:{cardDB.cards.Count}, npcs:{npcDB.npcs.Count}");
+                Service.logger.Info($"Loaded game data for cards:{cardDB.cards.Count}, npcs:{npcDB.npcs.Count}");
                 IsDataReady = true;
             }
             else
@@ -116,7 +114,7 @@ namespace TriadBuddyPlugin
             mapNpcAchievementId.Clear();
         }
 
-        private bool ParseRules(DataManager dataManager)
+        private bool ParseRules()
         {
             // update rule names to match current client language
             // hardcoded mapping, good for now, it's almost never changes anyway
@@ -124,10 +122,10 @@ namespace TriadBuddyPlugin
             var modDB = TriadGameModifierDB.Get();
             var locDB = LocalizationDB.Get();
 
-            var rulesSheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadRule>();
+            var rulesSheet = Service.dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadRule>();
             if (rulesSheet == null || rulesSheet.RowCount != modDB.mods.Count)
             {
-                PluginLog.Fatal($"Failed to parse rules (got:{rulesSheet?.RowCount ?? 0}, expected:{modDB.mods.Count})");
+                Service.logger.Fatal($"Failed to parse rules (got:{rulesSheet?.RowCount ?? 0}, expected:{modDB.mods.Count})");
                 return false;
             }
 
@@ -142,14 +140,14 @@ namespace TriadBuddyPlugin
             return true;
         }
 
-        private bool ParseCardTypes(DataManager dataManager)
+        private bool ParseCardTypes()
         {
             var locDB = LocalizationDB.Get();
 
-            var typesSheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCardType>();
+            var typesSheet = Service.dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCardType>();
             if (typesSheet == null || typesSheet.RowCount != locDB.LocCardTypes.Count)
             {
-                PluginLog.Fatal($"Failed to parse rules (got:{typesSheet?.RowCount ?? 0}, expected:{locDB.LocCardTypes.Count})");
+                Service.logger.Fatal($"Failed to parse rules (got:{typesSheet?.RowCount ?? 0}, expected:{locDB.LocCardTypes.Count})");
                 return false;
             }
 
@@ -162,26 +160,26 @@ namespace TriadBuddyPlugin
             return true;
         }
 
-        private bool ParseCards(DataManager dataManager)
+        private bool ParseCards()
         {
             var cardDB = TriadCardDB.Get();
             var cardInfoDB = GameCardDB.Get();
 
-            var cardDataSheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCardResident>();
-            var cardNameSheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCard>();
+            var cardDataSheet = Service.dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCardResident>();
+            var cardNameSheet = Service.dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCard>();
 
             if (cardDataSheet != null && cardNameSheet != null && cardDataSheet.RowCount == cardNameSheet.RowCount)
             {
-                var cardTypesSheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCardType>();
-                var cardRaritySheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCardRarity>();
+                var cardTypesSheet = Service.dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCardType>();
+                var cardRaritySheet = Service.dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadCardRarity>();
                 if (cardTypesSheet == null || cardTypesSheet.RowCount != cardTypeMap.Length)
                 {
-                    PluginLog.Fatal($"Failed to parse card types (got:{cardTypesSheet?.RowCount ?? 0}, expected:{cardTypeMap.Length})");
+                    Service.logger.Fatal($"Failed to parse card types (got:{cardTypesSheet?.RowCount ?? 0}, expected:{cardTypeMap.Length})");
                     return false;
                 }
                 if (cardRaritySheet == null || cardRaritySheet.RowCount != cardRarityMap.Length)
                 {
-                    PluginLog.Fatal($"Failed to parse card rarities (got:{cardRaritySheet?.RowCount ?? 0}, expected:{cardRarityMap.Length})");
+                    Service.logger.Fatal($"Failed to parse card rarities (got:{cardRaritySheet?.RowCount ?? 0}, expected:{cardRarityMap.Length})");
                     return false;
                 }
 
@@ -206,7 +204,7 @@ namespace TriadBuddyPlugin
                         int absDiff = (int)Math.Abs(cardDB.cards.Count - idx);
                         if (absDiff > 10)
                         {
-                            PluginLog.Fatal($"Failed to assign card data (got:{cardDB.cards.Count}, expected:{idx})");
+                            Service.logger.Fatal($"Failed to assign card data (got:{cardDB.cards.Count}, expected:{idx})");
                             return false;
                         }
 
@@ -224,7 +222,7 @@ namespace TriadBuddyPlugin
             }
             else
             {
-                PluginLog.Fatal($"Failed to parse card data (D:{cardDataSheet?.RowCount ?? 0}, N:{cardNameSheet?.RowCount ?? 0})");
+                Service.logger.Fatal($"Failed to parse card data (D:{cardDataSheet?.RowCount ?? 0}, N:{cardNameSheet?.RowCount ?? 0})");
                 return false;
             }
 
@@ -239,7 +237,7 @@ namespace TriadBuddyPlugin
             public string Name;
         }
 
-        private bool ParseNpcs(DataManager dataManager)
+        private bool ParseNpcs()
         {
             var npcDB = TriadNpcDB.Get();
 
@@ -250,7 +248,7 @@ namespace TriadBuddyPlugin
             // name is a bit more annoying to get
             var listTriadIds = new List<uint>();
 
-            var npcDataSheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriad>();
+            var npcDataSheet = Service.dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriad>();
             if (npcDataSheet != null)
             {
                 // rowIds are not going from 0 here!
@@ -263,13 +261,13 @@ namespace TriadBuddyPlugin
             listTriadIds.Remove(0);
             if (listTriadIds.Count == 0)
             {
-                PluginLog.Fatal("Failed to parse npc data (missing ids)");
+                Service.logger.Fatal("Failed to parse npc data (missing ids)");
                 return false;
             }
 
             var mapTriadNpcData = new Dictionary<uint, NpcIds>();
-            var sheetNpcNames = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.ENpcResident>();
-            var sheetENpcBase = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.ENpcBase>();
+            var sheetNpcNames = Service.dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.ENpcResident>();
+            var sheetENpcBase = Service.dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.ENpcBase>();
             if (sheetNpcNames != null && sheetENpcBase != null)
             {
                 foreach (var rowData in sheetENpcBase)
@@ -287,7 +285,7 @@ namespace TriadBuddyPlugin
             }
             else
             {
-                PluginLog.Fatal($"Failed to parse npc data (NN:{sheetNpcNames?.RowCount ?? 0}, NB:{sheetENpcBase?.RowCount ?? 0})");
+                Service.logger.Fatal($"Failed to parse npc data (NN:{sheetNpcNames?.RowCount ?? 0}, NB:{sheetENpcBase?.RowCount ?? 0})");
                 return false;
             }
 
@@ -316,7 +314,7 @@ namespace TriadBuddyPlugin
                         {
                             if (ruleRow.Row >= modDB.mods.Count)
                             {
-                                PluginLog.Fatal($"Failed to parse npc data (rule.id:{ruleRow.Row})");
+                                Service.logger.Fatal($"Failed to parse npc data (rule.id:{ruleRow.Row})");
                                 return false;
                             }
 
@@ -325,7 +323,7 @@ namespace TriadBuddyPlugin
 
                             if (ruleRow.Value.Name.RawString != logicRule.GetLocalizedName())
                             {
-                                PluginLog.Fatal($"Failed to match npc rules! (rule.id:{ruleRow.Row})");
+                                Service.logger.Fatal($"Failed to match npc rules! (rule.id:{ruleRow.Row})");
                                 return false;
                             }
                         }
@@ -338,7 +336,7 @@ namespace TriadBuddyPlugin
                 {
                     if (rowData.TripleTriadCardFixed.Length != 5)
                     {
-                        PluginLog.Fatal($"Failed to parse npc data (num CF:{rowData.TripleTriadCardFixed.Length})");
+                        Service.logger.Fatal($"Failed to parse npc data (num CF:{rowData.TripleTriadCardFixed.Length})");
                         return false;
                     }
 
@@ -349,7 +347,7 @@ namespace TriadBuddyPlugin
                         {
                             if (cardRowIdx >= cardDB.cards.Count)
                             {
-                                PluginLog.Fatal($"Failed to parse npc data (card.id:{cardRowIdx})");
+                                Service.logger.Fatal($"Failed to parse npc data (card.id:{cardRowIdx})");
                                 return false;
                             }
 
@@ -365,7 +363,7 @@ namespace TriadBuddyPlugin
                 {
                     if (rowData.TripleTriadCardVariable.Length != 5)
                     {
-                        PluginLog.Fatal($"Failed to parse npc data (num CV:{rowData.TripleTriadCardVariable.Length})");
+                        Service.logger.Fatal($"Failed to parse npc data (num CV:{rowData.TripleTriadCardVariable.Length})");
                         return false;
                     }
 
@@ -376,7 +374,7 @@ namespace TriadBuddyPlugin
                         {
                             if (cardRowIdx >= cardDB.cards.Count)
                             {
-                                PluginLog.Fatal($"Failed to parse npc data (card.id:{cardRowIdx})");
+                                Service.logger.Fatal($"Failed to parse npc data (card.id:{cardRowIdx})");
                                 return false;
                             }
 
@@ -416,9 +414,9 @@ namespace TriadBuddyPlugin
             return true;
         }
 
-        private bool ParseNpcAchievements(DataManager dataManager)
+        private bool ParseNpcAchievements()
         {
-            var npcDataSheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadResident>();
+            var npcDataSheet = Service.dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.TripleTriadResident>();
             if (npcDataSheet != null)
             {
                 // rowIds are not going from 0 here!
@@ -431,9 +429,9 @@ namespace TriadBuddyPlugin
             return true;
         }
 
-        private bool ParseNpcLocations(DataManager dataManager)
+        private bool ParseNpcLocations()
         {
-            var sheetLevel = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Level>();
+            var sheetLevel = Service.dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Level>();
             if (sheetLevel != null)
             {
                 const byte TypeNpc = 8;
@@ -451,7 +449,7 @@ namespace TriadBuddyPlugin
                 }
             }
 
-            var sheetMap = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Map>();
+            var sheetMap = Service.dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Map>();
             if (sheetMap != null)
             {
                 foreach (var kvp in mapENpcCache)
@@ -476,9 +474,9 @@ namespace TriadBuddyPlugin
             return true;
         }
 
-        private bool ParseCardRewards(DataManager dataManager)
+        private bool ParseCardRewards()
         {
-            var sheetItems = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>();
+            var sheetItems = Service.dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>();
             if (sheetItems != null)
             {
                 var cardsDB = TriadCardDB.Get();
@@ -529,7 +527,7 @@ namespace TriadBuddyPlugin
                             else
                             {
                                 var npcName = (kvp.Value.gameLogicOb != null) ? kvp.Value.gameLogicOb.Name.GetLocalized() : "??";
-                                PluginLog.Error($"Failed to parse npc reward data! npc:{kvp.Value.triadId} ({npcName}), rewardId:{itemId} ({itemRow.Name} | {itemRow.Singular})");
+                                Service.logger.Error($"Failed to parse npc reward data! npc:{kvp.Value.triadId} ({npcName}), rewardId:{itemId} ({itemRow.Name} | {itemRow.Singular})");
                             }
                         }
                     }
@@ -559,7 +557,7 @@ namespace TriadBuddyPlugin
                     else
                     {
                         // normal and annoying.
-                        // PluginLog.Log($"Failed to add triad[{cacheOb.triadId}], enpc[{kvp.Key}], name:{cacheOb.gameLogicOb.Name.GetLocalized()} - no location found!");
+                        // Service.logger.Info($"Failed to add triad[{cacheOb.triadId}], enpc[{kvp.Key}], name:{cacheOb.gameLogicOb.Name.GetLocalized()} - no location found!");
                     }
 
                     // npc.Id is their index in data array, refresh it
@@ -585,7 +583,7 @@ namespace TriadBuddyPlugin
                 gameNpcOb.triadId = (int)kvp.Value.triadId;
                 if (!mapNpcAchievementId.TryGetValue(kvp.Value.triadId, out gameNpcOb.achievementId))
                 {
-                    PluginLog.Log($"Failed to find achievId for triadId:{kvp.Value.triadId}");
+                    Service.logger.Info($"Failed to find achievId for triadId:{kvp.Value.triadId}");
                 }
 
                 gameNpcOb.matchFee = kvp.Value.matchFee;
@@ -606,7 +604,7 @@ namespace TriadBuddyPlugin
                     }
                     else
                     {
-                        PluginLog.Error($"Failed to match npc reward data! npc:{gameNpcOb.npcId}, key:{kvp.Key}");
+                        Service.logger.Error($"Failed to match npc reward data! npc:{gameNpcOb.npcId}, key:{kvp.Key}");
                     }
                 }
 
@@ -655,7 +653,7 @@ namespace TriadBuddyPlugin
                     if (numChangedTokens > 0)
                     {
                         var newText = string.Join(' ', tokens);
-                        //PluginLog.Log($"fixed casing: '{entry.Text}' => '{newText}'");
+                        //Service.logger.Info($"fixed casing: '{entry.Text}' => '{newText}'");
                         entry.Text = newText;
                     }
                 }

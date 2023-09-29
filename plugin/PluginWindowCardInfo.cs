@@ -1,7 +1,7 @@
 ﻿using Dalamud;
-using Dalamud.Game.Gui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using FFTriadBuddy;
 using ImGuiNET;
@@ -13,7 +13,6 @@ namespace TriadBuddyPlugin
     public class PluginWindowCardInfo : Window, IDisposable
     {
         private readonly UIReaderTriadCardList uiReaderCardList;
-        private readonly GameGui gameGui;
 
         private TriadCard selectedCard;
         private GameCardInfo selectedCardInfo;
@@ -28,10 +27,9 @@ namespace TriadBuddyPlugin
         private string locNoAvail;
         private bool hasCachedLocStrings;
 
-        public PluginWindowCardInfo(UIReaderTriadCardList uiReaderCardList, GameGui gameGui) : base("Card Info")
+        public PluginWindowCardInfo(UIReaderTriadCardList uiReaderCardList) : base("Card Info")
         {
             this.uiReaderCardList = uiReaderCardList;
-            this.gameGui = gameGui;
 
             uiReaderCardList.OnVisibilityChanged += (_) => UpdateWindowData();
             uiReaderCardList.OnUIStateChanged += (_) => UpdateWindowData();
@@ -161,7 +159,7 @@ namespace TriadBuddyPlugin
                     ImGui.SetCursorPosY(cursorY - ImGui.GetStyle().FramePadding.Y);
                     if (ImGuiComponents.IconButton(FontAwesomeIcon.Map))
                     {
-                        gameGui.OpenMapWithMapLink(rewardNpcInfo.Location);
+                        Service.gameGui.OpenMapWithMapLink(rewardNpcInfo.Location);
                     }
                     if (ImGui.IsItemHovered())
                     {

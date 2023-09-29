@@ -1,5 +1,4 @@
-﻿using Dalamud.Game.Gui;
-using Dalamud.Interface;
+﻿using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using FFTriadBuddy;
 using ImGuiNET;
@@ -14,21 +13,19 @@ namespace TriadBuddyPlugin
         private const float WindowContentWidth = 270.0f;
 
         private readonly UIReaderTriadDeckEdit uiReaderDeckEdit;
-        private readonly GameGui gameGui;
         private readonly Configuration config;
 
         private List<Tuple<TriadCard, GameCardInfo>> listCards = new();
 
         private int selectedCardIdx;
         private ImGuiTextFilterPtr searchFilter;
-        
+
         private int prevNumFiltered;
         private int prevNumCards;
 
-        public PluginWindowDeckSearch(UIReaderTriadDeckEdit uiReaderDeckEdit, GameGui gameGui, Configuration config) : base("Deck Search")
+        public PluginWindowDeckSearch(UIReaderTriadDeckEdit uiReaderDeckEdit, Configuration config) : base("Deck Search")
         {
             this.uiReaderDeckEdit = uiReaderDeckEdit;
-            this.gameGui = gameGui;
             this.config = config;
 
             var searchFilterPtr = ImGuiNative.ImGuiTextFilter_ImGuiTextFilter(null);
@@ -109,7 +106,7 @@ namespace TriadBuddyPlugin
         public override void Draw()
         {
             searchFilter.Draw("", WindowContentWidth * ImGuiHelpers.GlobalScale);
-            
+
             var filteredCards = new List<int>();
             if (ImGui.BeginListBox("##cards", new Vector2(WindowContentWidth * ImGuiHelpers.GlobalScale, ImGui.GetTextLineHeightWithSpacing() * 10)))
             {
@@ -156,7 +153,7 @@ namespace TriadBuddyPlugin
             {
                 var collectionPos = cardInfo.Collection[(int)GameCardCollectionFilter.DeckEditDefault];
 
-                //Dalamud.Logging.PluginLog.Log($"Card selection! {cardOb.Name.GetLocalized()} => page:{collectionPos.PageIndex}, cell:{collectionPos.CellIndex}");
+                //Dalamud.Logging.Service.logger.Info($"Card selection! {cardOb.Name.GetLocalized()} => page:{collectionPos.PageIndex}, cell:{collectionPos.CellIndex}");
                 uiReaderDeckEdit.SetPageAndGridView(collectionPos.PageIndex, collectionPos.CellIndex);
 
                 if (config.ShowDeckEditHighlights)

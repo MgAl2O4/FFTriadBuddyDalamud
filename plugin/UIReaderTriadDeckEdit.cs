@@ -1,5 +1,4 @@
-﻿using Dalamud.Game.Gui;
-using FFXIVClientStructs.FFXIV.Component.GUI;
+﻿using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using MgAl2O4.Utils;
 using System;
@@ -30,13 +29,11 @@ namespace TriadBuddyPlugin
         private float blinkAlpha;
         private float searchSyncBlinkRemaining;
         private bool isOptimizerActive;
-        
-        private List<string> highlightTexPaths = new();
-        private readonly GameGui gameGui;
 
-        public UIReaderTriadDeckEdit(GameGui gameGui)
+        private List<string> highlightTexPaths = new();
+
+        public UIReaderTriadDeckEdit()
         {
-            this.gameGui = gameGui;
             blinkAlpha = 0.0f;
         }
 
@@ -178,11 +175,11 @@ namespace TriadBuddyPlugin
             // agentPtr is NOT available through deck edit addon here
             // use GSInfoCardDeck instead
 
-            IntPtr addonPtr = gameGui.GetAddonByName(GetAddonName(), 1);
-            IntPtr agentPtr = gameGui.FindAgentInterface("GSInfoCardDeck");
+            IntPtr addonPtr = Service.gameGui.GetAddonByName(GetAddonName(), 1);
+            IntPtr agentPtr = Service.gameGui.FindAgentInterface("GSInfoCardDeck");
             if (agentPtr == IntPtr.Zero)
             {
-                agentPtr = UIReaderTriadCardList.LoadFailsafeAgent(gameGui);
+                agentPtr = UIReaderTriadCardList.LoadFailsafeAgent();
             }
 
             if (addonPtr != IntPtr.Zero && agentPtr != IntPtr.Zero)
