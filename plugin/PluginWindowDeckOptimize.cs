@@ -19,7 +19,6 @@ namespace TriadBuddyPlugin
 
         private SolverDeckOptimize solver;
         private UIReaderTriadDeckEdit uiReaderDeckEdit;
-        private Configuration config;
 
         public Action OnConfigRequested;
 
@@ -70,11 +69,10 @@ namespace TriadBuddyPlugin
         private string locOptimizeGuess;
         private bool hasCachedLocStrings;
 
-        public PluginWindowDeckOptimize(SolverDeckOptimize solver, UIReaderTriadDeckEdit uiReaderDeckEdit, Configuration config) : base("Deck Optimizer")
+        public PluginWindowDeckOptimize(SolverDeckOptimize solver, UIReaderTriadDeckEdit uiReaderDeckEdit) : base("Deck Optimizer")
         {
             this.solver = solver;
             this.uiReaderDeckEdit = uiReaderDeckEdit;
-            this.config = config;
 
             deckOptimizer = (solver != null) ? solver.deckOptimizer : new TriadDeckOptimizer();
             deckOptimizer.OnFoundDeck += DeckOptimizer_OnFoundDeck;
@@ -505,7 +503,7 @@ namespace TriadBuddyPlugin
             }
 
             deckOptimizer.Initialize(npc, regionMods.ToArray(), lockedCards);
-            deckOptimizer.parallelLoadPct = (config.DeckOptimizerCPU >= 1.0f) ? -1 : config.DeckOptimizerCPU;
+            deckOptimizer.parallelLoadPct = (Service.pluginConfig.DeckOptimizerCPU >= 1.0f) ? -1 : Service.pluginConfig.DeckOptimizerCPU;
 
             optimizerStatsTimeRemaining = 0;
             pendingCardsUpdateTimeRemaining = 0;

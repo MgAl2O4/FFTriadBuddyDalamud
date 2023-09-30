@@ -16,7 +16,6 @@ namespace TriadBuddyPlugin
     {
         private readonly UIReaderTriadGame uiReaderGame;
         private readonly UIReaderTriadPrep uiReaderPrep;
-        private readonly Configuration config;
 
         public bool showConfigs = false;
         private bool showDebugDetails;
@@ -56,11 +55,10 @@ namespace TriadBuddyPlugin
         private string locConfigOptimizerCPUHint;
         private bool hasCachedLocStrings;
 
-        public PluginWindowStatus(UIReaderTriadGame uiReaderGame, UIReaderTriadPrep uiReaderPrep, Configuration config) : base("Triad Buddy")
+        public PluginWindowStatus(UIReaderTriadGame uiReaderGame, UIReaderTriadPrep uiReaderPrep) : base("Triad Buddy")
         {
             this.uiReaderGame = uiReaderGame;
             this.uiReaderPrep = uiReaderPrep;
-            this.config = config;
 
             IsOpen = false;
 
@@ -153,9 +151,9 @@ namespace TriadBuddyPlugin
             ImGui.Separator();
             bool hasChanges = false;
 
-            var showSolverHintsInGameCopy = config.ShowSolverHintsInGame;
-            var showDeckEditHighlightsCopy = config.ShowDeckEditHighlights;
-            var deckOptimizerCPUCopy = (int)(100 * config.DeckOptimizerCPU);
+            var showSolverHintsInGameCopy = Service.pluginConfig.ShowSolverHintsInGame;
+            var showDeckEditHighlightsCopy = Service.pluginConfig.ShowDeckEditHighlights;
+            var deckOptimizerCPUCopy = (int)(100 * Service.pluginConfig.DeckOptimizerCPU);
 
             hasChanges = ImGui.Checkbox(locConfigSolverHints, ref showSolverHintsInGameCopy) || hasChanges;
             hasChanges = ImGui.Checkbox(locConfigDeckEditHighlights, ref showDeckEditHighlightsCopy) || hasChanges;
@@ -174,10 +172,10 @@ namespace TriadBuddyPlugin
 
             if (hasChanges)
             {
-                config.ShowSolverHintsInGame = showSolverHintsInGameCopy;
-                config.ShowDeckEditHighlights = showDeckEditHighlightsCopy;
-                config.DeckOptimizerCPU = deckOptimizerCPUCopy * 0.01f;
-                config.Save();
+                Service.pluginConfig.ShowSolverHintsInGame = showSolverHintsInGameCopy;
+                Service.pluginConfig.ShowDeckEditHighlights = showDeckEditHighlightsCopy;
+                Service.pluginConfig.DeckOptimizerCPU = deckOptimizerCPUCopy * 0.01f;
+                Service.pluginConfig.Save();
             }
         }
 
@@ -274,7 +272,7 @@ namespace TriadBuddyPlugin
                 ImGui.Text(locGameMove);
                 ImGui.SameLine();
 
-                if (isPvPMatch || isGameDataMissing || !config.ShowSolverHintsInGame)
+                if (isPvPMatch || isGameDataMissing || !Service.pluginConfig.ShowSolverHintsInGame)
                 {
                     ImGui.TextColored(colorYellow, locGameMoveDisabled);
                 }

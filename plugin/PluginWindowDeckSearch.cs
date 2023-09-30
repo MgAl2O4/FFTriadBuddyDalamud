@@ -13,7 +13,6 @@ namespace TriadBuddyPlugin
         private const float WindowContentWidth = 270.0f;
 
         private readonly UIReaderTriadDeckEdit uiReaderDeckEdit;
-        private readonly Configuration config;
 
         private List<Tuple<TriadCard, GameCardInfo>> listCards = new();
 
@@ -23,10 +22,9 @@ namespace TriadBuddyPlugin
         private int prevNumFiltered;
         private int prevNumCards;
 
-        public PluginWindowDeckSearch(UIReaderTriadDeckEdit uiReaderDeckEdit, Configuration config) : base("Deck Search")
+        public PluginWindowDeckSearch(UIReaderTriadDeckEdit uiReaderDeckEdit) : base("Deck Search")
         {
             this.uiReaderDeckEdit = uiReaderDeckEdit;
-            this.config = config;
 
             var searchFilterPtr = ImGuiNative.ImGuiTextFilter_ImGuiTextFilter(null);
             searchFilter = new ImGuiTextFilterPtr(searchFilterPtr);
@@ -137,7 +135,7 @@ namespace TriadBuddyPlugin
 
             bool hasFilteredCardsChanges = (prevNumCards != listCards.Count) || (prevNumFiltered != filteredCards.Count);
             bool hasSomeCardsFiltered = (filteredCards.Count > 0) && (filteredCards.Count != listCards.Count);
-            if (hasFilteredCardsChanges && hasSomeCardsFiltered && config.ShowDeckEditHighlights)
+            if (hasFilteredCardsChanges && hasSomeCardsFiltered && Service.pluginConfig.ShowDeckEditHighlights)
             {
                 prevNumCards = listCards.Count;
                 prevNumFiltered = filteredCards.Count;
@@ -156,7 +154,7 @@ namespace TriadBuddyPlugin
                 //Dalamud.Logging.Service.logger.Info($"Card selection! {cardOb.Name.GetLocalized()} => page:{collectionPos.PageIndex}, cell:{collectionPos.CellIndex}");
                 uiReaderDeckEdit.SetPageAndGridView(collectionPos.PageIndex, collectionPos.CellIndex);
 
-                if (config.ShowDeckEditHighlights)
+                if (Service.pluginConfig.ShowDeckEditHighlights)
                 {
                     uiReaderDeckEdit.SetSearchResultHighlight(new int[] { cardOb.Id });
                 }

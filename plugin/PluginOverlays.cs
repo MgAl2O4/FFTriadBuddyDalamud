@@ -14,7 +14,6 @@ namespace TriadBuddyPlugin
 
         public readonly UIReaderTriadGame uiReaderGame;
         public readonly UIReaderTriadPrep uiReaderPrep;
-        public readonly Configuration config;
 
         // overlay: game board
         private bool hasGameOverlay;
@@ -25,11 +24,10 @@ namespace TriadBuddyPlugin
         // overlay: deck selection
         private bool hasDeckSelection;
 
-        public PluginOverlays(UIReaderTriadGame uiReaderGame, UIReaderTriadPrep uiReaderPrep, Configuration config)
+        public PluginOverlays(UIReaderTriadGame uiReaderGame, UIReaderTriadPrep uiReaderPrep)
         {
             this.uiReaderGame = uiReaderGame;
             this.uiReaderPrep = uiReaderPrep;
-            this.config = config;
 
             SolverUtils.solverGame.OnMoveChanged += OnSolverMove;
             uiReaderPrep.OnDeckSelectionChanged += (active) => hasDeckSelection = active;
@@ -72,7 +70,7 @@ namespace TriadBuddyPlugin
                 return;
             }
 
-            if (config.ShowSolverHintsInGame)
+            if (Service.pluginConfig.ShowSolverHintsInGame)
             {
                 var (deckCardPos, deckCardSize) = uiReaderGame.GetBlueCardPosAndSize(gameCardIdx);
                 var (boardCardPos, boardCardSize) = uiReaderGame.GetBoardCardPosAndSize(gameBoardIdx);

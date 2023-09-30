@@ -2,6 +2,7 @@
 using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 using MgAl2O4.Utils;
 using System;
 
@@ -29,8 +30,6 @@ namespace TriadBuddyPlugin
         public static Localization CurrentLocManager;
         private string[] supportedLangCodes = { "de", "en", "es", "fr", "ja", "ko", "zh" };
 
-        private Configuration configuration { get; init; }
-
         public Plugin(DalamudPluginInterface pluginInterface)
         {
             pluginInterface.Create<Service>();
@@ -51,9 +50,9 @@ namespace TriadBuddyPlugin
             dataLoader.StartAsyncWork();
 
             SolverUtils.CreateSolvers();
-            SolverUtils.solverPreGameDecks.profileGS = configuration.CanUseProfileReader ? new UnsafeReaderProfileGS() : null;
+            SolverUtils.solverPreGameDecks.profileGS = Service.pluginConfig.CanUseProfileReader ? new UnsafeReaderProfileGS() : null;
 
-            statTracker = new StatTracker(configuration);
+            statTracker = new StatTracker();
 
             // prep data scrapers
             uiReaderGame = new UIReaderTriadGame();
@@ -84,12 +83,12 @@ namespace TriadBuddyPlugin
             uiReaderDeckEdit.unsafeDeck = new UnsafeReaderTriadDeck();
 
             // prep UI
-            overlays = new PluginOverlays(uiReaderGame, uiReaderPrep, configuration);
-            statusWindow = new PluginWindowStatus(uiReaderGame, uiReaderPrep, configuration);
+            overlays = new PluginOverlays(uiReaderGame, uiReaderPrep);
+            statusWindow = new PluginWindowStatus(uiReaderGame, uiReaderPrep);
             windowSystem.AddWindow(statusWindow);
 
             var npcStatsWindow = new PluginWindowNpcStats(statTracker);
-            var deckOptimizerWindow = new PluginWindowDeckOptimize(SolverUtils.solverDeckOptimize, uiReaderDeckEdit, configuration);
+            var deckOptimizerWindow = new PluginWindowDeckOptimize(SolverUtils.solverDeckOptimize, uiReaderDeckEdit);
             var deckEvalWindow = new PluginWindowDeckEval(SolverUtils.solverPreGameDecks, uiReaderPrep, deckOptimizerWindow, npcStatsWindow);
             deckOptimizerWindow.OnConfigRequested += () => OnOpenConfig();
             windowSystem.AddWindow(deckEvalWindow);
@@ -97,8 +96,8 @@ namespace TriadBuddyPlugin
             windowSystem.AddWindow(npcStatsWindow);
 
             windowSystem.AddWindow(new PluginWindowCardInfo(uiReaderCardList));
-            windowSystem.AddWindow(new PluginWindowCardSearch(uiReaderCardList, configuration, npcStatsWindow));
-            windowSystem.AddWindow(new PluginWindowDeckSearch(uiReaderDeckEdit, configuration));
+            windowSystem.AddWindow(new PluginWindowCardSearch(uiReaderCardList, npcStatsWindow));
+            windowSystem.AddWindow(new PluginWindowDeckSearch(uiReaderDeckEdit));
 
             // prep plugin hooks
             statusCommand = new(OnCommand) { HelpMessage = string.Format(Localization.Localize("Cmd_Status", "Show state of {0} plugin"), Name) };
@@ -108,7 +107,7 @@ namespace TriadBuddyPlugin
             pluginInterface.UiBuilder.Draw += OnDraw;
             pluginInterface.UiBuilder.OpenConfigUi += OnOpenConfig;
 
-            Service.framework.RunOnTick(Framework_OnUpdateEvent);
+            Service.framework.Update += Framework_Update;
         }
 
         private void OnLanguageChanged(string langCode)
@@ -129,7 +128,8 @@ namespace TriadBuddyPlugin
         public void Dispose()
         {
             Service.commandManager.RemoveHandler("/triadbuddy");
-            windowSystem.RemoveAllWindows();
+            Service.framework.Update -= Framework_Update;
+            windowSystem.RemoveAllWindows();            
         }
 
         private void OnCommand(string command, string args)
@@ -149,13 +149,13 @@ namespace TriadBuddyPlugin
             statusWindow.IsOpen = true;
         }
 
-        private void Framework_OnUpdateEvent()
+        private void Framework_Update(IFramework framework)
         {
             try
             {
                 if (dataLoader.IsDataReady)
                 {
-                    float deltaSeconds = (float)Service.framework.UpdateDelta.TotalSeconds;
+                    float deltaSeconds = (float)framework.UpdateDelta.TotalSeconds;
                     uiReaderScheduler.Update(deltaSeconds);
                 }
             }

@@ -5,12 +5,6 @@ namespace TriadBuddyPlugin
     public class StatTracker
     {
         private readonly static Configuration.NpcStatInfo EmptyStats = new();
-        private readonly Configuration config;
-
-        public StatTracker(Configuration config)
-        {
-            this.config = config;
-        }
 
         public void OnMatchFinished(SolverGame solver, UIStateTriadResults uiState)
         {
@@ -23,7 +17,7 @@ namespace TriadBuddyPlugin
             if (savedStats == null)
             {
                 savedStats = new();
-                config.NpcStats.Add(npcInfo.triadId, savedStats);
+                Service.pluginConfig.NpcStats.Add(npcInfo.triadId, savedStats);
             }
 
             savedStats.NumCoins += uiState.numMGP;
@@ -58,7 +52,7 @@ namespace TriadBuddyPlugin
                 }
             }
 
-            config.Save();
+            Service.pluginConfig.Save();
 
             // consume value to avoid counting if next match is against player
             solver.lastGameNpc = null;
@@ -66,7 +60,7 @@ namespace TriadBuddyPlugin
 
         public Configuration.NpcStatInfo GetNpcStats(GameNpcInfo npcInfo)
         {
-            if (config.NpcStats.TryGetValue(npcInfo.triadId, out var savedStats))
+            if (Service.pluginConfig.NpcStats.TryGetValue(npcInfo.triadId, out var savedStats))
             {
                 return savedStats;
             }
@@ -78,8 +72,8 @@ namespace TriadBuddyPlugin
 
         public void RemoveNpcStats(GameNpcInfo npcInfo)
         {
-            config.NpcStats.Remove(npcInfo.triadId);
-            config.Save();
+            Service.pluginConfig.NpcStats.Remove(npcInfo.triadId);
+            Service.pluginConfig.Save();
         }
 
         public static bool GetAverageRewardPerMatchDesc(Configuration config, GameNpcInfo npcInfo, out float avgMGP)
