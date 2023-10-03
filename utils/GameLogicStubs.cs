@@ -1,4 +1,4 @@
-﻿using Dalamud.Logging;
+﻿using Dalamud.Plugin.Services;
 using System;
 using System.Collections.Generic;
 
@@ -10,10 +10,14 @@ namespace MgAl2O4.Utils
 {
     public class Logger
     {
+#if DEBUG
+        public static IPluginLog logger;
+#endif // DEBUG
+
         public static void WriteLine(string fmt, params object[] args)
         {
 #if DEBUG
-            PluginLog.Log(string.Format(fmt, args));
+            logger?.Info(string.Format(fmt, args));
 #endif // DEBUG
         }
     }

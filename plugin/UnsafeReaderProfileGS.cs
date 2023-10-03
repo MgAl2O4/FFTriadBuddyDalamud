@@ -1,6 +1,4 @@
-﻿using Dalamud.Game.Gui;
-using Dalamud.Logging;
-using Dalamud.Memory;
+﻿using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using System;
 using System.Runtime.InteropServices;
@@ -48,13 +46,7 @@ namespace TriadBuddyPlugin
             public ushort[] cardIds = new ushort[5];
         }
 
-        private readonly GameGui gameGui;
         public bool HasErrors { get; private set; }
-
-        public UnsafeReaderProfileGS(GameGui gameGui)
-        {
-            this.gameGui = gameGui;
-        }
 
         public PlayerDeck[] GetPlayerDecks()
         {
@@ -75,7 +67,7 @@ namespace TriadBuddyPlugin
                 //
                 //     5.58: addr = uiModulePtr + 0x90dd0, this function is just getter for member var holding pointer
 
-                var uiModulePtr = (gameGui != null) ? gameGui.GetUIModule() : IntPtr.Zero;
+                var uiModulePtr = (Service.gameGui != null) ? Service.gameGui.GetUIModule() : IntPtr.Zero;
                 if (uiModulePtr != IntPtr.Zero)
                 {
                     // would be a nice place to use gameGui.address.GetVirtualFunction<> :(
@@ -116,7 +108,7 @@ namespace TriadBuddyPlugin
             }
             catch (Exception ex)
             {
-                PluginLog.Error(ex, "Failed to read GS profile data, turning reader off");
+                Service.logger.Error(ex, "Failed to read GS profile data, turning reader off");
                 HasErrors = true;
             }
 

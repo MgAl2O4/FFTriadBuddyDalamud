@@ -1,6 +1,4 @@
-﻿using Dalamud.Game.Gui;
-using Dalamud.Logging;
-using FFTriadBuddy;
+﻿using FFTriadBuddy;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using MgAl2O4.Utils;
@@ -62,13 +60,7 @@ namespace TriadBuddyPlugin
         public bool IsVisible => (status != Status.AddonNotFound) && (status != Status.AddonNotVisible);
         public bool HasErrors => false;
 
-        private GameGui gameGui;
         private IntPtr cachedAddonAgentPtr;
-
-        public UIReaderTriadCardList(GameGui gameGui)
-        {
-            this.gameGui = gameGui;
-        }
 
         public string GetAddonName()
         {
@@ -86,14 +78,14 @@ namespace TriadBuddyPlugin
 
         public void OnAddonShown(IntPtr addonPtr)
         {
-            cachedAddonAgentPtr = (addonPtr != IntPtr.Zero) ? gameGui.FindAgentInterface(addonPtr) : IntPtr.Zero;
+            cachedAddonAgentPtr = (addonPtr != IntPtr.Zero) ? Service.gameGui.FindAgentInterface(addonPtr) : IntPtr.Zero;
 
             if (cachedAddonAgentPtr == IntPtr.Zero)
             {
                 // failsafe, likely to break with patch
-                cachedAddonAgentPtr = LoadFailsafeAgent(gameGui);
+                cachedAddonAgentPtr = LoadFailsafeAgent();
 #if DEBUG
-                PluginLog.Log($"using agentPtr from failsafe: {(ulong)cachedAddonAgentPtr:X}");
+                Service.logger.Info($"using agentPtr from failsafe: {(ulong)cachedAddonAgentPtr:X}");
 #endif // DEBUG
             }
         }
@@ -141,9 +133,9 @@ namespace TriadBuddyPlugin
             SetStatus(Status.NoErrors);
         }
 
-        public static unsafe IntPtr LoadFailsafeAgent(GameGui gameGui)
+        public static unsafe IntPtr LoadFailsafeAgent()
         {
-            var uiModule = (UIModule*)gameGui.GetUIModule();
+            var uiModule = (UIModule*)Service.gameGui.GetUIModule();
             if (uiModule != null)
             {
                 var agentModule = uiModule->GetAgentModule();
@@ -173,7 +165,7 @@ namespace TriadBuddyPlugin
             }
 
             // refresh cached pointers before using them
-            IntPtr addonPtr = gameGui.GetAddonByName(GetAddonName(), 1);
+            IntPtr addonPtr = Service.gameGui.GetAddonByName(GetAddonName(), 1);
             OnAddonShown(addonPtr);
 
             if (addonPtr != IntPtr.Zero && cachedAddonAgentPtr != IntPtr.Zero)
@@ -198,7 +190,7 @@ namespace TriadBuddyPlugin
 
                 if (HasErrors)
                 {
-                    PluginLog.Error("CardList reader error: " + newStatus);
+                    Service.logger.Error("CardList reader error: " + newStatus);
                 }
 
                 if (wasVisible != IsVisible)

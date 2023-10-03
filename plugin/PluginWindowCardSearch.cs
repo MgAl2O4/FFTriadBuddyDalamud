@@ -1,7 +1,7 @@
 ﻿using Dalamud;
-using Dalamud.Game.Gui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using FFTriadBuddy;
 using ImGuiNET;
@@ -16,8 +16,6 @@ namespace TriadBuddyPlugin
         private const float WindowContentWidth = 270.0f;
 
         private readonly UIReaderTriadCardList uiReaderCardList;
-        private readonly GameGui gameGui;
-        private readonly Configuration config;
         private readonly PluginWindowNpcStats statsWindow;
 
         private List<Tuple<TriadCard, GameCardInfo>> listCards = new();
@@ -50,11 +48,9 @@ namespace TriadBuddyPlugin
         private string locEstMGP;
         private bool hasCachedLocStrings;
 
-        public PluginWindowCardSearch(UIReaderTriadCardList uiReaderCardList, GameGui gameGui, Configuration config, PluginWindowNpcStats statsWindow) : base("Card Search")
+        public PluginWindowCardSearch(UIReaderTriadCardList uiReaderCardList, PluginWindowNpcStats statsWindow) : base("Card Search")
         {
             this.uiReaderCardList = uiReaderCardList;
-            this.gameGui = gameGui;
-            this.config = config;
             this.statsWindow = statsWindow;
 
             var searchFilterCardPtr = ImGuiNative.ImGuiTextFilter_ImGuiTextFilter(null);
@@ -67,12 +63,12 @@ namespace TriadBuddyPlugin
             uiReaderCardList.OnUIStateChanged += OnUIStateChanged;
             UpdateWindowData();
 
-            if (config != null)
+            if (Service.pluginConfig != null)
             {
-                showNpcMatchesOnly = config.CheckCardNpcMatchOnly;
-                showNotOwnedOnly = config.CheckCardNotOwnedOnly;
-                hideNpcBeatenOnce = config.CheckNpcHideBeaten;
-                hideNpcCompleted = config.CheckNpcHideCompleted;
+                showNpcMatchesOnly = Service.pluginConfig.CheckCardNpcMatchOnly;
+                showNotOwnedOnly = Service.pluginConfig.CheckCardNotOwnedOnly;
+                hideNpcBeatenOnce = Service.pluginConfig.CheckNpcHideBeaten;
+                hideNpcCompleted = Service.pluginConfig.CheckNpcHideCompleted;
             }
 
             // doesn't matter will be updated on next draw
@@ -246,10 +242,10 @@ namespace TriadBuddyPlugin
             ImGui.Spacing();
             if (ImGui.Checkbox(locNpcOnly, ref showNpcMatchesOnly))
             {
-                if (config != null)
+                if (Service.pluginConfig != null)
                 {
-                    config.CheckCardNpcMatchOnly = showNpcMatchesOnly;
-                    config.Save();
+                    Service.pluginConfig.CheckCardNpcMatchOnly = showNpcMatchesOnly;
+                    Service.pluginConfig.Save();
                 }
             }
 
@@ -257,10 +253,10 @@ namespace TriadBuddyPlugin
             {
                 if (ImGui.Checkbox(locNotOwnedOnly, ref showNotOwnedOnly))
                 {
-                    if (config != null)
+                    if (Service.pluginConfig != null)
                     {
-                        config.CheckCardNotOwnedOnly = showNotOwnedOnly;
-                        config.Save();
+                        Service.pluginConfig.CheckCardNotOwnedOnly = showNotOwnedOnly;
+                        Service.pluginConfig.Save();
                     }
                 }
             }
@@ -307,19 +303,19 @@ namespace TriadBuddyPlugin
             ImGui.Spacing();
             if (ImGui.Checkbox(locHideBeatenNpc, ref hideNpcBeatenOnce))
             {
-                if (config != null)
+                if (Service.pluginConfig != null)
                 {
-                    config.CheckNpcHideBeaten = hideNpcBeatenOnce;
-                    config.Save();
+                    Service.pluginConfig.CheckNpcHideBeaten = hideNpcBeatenOnce;
+                    Service.pluginConfig.Save();
                 }
             }
 
             if (ImGui.Checkbox(locHideCompletedNpc, ref hideNpcCompleted))
             {
-                if (config != null)
+                if (Service.pluginConfig != null)
                 {
-                    config.CheckNpcHideCompleted = hideNpcCompleted;
-                    config.Save();
+                    Service.pluginConfig.CheckNpcHideCompleted = hideNpcCompleted;
+                    Service.pluginConfig.Save();
                 }
             }
 
@@ -339,7 +335,7 @@ namespace TriadBuddyPlugin
                 ImGui.SetCursorPosY(cursorY - ImGui.GetStyle().FramePadding.Y);
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.Map))
                 {
-                    gameGui.OpenMapWithMapLink(npcData.Item2.Location);
+                    Service.gameGui.OpenMapWithMapLink(npcData.Item2.Location);
                 }
                 if (ImGui.IsItemHovered())
                 {
@@ -357,7 +353,7 @@ namespace TriadBuddyPlugin
                     statsWindow.SetupAndOpen(npcData.Item1);
                 }
 
-                var hasAvgRewards = StatTracker.GetAverageRewardPerMatchDesc(config, npcData.Item2, out var avgRewardPerMatch);
+                var hasAvgRewards = StatTracker.GetAverageRewardPerMatchDesc(Service.pluginConfig, npcData.Item2, out var avgRewardPerMatch);
                 ImGui.SetCursorPosY(cursorY);
                 ImGui.SameLine();
                 ImGui.Text(locNpcStats + (hasAvgRewards ? "," : ""));
@@ -428,7 +424,7 @@ namespace TriadBuddyPlugin
 
                 var collectionPos = cardInfo.Collection[(int)filterEnum];
 
-                //PluginLog.Log($"Card selection! {cardOb.Name.GetLocalized()}, filter:{filterEnum} ({filterMode}) => page:{collectionPos.PageIndex}, cell:{collectionPos.CellIndex}");
+                //Service.logger.Info($"Card selection! {cardOb.Name.GetLocalized()}, filter:{filterEnum} ({filterMode}) => page:{collectionPos.PageIndex}, cell:{collectionPos.CellIndex}");
                 uiReaderCardList.SetPageAndGridView(collectionPos.PageIndex, collectionPos.CellIndex);
             }
         }

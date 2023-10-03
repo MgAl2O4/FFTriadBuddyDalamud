@@ -58,7 +58,7 @@ namespace TriadBuddyPlugin
             return null;
         }
 
-        public GameCardInfo FindByGridLocation(int pageIdx, int cellIdx, int filterMode) 
+        public GameCardInfo FindByGridLocation(int pageIdx, int cellIdx, int filterMode)
         {
             if (pageIdx < 0 || cellIdx < 0 || filterMode < 0 || filterMode > 2)
             {

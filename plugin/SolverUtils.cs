@@ -1,9 +1,4 @@
 ﻿using FFTriadBuddy;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TriadBuddyPlugin
 {
@@ -28,7 +23,7 @@ namespace TriadBuddyPlugin
         {
             solverGame = new SolverGame();
             solverDeckOptimize = new SolverDeckOptimize();
-            solverPreGameDecks= new SolverPreGameDecks();
+            solverPreGameDecks = new SolverPreGameDecks();
 
             TriadGameSimulation.StaticInitialize();
         }
