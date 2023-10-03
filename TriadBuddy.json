@@ -5,5 +5,5 @@
   "Description": "Triple triad solver, NPC matches only.\n- highlights next move during mini game\n- evaluates all deck presets before match\n- deck optimizer for NPC\n- adds more details to card collection window",
   "InternalName": "TriadBuddy",
   "ApplicableVersion": "any",
-  "Tags": [ "solver", "triad", "triple triad" ],
+  "Tags": [ "solver", "triad", "triple triad" ]
 }
