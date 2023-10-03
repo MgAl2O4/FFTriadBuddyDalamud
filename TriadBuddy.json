@@ -6,5 +6,4 @@
   "InternalName": "TriadBuddy",
   "ApplicableVersion": "any",
   "Tags": [ "solver", "triad", "triple triad" ],
-  "DalamudApiLevel": 9
 }
