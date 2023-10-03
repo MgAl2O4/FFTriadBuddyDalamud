@@ -33,7 +33,9 @@ namespace TriadBuddyPlugin
         public Plugin(DalamudPluginInterface pluginInterface)
         {
             pluginInterface.Create<Service>();
+#if DEBUG
             MgAl2O4.Utils.Logger.logger = Service.logger;
+#endif // DEBUG
 
             Service.plugin = this;
 
