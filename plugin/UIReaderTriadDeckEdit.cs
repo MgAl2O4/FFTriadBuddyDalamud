@@ -112,7 +112,7 @@ namespace TriadBuddyPlugin
                         }
                     }
                 }
-            }
+            } 
 
             (cachedState.screenPos, cachedState.screenSize) = GUINodeUtils.GetNodePosAndSize(addon->AtkUnitBase.RootNode);
             cachedState.pageIndex = addon->PageIndex;
@@ -133,7 +133,7 @@ namespace TriadBuddyPlugin
                 foreach (int cardId in cardIds)
                 {
                     // see TriadCardDB.FindByTexture for details on patterns
-                    var pathPattern = string.Format("082000/{0:D6}", FFTriadBuddy.TriadCardDB.GetCardIconTextureId(cardId));
+                    var pathPattern = string.Format("088000/{0:D6}", FFTriadBuddy.TriadCardDB.GetCardIconTextureId(cardId));
                     highlightTexPaths.Add(pathPattern);
                 }
             }
