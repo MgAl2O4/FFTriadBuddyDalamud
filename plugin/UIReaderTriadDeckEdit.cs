@@ -26,16 +26,10 @@ namespace TriadBuddyPlugin
 
         public bool IsVisible { get; private set; }
 
-        private float blinkAlpha;
         private float searchSyncBlinkRemaining;
         private bool isOptimizerActive;
 
         private List<string> highlightTexPaths = new();
-
-        public UIReaderTriadDeckEdit()
-        {
-            blinkAlpha = 0.0f;
-        }
 
         public string GetAddonName()
         {
@@ -57,13 +51,11 @@ namespace TriadBuddyPlugin
         public unsafe void OnAddonUpdate(IntPtr addonPtr)
         {
             var addon = (AddonTriadDeckEdit*)addonPtr;
-            var deltaTime = ImGui.GetIO().DeltaTime;
             var hasHighlights = isOptimizerActive;
-
-            blinkAlpha = (blinkAlpha + deltaTime) % 1.0f;
 
             if (searchSyncBlinkRemaining > 0)
             {
+                var deltaTime = ImGui.GetIO().DeltaTime;
                 searchSyncBlinkRemaining -= deltaTime;
                 hasHighlights = true;
             }
@@ -99,12 +91,7 @@ namespace TriadBuddyPlugin
                         {
                             var texPath = GUINodeUtils.GetNodeTexturePath(nodeImage);
                             bool shouldHighlight = IsCardTexPathMatching(texPath);
-
-                            // lerp color:
-                            //   t0 .. t0.5 = 0 -> 100%
-                            //   t0.5 .. t1 -> hold 100%
-                            float colorAlpha = (blinkAlpha < 0.5f) ? (blinkAlpha * 2.0f) : 1.0f;
-                            byte colorV = (byte)(shouldHighlight ? (50 + 50 * colorAlpha) : 25);
+                            byte colorV = (byte)(shouldHighlight ? 100 : 25);
 
                             nodeImage->MultiplyBlue = colorV;
                             nodeImage->MultiplyRed = colorV;
