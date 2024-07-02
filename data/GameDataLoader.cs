@@ -18,14 +18,14 @@ namespace TriadBuddyPlugin
         {
             public uint triadId;                // TripleTriad sheet
             public int gameLogicIdx = -1;       // TriadNpcDB
-            public TriadNpc gameLogicOb;
+            public TriadNpc? gameLogicOb;
 
-            public float[] mapRawCoords;
-            public float[] mapCoords;
+            public float[]? mapRawCoords;
+            public float[]? mapCoords;
             public uint mapId;
             public uint territoryId;
 
-            public uint[] rewardItems;
+            public uint[]? rewardItems;
             public List<int> rewardCardIds = new();
 
             public int matchFee;
