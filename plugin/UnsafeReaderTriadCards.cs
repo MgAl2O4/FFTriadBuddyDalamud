@@ -10,8 +10,8 @@ namespace TriadBuddyPlugin
         private delegate byte IsCardOwnedDelegate(IntPtr uiState, ushort cardId);
         private delegate byte IsNpcBeatenDelegate(IntPtr uiState, int triadNpcId);
 
-        private readonly IsCardOwnedDelegate IsCardOwnedFunc;
-        private readonly IsNpcBeatenDelegate IsNpcBeatenFunc;
+        private readonly IsCardOwnedDelegate? IsCardOwnedFunc;
+        private readonly IsNpcBeatenDelegate? IsNpcBeatenFunc;
         private readonly IntPtr UIStatePtr;
 
         public UnsafeReaderTriadCards()
@@ -64,7 +64,7 @@ namespace TriadBuddyPlugin
                 return false;
             }
 
-            return !HasErrors && IsCardOwnedFunc(UIStatePtr, (ushort)cardId) != 0;
+            return (IsCardOwnedFunc != null) && IsCardOwnedFunc(UIStatePtr, (ushort)cardId) != 0;
         }
 
         public bool IsNpcBeaten(int npcId)
@@ -74,7 +74,7 @@ namespace TriadBuddyPlugin
                 return false;
             }
 
-            return !HasErrors && IsNpcBeatenFunc(UIStatePtr, npcId) != 0;
+            return (IsNpcBeatenFunc != null) && IsNpcBeatenFunc(UIStatePtr, npcId) != 0;
         }
 
         /*public void TestBeatenNpcs()

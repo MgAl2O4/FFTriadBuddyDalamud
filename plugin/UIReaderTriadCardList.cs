@@ -16,17 +16,17 @@ namespace TriadBuddyPlugin
             [FieldOffset(0x0)] public AtkUnitBase AtkUnitBase;
             [FieldOffset(0xe0)] public AtkCollisionNode* SelectedCardColisionNode;
 
-            [FieldOffset(0x288)] public byte CardRarity;                // 1..5
-            [FieldOffset(0x289)] public byte CardType;                  // 0: no type, 1: primal, 2: scion, 3: beastman, 4: garland
-            [FieldOffset(0x28b)] public byte NumSideU;
-            [FieldOffset(0x28c)] public byte NumSideD;
-            [FieldOffset(0x28d)] public byte NumSideR;
-            [FieldOffset(0x28e)] public byte NumSideL;
-            [FieldOffset(0x290)] public int CardIconId;                 // texture id for button (82100+) or 0 when missing
+            [FieldOffset(0x298)] public byte CardRarity;                // 1..5
+            [FieldOffset(0x299)] public byte CardType;                  // 0: no type, 1: primal, 2: scion, 3: beastman, 4: garland
+            [FieldOffset(0x29b)] public byte NumSideU;
+            [FieldOffset(0x29c)] public byte NumSideD;
+            [FieldOffset(0x29d)] public byte NumSideR;
+            [FieldOffset(0x29e)] public byte NumSideL;
+            [FieldOffset(0x2a0)] public int CardIconId;                 // texture id for button (82100+) or 0 when missing
 
-            [FieldOffset(0x31c)] public byte FilterMode;                // 0xD = all, 0x3 = only owned, 0xC = only missing
-            [FieldOffset(0x50c)] public byte PageIndex;                 // ignores writes
-            [FieldOffset(0x514)] public byte CardIndex;                 // can be written to, yay!
+            [FieldOffset(0x32c)] public byte FilterMode;                // 0xD = all, 0x3 = only owned, 0xC = only missing
+            [FieldOffset(0x51c)] public byte PageIndex;                 // ignores writes
+            [FieldOffset(0x524)] public byte CardIndex;                 // can be written to, yay!
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 0x110)]               // it's around 0x200?
@@ -107,8 +107,8 @@ namespace TriadBuddyPlugin
             (cachedState.descriptionPos, cachedState.descriptionSize) = GUINodeUtils.GetNodePosAndSize(descNode);
 
             byte newFilterMode =
-                (addon->FilterMode == 0x3) ? (byte)1 :
-                (addon->FilterMode == 0xC) ? (byte)2 :
+                (addon->FilterMode == 0x7) ? (byte)1 :
+                (addon->FilterMode == 0xA) ? (byte)2 :
                 (byte)0;
 
             if (cachedState.pageIndex != addon->PageIndex ||
