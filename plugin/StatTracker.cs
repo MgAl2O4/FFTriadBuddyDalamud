@@ -58,7 +58,7 @@ namespace TriadBuddyPlugin
             solver.lastGameNpc = null;
         }
 
-        public Configuration.NpcStatInfo GetNpcStats(GameNpcInfo npcInfo)
+        public Configuration.NpcStatInfo? GetNpcStats(GameNpcInfo npcInfo)
         {
             if (Service.pluginConfig.NpcStats.TryGetValue(npcInfo.triadId, out var savedStats))
             {
@@ -92,7 +92,7 @@ namespace TriadBuddyPlugin
                         if (kvp.Key >= 0 && kvp.Key < cardDB.cards.Count && kvp.Value > 0)
                         {
                             var cardOb = cardDB.FindById(kvp.Key);
-                            if (cardOb.IsValid() && gameCardDB.mapCards.TryGetValue(kvp.Key, out var cardInfo))
+                            if (cardOb != null && cardOb.IsValid() && gameCardDB.mapCards.TryGetValue(kvp.Key, out var cardInfo))
                             {
                                 sumNetGain += kvp.Value * cardInfo.SaleValue;
                             }

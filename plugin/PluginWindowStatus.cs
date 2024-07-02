@@ -1,13 +1,13 @@
 ﻿using Dalamud;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
-using Dalamud.Interface.Internal;
+using Dalamud.Interface.Textures;
+using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using FFTriadBuddy;
 using ImGuiNET;
 using System;
-using System.Collections.Generic;
 using System.Numerics;
 
 namespace TriadBuddyPlugin
@@ -20,7 +20,6 @@ namespace TriadBuddyPlugin
         public bool showConfigs = false;
         private bool showDebugDetails;
         private float orgDrawPosX;
-        private Dictionary<int, IDalamudTextureWrap> mapCardImages = new();
         private const float debugCellSize = 30.0f;
         private const float debugCellPading = 4.0f;
 
@@ -29,30 +28,30 @@ namespace TriadBuddyPlugin
         private Vector4 colorYellow = new Vector4(0.9f, 0.9f, 0.2f, 1);
         private Vector4 colorInactive = new Vector4(0.5f, 0.5f, 0.5f, 1);
 
-        private string locStatus;
-        private string locStatusNotActive;
-        private string locStatusPvPMatch;
-        private string locStatusActive;
-        private string locGameData;
-        private string locGameDataError;
-        private string locGameDataLog;
-        private string locPrepNpc;
-        private string locPrepRule;
-        private string locGameNpc;
-        private string locGameMove;
-        private string locGameMoveDisabled;
-        private string locBoardX0;
-        private string locBoardX1;
-        private string locBoardX2;
-        private string locBoardY0;
-        private string locBoardY1;
-        private string locBoardY2;
-        private string locBoardCenter;
-        private string locDebugMode;
-        private string locConfigSolverHints;
-        private string locConfigDeckEditHighlights;
-        private string locConfigOptimizerCPU;
-        private string locConfigOptimizerCPUHint;
+        private string? locStatus;
+        private string? locStatusNotActive;
+        private string? locStatusPvPMatch;
+        private string? locStatusActive;
+        private string? locGameData;
+        private string? locGameDataError;
+        private string? locGameDataLog;
+        private string? locPrepNpc;
+        private string? locPrepRule;
+        private string? locGameNpc;
+        private string? locGameMove;
+        private string? locGameMoveDisabled;
+        private string? locBoardX0;
+        private string? locBoardX1;
+        private string? locBoardX2;
+        private string? locBoardY0;
+        private string? locBoardY1;
+        private string? locBoardY2;
+        private string? locBoardCenter;
+        private string? locDebugMode;
+        private string? locConfigSolverHints;
+        private string? locConfigDeckEditHighlights;
+        private string? locConfigOptimizerCPU;
+        private string? locConfigOptimizerCPUHint;
         private bool hasCachedLocStrings;
 
         public PluginWindowStatus(UIReaderTriadGame uiReaderGame, UIReaderTriadPrep uiReaderPrep) : base("Triad Buddy")
@@ -66,15 +65,15 @@ namespace TriadBuddyPlugin
 
             Flags = ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoScrollbar;
 
-            Plugin.CurrentLocManager.LocalizationChanged += (_) => { hasCachedLocStrings = false; };
+            if (Plugin.CurrentLocManager != null)
+            {
+                Plugin.CurrentLocManager.LocalizationChanged += (_) => { hasCachedLocStrings = false; };
+            }
         }
 
         public void Dispose()
         {
-            foreach (var kvp in mapCardImages)
-            {
-                kvp.Value.Dispose();
-            }
+            // ...
         }
 
         private void UpdateLocalizationCache()
@@ -115,12 +114,6 @@ namespace TriadBuddyPlugin
 
         public override void OnClose()
         {
-            // release all images collected so far
-            foreach (var kvp in mapCardImages)
-            {
-                kvp.Value.Dispose();
-            }
-            mapCardImages.Clear();
         }
 
         public override void Draw()
@@ -161,7 +154,7 @@ namespace TriadBuddyPlugin
             ImGui.Spacing();
             ImGui.Text(locConfigOptimizerCPU);
             ImGui.SameLine();
-            ImGuiComponents.HelpMarker(locConfigOptimizerCPUHint);
+            ImGuiComponents.HelpMarker(locConfigOptimizerCPUHint ?? "");
             ImGui.SameLine();
             int maxProcessors = Math.Max(1, Environment.ProcessorCount);
             int numProcessors = Math.Max(1, (int)(maxProcessors * deckOptimizerCPUCopy * 0.01f));
@@ -181,6 +174,11 @@ namespace TriadBuddyPlugin
 
         private void DrawStatus()
         {
+            if (SolverUtils.solverGame == null)
+            {
+                return;
+            }
+
             ImGui.AlignTextToFramePadding();
             ImGui.Text(locStatus);
             ImGui.SameLine();
@@ -230,7 +228,7 @@ namespace TriadBuddyPlugin
             }
             else
             {
-                ImGui.Text(string.Format(locGameDataLog, numCards, numNpcs));
+                ImGui.Text(string.Format(locGameDataLog ?? "", numCards, numNpcs));
             }
 
             ImGui.Separator();
@@ -238,30 +236,33 @@ namespace TriadBuddyPlugin
             // context sensitive part
             if (uiReaderPrep.HasDeckSelectionUI || uiReaderPrep.HasMatchRequestUI)
             {
-                var rulesDesc = "--";
-
-                var npcDesc = (SolverUtils.solverPreGameDecks.preGameNpc != null) ? SolverUtils.solverPreGameDecks.preGameNpc.Name.GetLocalized() : uiReaderPrep.cachedState.npc;
-                if (SolverUtils.solverPreGameDecks.preGameMods.Count > 0)
+                if (SolverUtils.solverPreGameDecks != null)
                 {
-                    rulesDesc = "";
-                    foreach (var ruleOb in SolverUtils.solverPreGameDecks.preGameMods)
+                    var rulesDesc = "--";
+
+                    var npcDesc = (SolverUtils.solverPreGameDecks.preGameNpc != null) ? SolverUtils.solverPreGameDecks.preGameNpc.Name.GetLocalized() : uiReaderPrep.cachedState.npc;
+                    if (SolverUtils.solverPreGameDecks.preGameMods.Count > 0)
                     {
-                        if (rulesDesc.Length > 0) { rulesDesc += ", "; }
-                        rulesDesc += ruleOb.GetLocalizedName();
+                        rulesDesc = "";
+                        foreach (var ruleOb in SolverUtils.solverPreGameDecks.preGameMods)
+                        {
+                            if (rulesDesc.Length > 0) { rulesDesc += ", "; }
+                            rulesDesc += ruleOb.GetLocalizedName();
+                        }
                     }
-                }
-                else
-                {
-                    rulesDesc = string.Join(", ", uiReaderPrep.cachedState.rules);
-                }
+                    else
+                    {
+                        rulesDesc = string.Join(", ", uiReaderPrep.cachedState.rules);
+                    }
 
-                ImGui.Text(locPrepNpc);
-                ImGui.SameLine();
-                ImGui.TextColored(colorYellow, npcDesc);
+                    ImGui.Text(locPrepNpc);
+                    ImGui.SameLine();
+                    ImGui.TextColored(colorYellow, npcDesc);
 
-                ImGui.Text(locPrepRule);
-                ImGui.SameLine();
-                ImGui.TextColored(colorYellow, rulesDesc);
+                    ImGui.Text(locPrepRule);
+                    ImGui.SameLine();
+                    ImGui.TextColored(colorYellow, rulesDesc);
+                }
             }
             else
             {
@@ -286,9 +287,9 @@ namespace TriadBuddyPlugin
                     string humanCard = (SolverUtils.solverGame.moveCard != null) ? SolverUtils.solverGame.moveCard.Name.GetLocalized() : "??";
                     int boardX = SolverUtils.solverGame.moveBoardIdx % 3;
                     int boardY = SolverUtils.solverGame.moveBoardIdx / 3;
-                    string humanBoardX = boardX == 0 ? locBoardX0 : (boardX == 1) ? locBoardX1 : locBoardX2;
-                    string humanBoardY = boardY == 0 ? locBoardY0 : (boardY == 1) ? locBoardY1 : locBoardY2;
-                    string humanBoard = (SolverUtils.solverGame.moveBoardIdx == 4) ? locBoardCenter : $"{humanBoardY}, {humanBoardX}";
+                    string? humanBoardX = boardX == 0 ? locBoardX0 : (boardX == 1) ? locBoardX1 : locBoardX2;
+                    string? humanBoardY = boardY == 0 ? locBoardY0 : (boardY == 1) ? locBoardY1 : locBoardY2;
+                    string? humanBoard = (SolverUtils.solverGame.moveBoardIdx == 4) ? locBoardCenter : $"{humanBoardY}, {humanBoardX}";
 
                     // 1 based indexing for humans, disgusting
                     ImGui.TextColored(useColor, $"[{SolverUtils.solverGame.moveCardIdx + 1}] {humanCard} => {humanBoard}");
@@ -443,7 +444,7 @@ namespace TriadBuddyPlugin
             ImGui.Dummy(new Vector2(400, 180));
         }
 
-        private void DrawPaddedCardHelper(ref Vector2 pos, TriadCard cardOb, uint cellColor)
+        private void DrawPaddedCardHelper(ref Vector2 pos, TriadCard? cardOb, uint cellColor)
         {
             const float halfThickness = debugCellPading / 2;
             float totalSize = debugCellSize + debugCellPading * 2;
@@ -456,9 +457,12 @@ namespace TriadBuddyPlugin
             if (cardOb != null && cardOb.IsValid())
             {
                 var texture = GetCardTexture(cardOb.Id);
-                drawList.AddImage(texture.ImGuiHandle,
-                    pos + new Vector2(debugCellPading, debugCellPading),
-                    pos + new Vector2(debugCellPading + debugCellSize, debugCellPading + debugCellSize));
+                if (texture != null)
+                {
+                    drawList.AddImage(texture.ImGuiHandle,
+                        pos + new Vector2(debugCellPading, debugCellPading),
+                        pos + new Vector2(debugCellPading + debugCellSize, debugCellPading + debugCellSize));
+                }
             }
             else
             {
@@ -490,18 +494,22 @@ namespace TriadBuddyPlugin
             pos.Y += debugCellSize + debugCellPading * 2;
         }
 
-        private IDalamudTextureWrap GetCardTexture(int cardId)
+        private IDalamudTextureWrap? GetCardTexture(int cardId)
         {
-            if (mapCardImages.TryGetValue(cardId, out var texWrap))
+            uint iconId = TriadCardDB.GetCardTextureId(cardId);
+            GameIconLookup iconLookup = new(iconId);
+
+            var resource = Service.textureProvider.GetFromGameIcon(iconLookup);
+            if (resource != null)
             {
-                return texWrap;
+                var hasWrap = resource.TryGetWrap(out IDalamudTextureWrap? resultOb, out Exception? ex);
+                if (hasWrap)
+                {
+                    return resultOb;
+                }
             }
 
-            uint iconId = TriadCardDB.GetCardIconTextureId(cardId);
-            var newTexWrap = Service.textureProvider.GetIcon(iconId);
-            mapCardImages.Add(cardId, newTexWrap);
-
-            return newTexWrap;
+            return null;
         }
     }
 }

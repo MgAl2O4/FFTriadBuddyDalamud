@@ -13,7 +13,7 @@ namespace TriadBuddyPlugin
         private bool pauseOptimizerForOptimizedEval = false;
         private bool pauseOptimizerForDeckEval = false;
 
-        public void SolveOptimizedDeck(TriadDeck deck, TriadNpc npc, List<TriadGameModifier> regionMods, SolverUtils.SolveDeckDelegate callback)
+        public void SolveOptimizedDeck(TriadDeck? deck, TriadNpc? npc, List<TriadGameModifier> regionMods, SolverUtils.SolveDeckDelegate callback)
         {
             if (npc == null || deck == null)
             {
@@ -28,11 +28,14 @@ namespace TriadBuddyPlugin
 
             SetPauseForOptimizedDeck(true);
 
-            Action<object> solverAction = (ctxOb) =>
+            Action<object?> solverAction = (ctxOb) =>
             {
                 var ctx = ctxOb as SolverUtils.DeckSolverContext;
-                ctx.solver.FindNextMove(ctx.gameState, out _, out _, out var solverResult);
-                callback?.Invoke(solverResult);
+                if (ctx != null && ctx.solver != null && ctx.gameState != null)
+                {
+                    ctx.solver.FindNextMove(ctx.gameState, out _, out _, out var solverResult);
+                    callback?.Invoke(solverResult);
+                }
 
                 SetPauseForOptimizedDeck(false);
             };

@@ -8,10 +8,10 @@ namespace TriadBuddyPlugin
         public bool HasErrors { get; private set; }
 
         private delegate void SetSelectedCardDelegate(IntPtr addonPtr, int cellIdx);
-        private readonly SetSelectedCardDelegate SetSelectedCardFunc;
+        private readonly SetSelectedCardDelegate? SetSelectedCardFunc;
 
         private delegate void RefreshUIDelegate(IntPtr agentPtr);
-        private readonly RefreshUIDelegate RefreshUIFunc;
+        private readonly RefreshUIDelegate? RefreshUIFunc;
 
         public UnsafeReaderTriadDeck()
         {
@@ -52,7 +52,7 @@ namespace TriadBuddyPlugin
 
         public void SetSelectedCard(IntPtr addonPtr, int cellIdx)
         {
-            if (HasErrors || cellIdx < 0 || cellIdx >= 30)
+            if (SetSelectedCardFunc == null || cellIdx < 0 || cellIdx >= 30)
             {
                 return;
             }
@@ -62,7 +62,7 @@ namespace TriadBuddyPlugin
 
         public void RefreshUI(IntPtr agentPtr)
         {
-            if (!HasErrors)
+            if (RefreshUIFunc != null)
             {
                 RefreshUIFunc(agentPtr);
             }

@@ -21,8 +21,8 @@ namespace TriadBuddyPlugin
         }
 
         public UIStateTriadDeckEdit cachedState = new();
-        public UnsafeReaderTriadDeck unsafeDeck;
-        public Action<bool> OnVisibilityChanged;
+        public UnsafeReaderTriadDeck? unsafeDeck;
+        public Action<bool>? OnVisibilityChanged;
 
         public bool IsVisible { get; private set; }
 
@@ -89,7 +89,7 @@ namespace TriadBuddyPlugin
                         }
                         else
                         {
-                            var texPath = GUINodeUtils.GetNodeTexturePath(nodeImage);
+                            var texPath = GUINodeUtils.GetNodeTexturePath(nodeImage) ?? "";
                             bool shouldHighlight = IsCardTexPathMatching(texPath);
                             byte colorV = (byte)(shouldHighlight ? 100 : 25);
 
@@ -99,7 +99,7 @@ namespace TriadBuddyPlugin
                         }
                     }
                 }
-            } 
+            }
 
             (cachedState.screenPos, cachedState.screenSize) = GUINodeUtils.GetNodePosAndSize(addon->AtkUnitBase.RootNode);
             cachedState.pageIndex = addon->PageIndex;
@@ -112,7 +112,7 @@ namespace TriadBuddyPlugin
             highlightTexPaths.Clear();
         }
 
-        public void SetHighlightedCards(int[] cardIds)
+        public void SetHighlightedCards(int[]? cardIds)
         {
             highlightTexPaths.Clear();
             if (cardIds != null)
@@ -183,9 +183,9 @@ namespace TriadBuddyPlugin
                 agent->FilterMode = 0;
 
                 agent->PageIndex = (byte)pageIndex;
-                unsafeDeck.RefreshUI(agentPtr);
-
-                unsafeDeck.SetSelectedCard(addonPtr, cellIndex);
+                
+                unsafeDeck?.RefreshUI(agentPtr);
+                unsafeDeck?.SetSelectedCard(addonPtr, cellIndex);
 
                 return true;
             }

@@ -53,8 +53,8 @@ namespace TriadBuddyPlugin
         }
 
         public UIStateTriadCardList cachedState = new();
-        public Action<UIStateTriadCardList> OnUIStateChanged;
-        public Action<bool> OnVisibilityChanged;
+        public Action<UIStateTriadCardList>? OnUIStateChanged;
+        public Action<bool>? OnVisibilityChanged;
 
         public Status status = Status.AddonNotFound;
         public bool IsVisible => (status != Status.AddonNotFound) && (status != Status.AddonNotVisible);
@@ -236,7 +236,7 @@ namespace TriadBuddyPlugin
         public byte cardIndex;
         public byte filterMode;
 
-        public TriadCard ToTriadCard(GameUIParser ctx)
+        public TriadCard? ToTriadCard(GameUIParser ctx)
         {
             var matchOb = ctx.ParseCard(numU, numL, numD, numR, (ETriadCardType)type, (ETriadCardRarity)rarity, false);
             if (matchOb == null || matchOb.SameNumberId >= 0)

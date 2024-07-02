@@ -1,6 +1,7 @@
 ﻿using Dalamud;
 using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
+using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using MgAl2O4.Utils;
@@ -27,10 +28,12 @@ namespace TriadBuddyPlugin
         private readonly PluginOverlays overlays;
         private readonly Localization locManager;
 
-        public static Localization CurrentLocManager;
+        public static Localization? CurrentLocManager;
         private string[] supportedLangCodes = { "de", "en", "es", "fr", "ja", "ko", "zh" };
 
-        public Plugin(DalamudPluginInterface pluginInterface)
+        [PluginService] internal static IDalamudPluginInterface pluginInterface { get; private set; } = null!;
+
+        public Plugin()
         {
             pluginInterface.Create<Service>();
 #if DEBUG
@@ -38,9 +41,8 @@ namespace TriadBuddyPlugin
 #endif // DEBUG
 
             Service.plugin = this;
-
+            Service.pluginInterface = pluginInterface;
             Service.pluginConfig = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-            Service.pluginConfig.Initialize(pluginInterface);
 
             // prep utils
             var myAssemblyName = GetType().Assembly.GetName().Name;
@@ -52,23 +54,26 @@ namespace TriadBuddyPlugin
             dataLoader.StartAsyncWork();
 
             SolverUtils.CreateSolvers();
-            SolverUtils.solverPreGameDecks.profileGS = Service.pluginConfig.CanUseProfileReader ? new UnsafeReaderProfileGS() : null;
+            if (Service.pluginConfig != null && Service.pluginConfig.CanUseProfileReader && SolverUtils.solverPreGameDecks != null)
+            {
+                SolverUtils.solverPreGameDecks.profileGS = new UnsafeReaderProfileGS();
+            }
 
             statTracker = new StatTracker();
 
             // prep data scrapers
             uiReaderGame = new UIReaderTriadGame();
-            uiReaderGame.OnUIStateChanged += (state) => SolverUtils.solverGame.UpdateGame(state);
+            uiReaderGame.OnUIStateChanged += (state) => { if (state != null) { SolverUtils.solverGame?.UpdateGame(state); } };
 
             uiReaderPrep = new UIReaderTriadPrep();
-            uiReaderPrep.shouldScanDeckData = (SolverUtils.solverPreGameDecks.profileGS == null) || SolverUtils.solverPreGameDecks.profileGS.HasErrors;
-            uiReaderPrep.OnUIStateChanged += (state) => SolverUtils.solverPreGameDecks.UpdateDecks(state);
+            uiReaderPrep.shouldScanDeckData = (SolverUtils.solverPreGameDecks?.profileGS == null) || SolverUtils.solverPreGameDecks.profileGS.HasErrors;
+            uiReaderPrep.OnUIStateChanged += (state) => SolverUtils.solverPreGameDecks?.UpdateDecks(state);
 
             uiReaderCardList = new UIReaderTriadCardList();
             uiReaderDeckEdit = new UIReaderTriadDeckEdit();
 
             var uiReaderMatchResults = new UIReaderTriadResults();
-            uiReaderMatchResults.OnUpdated += (state) => statTracker.OnMatchFinished(SolverUtils.solverGame, state);
+            uiReaderMatchResults.OnUpdated += (state) => { if (SolverUtils.solverGame != null) { statTracker.OnMatchFinished(SolverUtils.solverGame, state); } };
 
             uiReaderScheduler = new UIReaderScheduler(Service.gameGui);
             uiReaderScheduler.AddObservedAddon(uiReaderGame);
@@ -90,8 +95,8 @@ namespace TriadBuddyPlugin
             windowSystem.AddWindow(statusWindow);
 
             var npcStatsWindow = new PluginWindowNpcStats(statTracker);
-            var deckOptimizerWindow = new PluginWindowDeckOptimize(SolverUtils.solverDeckOptimize, uiReaderDeckEdit);
-            var deckEvalWindow = new PluginWindowDeckEval(SolverUtils.solverPreGameDecks, uiReaderPrep, deckOptimizerWindow, npcStatsWindow);
+            var deckOptimizerWindow = new PluginWindowDeckOptimize(uiReaderDeckEdit);
+            var deckEvalWindow = new PluginWindowDeckEval(uiReaderPrep, deckOptimizerWindow, npcStatsWindow);
             deckOptimizerWindow.OnConfigRequested += () => OnOpenConfig();
             windowSystem.AddWindow(deckEvalWindow);
             windowSystem.AddWindow(deckOptimizerWindow);
@@ -108,6 +113,7 @@ namespace TriadBuddyPlugin
             pluginInterface.LanguageChanged += OnLanguageChanged;
             pluginInterface.UiBuilder.Draw += OnDraw;
             pluginInterface.UiBuilder.OpenConfigUi += OnOpenConfig;
+            pluginInterface.UiBuilder.OpenMainUi += () => OnCommand("", "");
 
             Service.framework.Update += Framework_Update;
         }
@@ -131,11 +137,12 @@ namespace TriadBuddyPlugin
         {
             Service.commandManager.RemoveHandler("/triadbuddy");
             Service.framework.Update -= Framework_Update;
-            windowSystem.RemoveAllWindows();            
+            windowSystem.RemoveAllWindows();
         }
 
         private void OnCommand(string command, string args)
         {
+            statusWindow.showConfigs = false;
             statusWindow.IsOpen = true;
         }
 

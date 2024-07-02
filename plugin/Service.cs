@@ -7,12 +7,9 @@ namespace TriadBuddyPlugin
 {
     internal class Service
     {
-        public static Plugin plugin;
-
-        public static Configuration pluginConfig;
-
-        [PluginService]
-        public static DalamudPluginInterface pluginInterface { get; private set; } = null!;
+        public static Plugin plugin = null!;
+        public static IDalamudPluginInterface pluginInterface = null!;
+        public static Configuration pluginConfig = null!;
 
         [PluginService]
         public static IDataManager dataManager { get; private set; } = null!;

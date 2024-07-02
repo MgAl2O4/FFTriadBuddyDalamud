@@ -76,12 +76,12 @@ namespace TriadBuddyPlugin
             FailedToReadCards,
         }
 
-        public UIStateTriadGame currentState;
+        public UIStateTriadGame? currentState;
         public Status status = Status.AddonNotFound;
         public bool HasErrors => status >= Status.FailedToReadMove;
         public bool IsVisible => (status != Status.AddonNotFound) && (status != Status.AddonNotVisible);
 
-        public event Action<UIStateTriadGame> OnUIStateChanged;
+        public event Action<UIStateTriadGame?>? OnUIStateChanged;
 
         private IntPtr addonPtr;
 
@@ -174,7 +174,7 @@ namespace TriadBuddyPlugin
             }
         }
 
-        private void SetCurrentState(UIStateTriadGame newState)
+        private void SetCurrentState(UIStateTriadGame? newState)
         {
             bool isEmpty = newState == null;
             bool wasEmpty = currentState == null;
@@ -185,7 +185,7 @@ namespace TriadBuddyPlugin
             }
 
             bool changed = (isEmpty != wasEmpty);
-            if (!changed && !isEmpty && !wasEmpty)
+            if (!changed && newState != null && currentState != null)
             {
                 changed = !currentState.Equals(newState);
             }
@@ -197,7 +197,7 @@ namespace TriadBuddyPlugin
             }
         }
 
-        private unsafe List<string> GetUIDescriptionRedPlayer(AtkResNode*[] level0)
+        private unsafe List<string> GetUIDescriptionRedPlayer(AtkResNode*[]? level0)
         {
             var listRedDesc = new List<string>();
 
@@ -233,7 +233,7 @@ namespace TriadBuddyPlugin
             return listRedDesc;
         }
 
-        private unsafe List<string> GetUIDescriptionRules(AtkResNode*[] level0)
+        private unsafe List<string> GetUIDescriptionRules(AtkResNode*[]? level0)
         {
             var listRuleDesc = new List<string>();
 
@@ -259,11 +259,11 @@ namespace TriadBuddyPlugin
             return listRuleDesc;
         }
 
-        private unsafe bool GetUIStatePvP(AtkResNode*[] level0)
+        private unsafe bool GetUIStatePvP(AtkResNode*[]? level0)
         {
             // verify, is that for both pvp and tournament games?
             var nodePvPButton = GUINodeUtils.PickNode(level0, 11, 12);
-            if (nodePvPButton != null && nodePvPButton->IsVisible)
+            if (nodePvPButton != null && nodePvPButton->IsVisible())
             {
                 return true;
             }
@@ -288,7 +288,7 @@ namespace TriadBuddyPlugin
             }
 
             bool isLocked = (nodeB != null) && (nodeB->MultiplyRed < 100);
-            return (texPath, isLocked);
+            return (texPath ?? "", isLocked);
         }
 
         private unsafe UIStateTriadCard GetCardData(AddonTripleTriadCard addonCard)

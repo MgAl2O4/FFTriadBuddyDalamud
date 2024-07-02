@@ -16,7 +16,7 @@ namespace TriadBuddyPlugin
         public bool hasFailedNpc = false;
         public bool HasErrors => hasFailedCard || hasFailedModifier || hasFailedNpc;
 
-        private static string lastLoggedNpc;
+        private static string? lastLoggedNpc;
 
         public void Reset()
         {
@@ -25,7 +25,7 @@ namespace TriadBuddyPlugin
             hasFailedNpc = false;
         }
 
-        public TriadCard ParseCard(int numU, int numL, int numD, int numR, string texPath, bool markFailed = true)
+        public TriadCard? ParseCard(int numU, int numL, int numD, int numR, string texPath, bool markFailed = true)
         {
             // there's hardly any point in doing side comparison since plugin can access card id directly, but i still like it :<
             var matchOb = cards.Find(numU, numL, numD, numR);
@@ -46,7 +46,7 @@ namespace TriadBuddyPlugin
             return matchOb;
         }
 
-        public TriadCard ParseCard(int numU, int numL, int numD, int numR, ETriadCardType type, ETriadCardRarity rarity, bool markFailed = true)
+        public TriadCard? ParseCard(int numU, int numL, int numD, int numR, ETriadCardType type, ETriadCardRarity rarity, bool markFailed = true)
         {
             var matchOb = cards.Find(numU, numL, numD, numR, type, rarity);
             if (matchOb == null && markFailed)
@@ -58,7 +58,7 @@ namespace TriadBuddyPlugin
             return matchOb;
         }
 
-        public TriadCard ParseCardByTexture(string texPath, bool markFailed = true)
+        public TriadCard? ParseCardByTexture(string texPath, bool markFailed = true)
         {
             var matchOb = cards.FindByTexture(texPath);
             if (matchOb == null && markFailed)
@@ -69,23 +69,31 @@ namespace TriadBuddyPlugin
             return matchOb;
         }
 
-        public TriadCard ParseCardByGridLocation(int pageIdx, int cellIdx, int filterMode, bool markFailed = true)
+        public TriadCard? ParseCardByGridLocation(int pageIdx, int cellIdx, int filterMode, bool markFailed = true)
         {
             var matchInfoOb = GameCardDB.Get().FindByGridLocation(pageIdx, cellIdx, filterMode);
-            if (matchInfoOb == null && markFailed)
+            if (matchInfoOb != null)
             {
-                OnFailedCard($"page:{pageIdx}, cell:{cellIdx}, mode:{filterMode}");
-                return null;
+                var matchOb = cards.FindById(matchInfoOb.CardId);
+                if (matchOb != null)
+                {
+                    return matchOb;
+                }
+                
+                if (markFailed)
+                {
+                    OnFailedCard($"page:{pageIdx}, cell:{cellIdx}, mode:{filterMode}, id:{matchInfoOb.CardId}");
+                }
+            }
+            else
+            {
+                if (markFailed)
+                {
+                    OnFailedCard($"page:{pageIdx}, cell:{cellIdx}, mode:{filterMode}");
+                }
             }
 
-            var matchOb = cards.FindById(matchInfoOb.CardId);
-            if (matchInfoOb == null && markFailed)
-            {
-                OnFailedCard($"page:{pageIdx}, cell:{cellIdx}, mode:{filterMode}, id:{matchInfoOb.CardId}");
-                return null;
-            }
-
-            return matchOb;
+            return null;
         }
 
         public void OnFailedCard(string desc)
@@ -94,7 +102,7 @@ namespace TriadBuddyPlugin
             hasFailedCard = true;
         }
 
-        public TriadGameModifier ParseModifier(string desc, bool markFailed = true)
+        public TriadGameModifier? ParseModifier(string desc, bool markFailed = true)
         {
             var matchOb = mods.mods.Find(x => x.GetLocalizedName().Equals(desc, StringComparison.OrdinalIgnoreCase));
             if (matchOb == null && markFailed)
@@ -111,7 +119,7 @@ namespace TriadBuddyPlugin
             hasFailedModifier = true;
         }
 
-        public TriadNpc ParseNpcNameStart(string desc, bool markFailed = true)
+        public TriadNpc? ParseNpcNameStart(string desc, bool markFailed = true)
         {
             // some names will be truncated in UI, e.g. 'Guhtwint of the Three...'
             // limit match to first 20 characters and hope that SE will keep it unique
@@ -126,7 +134,7 @@ namespace TriadBuddyPlugin
             return matchOb;
         }
 
-        public TriadNpc ParseNpc(string desc, bool markFailed = true)
+        public TriadNpc? ParseNpc(string desc, bool markFailed = true)
         {
             var matchOb = npcs.Find(desc);
             if (matchOb == null && markFailed)

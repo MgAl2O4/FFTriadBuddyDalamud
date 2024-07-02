@@ -146,7 +146,12 @@ namespace TriadBuddyPlugin
 
         private void OnCardSelectionChanged()
         {
-            var (cardOb, cardInfo) = (selectedCardIdx >= 0) && (selectedCardIdx < listCards.Count) ? listCards[selectedCardIdx] : null;
+            if (selectedCardIdx < 0 || selectedCardIdx >= listCards.Count)
+            {
+                return;
+            }
+
+            var (cardOb, cardInfo) = listCards[selectedCardIdx];
             if (cardOb != null && cardInfo != null)
             {
                 var collectionPos = cardInfo.Collection[(int)GameCardCollectionFilter.DeckEditDefault];

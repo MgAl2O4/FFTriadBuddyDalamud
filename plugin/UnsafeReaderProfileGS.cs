@@ -1,5 +1,6 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.UI;
 using System;
+using System.Text;
 using static FFXIVClientStructs.FFXIV.Client.UI.Misc.GoldSaucerModule;
 
 namespace TriadBuddyPlugin
@@ -8,14 +9,14 @@ namespace TriadBuddyPlugin
     {
         public class PlayerDeck
         {
-            public string name;
+            public string name = string.Empty;
             public int id;
             public ushort[] cardIds = new ushort[5];
         }
 
         public bool HasErrors { get; private set; }
 
-        public PlayerDeck[] GetPlayerDecks()
+        public PlayerDeck?[]? GetPlayerDecks()
         {
             if (HasErrors)
             {
@@ -39,7 +40,7 @@ namespace TriadBuddyPlugin
 
                 if (gsModule != null)
                 {
-                    PlayerDeck ConvertToPlayerDeck(TripleTriadDeck* deckPtr, int deckId)
+                    PlayerDeck? ConvertToPlayerDeck(TripleTriadDeck* deckPtr, int deckId)
                     {
                         if (deckPtr != null &&
                             deckPtr->Cards[0] != 0 &&
@@ -48,9 +49,10 @@ namespace TriadBuddyPlugin
                             deckPtr->Cards[3] != 0 &&
                             deckPtr->Cards[4] != 0)
                         {
-                            var deckOb = new PlayerDeck() {
+                            var deckOb = new PlayerDeck()
+                            {
                                 id = deckId,
-                                name = deckPtr->Name,
+                                name = Encoding.UTF8.GetString(deckPtr->Name),
                             };
 
                             for (int idx = 0; idx < 5; idx++)
@@ -65,14 +67,14 @@ namespace TriadBuddyPlugin
                     };
 
                     // just 5 decks, no idea what other 5..9 are used for
-                    return new PlayerDeck[]
-                    {
+                    return
+                    [
                         ConvertToPlayerDeck(gsModule->GetDeck(0), 0),
                         ConvertToPlayerDeck(gsModule->GetDeck(1), 1),
                         ConvertToPlayerDeck(gsModule->GetDeck(2), 2),
                         ConvertToPlayerDeck(gsModule->GetDeck(3), 3),
                         ConvertToPlayerDeck(gsModule->GetDeck(4), 4)
-                    };
+                    ];
                 }
             }
             catch (Exception ex)

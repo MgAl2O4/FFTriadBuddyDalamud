@@ -14,17 +14,17 @@ namespace TriadBuddyPlugin
     {
         private readonly UIReaderTriadCardList uiReaderCardList;
 
-        private TriadCard selectedCard;
-        private GameCardInfo selectedCardInfo;
-        private GameNpcInfo rewardNpcInfo;
-        private TriadNpc rewardNpc;
-        private string rewardNpcRules;
-        private int rewardSourceIdx;
-        private int numRewardSources;
+        private TriadCard? selectedCard;
+        private GameCardInfo? selectedCardInfo;
+        private GameNpcInfo? rewardNpcInfo;
+        private TriadNpc? rewardNpc;
+        private string rewardNpcRules = string.Empty;
+        private int rewardSourceIdx = -1;
+        private int numRewardSources = 0;
 
-        private string locNpcReward;
-        private string locShowOnMap;
-        private string locNoAvail;
+        private string? locNpcReward;
+        private string? locShowOnMap;
+        private string? locNoAvail;
         private bool hasCachedLocStrings;
 
         public PluginWindowCardInfo(UIReaderTriadCardList uiReaderCardList) : base("Card Info")
@@ -50,7 +50,10 @@ namespace TriadBuddyPlugin
                 ImGuiWindowFlags.NoFocusOnAppearing |
                 ImGuiWindowFlags.NoNav;
 
-            Plugin.CurrentLocManager.LocalizationChanged += (_) => { hasCachedLocStrings = false; };
+            if (Plugin.CurrentLocManager != null)
+            {
+                Plugin.CurrentLocManager.LocalizationChanged += (_) => { hasCachedLocStrings = false; };
+            }
         }
 
         public void Dispose()
@@ -70,8 +73,12 @@ namespace TriadBuddyPlugin
 
         private void UpdateWindowData()
         {
-            bool canShow = (uiReaderCardList != null) && uiReaderCardList.IsVisible && (uiReaderCardList.cachedState?.iconId == 0);
-            if (canShow)
+            bool canShow = false;
+
+            if (uiReaderCardList != null &&
+                uiReaderCardList.IsVisible &&
+                uiReaderCardList.cachedState != null &&
+                uiReaderCardList.cachedState.iconId == 0)
             {
                 if (!IsOpen)
                 {
@@ -144,7 +151,7 @@ namespace TriadBuddyPlugin
 
                 ImGui.Text(locNpcReward);
 
-                if (selectedCardInfo != null && rewardNpc != null && rewardNpcInfo != null)
+                if (selectedCardInfo != null && rewardNpc != null && rewardNpcInfo != null && rewardNpcInfo.Location != null)
                 {
                     ImGui.SameLine();
                     ImGui.TextColored(colorName, rewardNpc.Name.GetLocalized());
@@ -189,7 +196,7 @@ namespace TriadBuddyPlugin
             rewardNpcInfo = null;
             rewardNpcRules = "";
 
-            if (numRewardSources <= 0)
+            if (numRewardSources <= 0 || selectedCardInfo == null)
             {
                 return;
             }

@@ -17,14 +17,14 @@ namespace TriadBuddyPlugin
         }
 
         private TriadGameScreenMemory screenMemory = new();
-        public TriadGameScreenMemory DebugScreenMemory => screenMemory;
+        public TriadGameScreenMemory? DebugScreenMemory => screenMemory;
 
-        private ScannerTriad.GameState cachedScreenState;
-        public ScannerTriad.GameState DebugScreenState => cachedScreenState;
+        private ScannerTriad.GameState? cachedScreenState;
+        public ScannerTriad.GameState? DebugScreenState => cachedScreenState;
 
-        public TriadNpc lastGameNpc;
-        public TriadNpc currentNpc;
-        public TriadCard moveCard => screenMemory.deckBlue?.GetCard(moveCardIdx);
+        public TriadNpc? lastGameNpc;
+        public TriadNpc? currentNpc;
+        public TriadCard? moveCard => screenMemory.deckBlue?.GetCard(moveCardIdx);
         public int moveCardIdx;
         public int moveBoardIdx;
         public SolverResult moveWinChance;
@@ -33,13 +33,13 @@ namespace TriadBuddyPlugin
         public Status status;
         public bool HasErrors => status != Status.NoErrors;
 
-        public event Action<bool> OnMoveChanged;
+        public event Action<bool>? OnMoveChanged;
 
         public async void UpdateGame(UIStateTriadGame stateOb)
         {
             status = Status.NoErrors;
 
-            ScannerTriad.GameState screenOb = null;
+            ScannerTriad.GameState? screenOb = null;
             if (stateOb != null)
             {
                 var parseCtx = new GameUIParser();
@@ -68,7 +68,9 @@ namespace TriadBuddyPlugin
             }
 
             cachedScreenState = screenOb;
-            if (currentNpc != null && screenOb.turnState == ScannerTriad.ETurnState.Active && !stateOb.isPvP)
+            if (currentNpc != null &&
+                screenOb != null && screenOb.turnState == ScannerTriad.ETurnState.Active &&
+                stateOb != null && !stateOb.isPvP)
             {
                 var updateFlags = screenMemory.OnNewScan(screenOb, currentNpc);
                 if (updateFlags != TriadGameScreenMemory.EUpdateFlags.None)
@@ -80,7 +82,7 @@ namespace TriadBuddyPlugin
                         screenMemory.gameSolver.agent.debugFlags = TriadGameAgent.DebugFlags.ShowMoveStart | TriadGameAgent.DebugFlags.ShowMoveDetails;
 #endif // DEBUG
 
-                        SolverUtils.solverDeckOptimize.SetPauseForGameSolver(true);
+                        SolverUtils.solverDeckOptimize?.SetPauseForGameSolver(true);
 
                         var nextMoveInfo = await UpdateGameRunSolver();
 
@@ -110,7 +112,7 @@ namespace TriadBuddyPlugin
                             solverCardOb != null ? solverCardOb.Name.GetCodeName() : "??",
                             moveWinChance.expectedResult);
 
-                        SolverUtils.solverDeckOptimize.SetPauseForGameSolver(false);
+                        SolverUtils.solverDeckOptimize?.SetPauseForGameSolver(false);
                     }
                     else
                     {
@@ -164,7 +166,7 @@ namespace TriadBuddyPlugin
 
                 int visibleCardsMask = (deckInst.cards != null) ? ((1 << deckInst.cards.Length) - 1) : 0;
                 bool hasHiddenCards = (deckInst.availableCardMask & ~visibleCardsMask) != 0;
-                if (hasHiddenCards)
+                if (hasHiddenCards && deckInst.cards != null)
                 {
                     for (int Idx = deckInst.cards.Length; Idx < 15; Idx++)
                     {

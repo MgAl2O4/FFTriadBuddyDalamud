@@ -14,7 +14,7 @@ namespace TriadBuddyPlugin
         }
 
         private UIStateTriadResults cachedState = new();
-        public Action<UIStateTriadResults> OnUpdated;
+        public Action<UIStateTriadResults>? OnUpdated;
 
         private bool needsNotify = false;
 
@@ -95,9 +95,9 @@ namespace TriadBuddyPlugin
             var nodeArrResult0 = GUINodeUtils.GetImmediateChildNodes(nodeResult);
             if (nodeArrResult0 != null && nodeArrResult0.Length == 3)
             {
-                cachedState.isDraw = (nodeArrResult0[0] != null) ? nodeArrResult0[0]->IsVisible : false;
-                cachedState.isLose = (nodeArrResult0[1] != null) ? nodeArrResult0[1]->IsVisible : false;
-                cachedState.isWin = (nodeArrResult0[2] != null) ? nodeArrResult0[2]->IsVisible : false;
+                cachedState.isDraw = (nodeArrResult0[0] != null) ? nodeArrResult0[0]->IsVisible() : false;
+                cachedState.isLose = (nodeArrResult0[1] != null) ? nodeArrResult0[1]->IsVisible() : false;
+                cachedState.isWin = (nodeArrResult0[2] != null) ? nodeArrResult0[2]->IsVisible() : false;
             }
         }
     }

@@ -11,7 +11,7 @@ namespace MgAl2O4.Utils
     public class Logger
     {
 #if DEBUG
-        public static IPluginLog logger;
+        public static IPluginLog? logger;
 #endif // DEBUG
 
         public static void WriteLine(string fmt, params object[] args)
@@ -36,7 +36,7 @@ namespace FFTriadBuddy
 
     public class LocString
     {
-        public string Text;
+        public string Text = string.Empty;
         public ELocStringType Type;
         public int Id;
 
@@ -128,7 +128,7 @@ namespace FFTriadBuddy
     {
         private static PlayerSettingsDB instance = new PlayerSettingsDB();
         public List<TriadCard> ownedCards = new List<TriadCard>();
-        public TriadCard[] starterCards;
+        public TriadCard?[] starterCards;
 
         public static PlayerSettingsDB Get()
         {
@@ -138,7 +138,7 @@ namespace FFTriadBuddy
         public PlayerSettingsDB()
         {
             TriadCardDB cardDB = TriadCardDB.Get();
-            starterCards = new TriadCard[5];
+            starterCards = new TriadCard?[5];
 
             // localization is not fully loaded, just active language!
             // find starter cards by their ids 
@@ -161,11 +161,11 @@ namespace FFTriadBuddy
 
         public class GameState
         {
-            public TriadCard[] board = new TriadCard[9];
+            public TriadCard?[] board = new TriadCard[9];
             public ETriadCardOwner[] boardOwner = new ETriadCardOwner[9];
-            public TriadCard[] blueDeck = new TriadCard[5];
-            public TriadCard[] redDeck = new TriadCard[5];
-            public TriadCard forcedBlueCard = null;
+            public TriadCard?[] blueDeck = new TriadCard[5];
+            public TriadCard?[] redDeck = new TriadCard[5];
+            public TriadCard? forcedBlueCard = null;
             public List<TriadGameModifier> mods = new List<TriadGameModifier>();
             public ETurnState turnState = ETurnState.MissingTimer;
         }

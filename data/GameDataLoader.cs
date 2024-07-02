@@ -134,7 +134,7 @@ namespace TriadBuddyPlugin
                 var mod = modDB.mods[idx];
                 var locStr = locDB.LocRuleNames[mod.GetLocalizationId()];
 
-                locStr.Text = rulesSheet.GetRow(ruleLogicToLuminaMap[idx]).Name;
+                locStr.Text = rulesSheet.GetRow(ruleLogicToLuminaMap[idx])?.Name ?? "";
             }
 
             return true;
@@ -188,7 +188,7 @@ namespace TriadBuddyPlugin
                     var rowData = cardDataSheet.GetRow(idx);
                     var rowName = cardNameSheet.GetRow(idx);
 
-                    if (rowData.Top > 0)
+                    if (rowData != null && rowName != null && rowData.Top > 0)
                     {
                         var rowTypeId = rowData.TripleTriadCardType.Row;
                         var rowRarityId = rowData.TripleTriadCardRarity.Row;
@@ -259,7 +259,7 @@ namespace TriadBuddyPlugin
             }
 
             listTriadIds.Remove(0);
-            if (listTriadIds.Count == 0)
+            if (listTriadIds.Count == 0 || npcDataSheet == null)
             {
                 Service.logger.Fatal("Failed to parse npc data (missing ids)");
                 return false;
@@ -299,6 +299,11 @@ namespace TriadBuddyPlugin
             int nameLocId = 0;
             foreach (var rowData in npcDataSheet)
             {
+                if (rowData == null)
+                {
+                    continue;
+                }
+
                 if (!mapTriadNpcData.ContainsKey(rowData.RowId))
                 {
                     // no name = no npc entry, disabled? skip it
@@ -310,7 +315,7 @@ namespace TriadBuddyPlugin
                 {
                     foreach (var ruleRow in rowData.TripleTriadRule)
                     {
-                        if (ruleRow.Row != 0)
+                        if (ruleRow != null && ruleRow.Row != 0)
                         {
                             if (ruleRow.Row >= modDB.mods.Count)
                             {
@@ -321,7 +326,8 @@ namespace TriadBuddyPlugin
                             var logicRule = modDB.mods[ruleLuminaToLogicMap[(int)ruleRow.Row]];
                             listRules.Add(logicRule);
 
-                            if (ruleRow.Value.Name.RawString != logicRule.GetLocalizedName())
+                            var ruleValueOb = ruleRow.Value;
+                            if (ruleValueOb == null || ruleValueOb.Name.RawString != logicRule.GetLocalizedName())
                             {
                                 Service.logger.Fatal($"Failed to match npc rules! (rule.id:{ruleRow.Row})");
                                 return false;
@@ -597,6 +603,12 @@ namespace TriadBuddyPlugin
                     gameNpcOb.rewardCards.Add(cardId);
 
                     var cardInfo = gameCardDB.FindById(cardId);
+                    if (cardInfo == null)
+                    {
+                        Service.logger.Error($"Failed to match npc reward data! npc:{gameNpcOb.npcId}, key:{kvp.Key}, card:{cardId}");
+                        continue;
+                    }
+
                     var npcOb = (gameNpcOb.npcId < npcDB.npcs.Count) ? npcDB.npcs[gameNpcOb.npcId] : null;
                     if (npcOb != null)
                     {

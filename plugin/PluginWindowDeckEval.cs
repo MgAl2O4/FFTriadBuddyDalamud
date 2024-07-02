@@ -19,22 +19,22 @@ namespace TriadBuddyPlugin
         private readonly Vector4 colorGray = new Vector4(0.6f, 0.6f, 0.6f, 1);
 
         private readonly UIReaderTriadPrep uiReaderPrep;
-        private readonly SolverPreGameDecks solver;
+        private readonly SolverPreGameDecks? solver;
         private readonly PluginWindowDeckOptimize optimizerWindow;
         private readonly PluginWindowNpcStats statsWindow;
 
-        private string locEvaluating;
-        private string locWinChance;
-        private string locCantFind;
-        private string locNoProfileDecks;
-        private string locOptimize;
-        private string locNpcStats;
-        private string locStatusPvPMatch;
+        private string? locEvaluating;
+        private string? locWinChance;
+        private string? locCantFind;
+        private string? locNoProfileDecks;
+        private string? locOptimize;
+        private string? locNpcStats;
+        private string? locStatusPvPMatch;
         private bool hasCachedLocStrings;
 
-        public PluginWindowDeckEval(SolverPreGameDecks solver, UIReaderTriadPrep uiReaderPrep, PluginWindowDeckOptimize optimizerWindow, PluginWindowNpcStats statsWindow) : base("Deck Eval")
+        public PluginWindowDeckEval(UIReaderTriadPrep uiReaderPrep, PluginWindowDeckOptimize optimizerWindow, PluginWindowNpcStats statsWindow) : base("Deck Eval")
         {
-            this.solver = solver;
+            this.solver = SolverUtils.solverPreGameDecks;
             this.uiReaderPrep = uiReaderPrep;
             this.optimizerWindow = optimizerWindow;
             this.statsWindow = statsWindow;
@@ -57,7 +57,10 @@ namespace TriadBuddyPlugin
                 ImGuiWindowFlags.NoFocusOnAppearing |
                 ImGuiWindowFlags.NoNav;
 
-            Plugin.CurrentLocManager.LocalizationChanged += (_) => { hasCachedLocStrings = false; };
+            if (Plugin.CurrentLocManager != null)
+            {
+                Plugin.CurrentLocManager.LocalizationChanged += (_) => { hasCachedLocStrings = false; };
+            }
         }
 
         public void Dispose()
@@ -81,7 +84,7 @@ namespace TriadBuddyPlugin
 
         private void OnMatchRequestChanged(bool active)
         {
-            bool canAccessProfileDecks = (solver.profileGS != null) && !solver.profileGS.HasErrors;
+            bool canAccessProfileDecks = (solver != null) && (solver.profileGS != null) && !solver.profileGS.HasErrors;
             IsOpen = active && canAccessProfileDecks;
 
             if (active)
@@ -108,6 +111,11 @@ namespace TriadBuddyPlugin
 
         public override void Draw()
         {
+            if (solver == null)
+            {
+                return;
+            }
+
             UpdateLocalizationCache();
 
             Vector4 hintColor = colorTxt;
@@ -116,13 +124,13 @@ namespace TriadBuddyPlugin
             if (solver.preGameNpc == null)
             {
                 hintColor = colorDraw;
-                hintText = locStatusPvPMatch;
+                hintText = locStatusPvPMatch ?? "";
             }
             else if (solver.preGameDecks.Count == 0)
             {
                 // no profile decks created vs profile reader failed
                 hintColor = solver.HasAllProfileDecksEmpty ? colorTxt : colorDraw;
-                hintText = locNoProfileDecks;
+                hintText = locNoProfileDecks ?? "";
             }
             else if (solver.preGameProgress < 1.0f)
             {
@@ -135,12 +143,12 @@ namespace TriadBuddyPlugin
                 {
                     hintColor = GetChanceColor(bestDeckData.chance);
                     hintText = $"{bestDeckData.name} -- ";
-                    hintText += string.Format(locWinChance, bestDeckData.chance.winChance); // no more: .Replace("%", "%%");
+                    hintText += string.Format(locWinChance ?? "", bestDeckData.chance.winChance); // no more: .Replace("%", "%%");
                 }
                 else
                 {
                     hintColor = colorLose;
-                    hintText = locCantFind;
+                    hintText = locCantFind ?? "";
                 }
             }
 

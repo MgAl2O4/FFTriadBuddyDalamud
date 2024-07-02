@@ -34,18 +34,18 @@ namespace TriadBuddyPlugin
         private bool hideNpcBeatenOnce = false;
         private bool hideNpcCompleted = false;
 
-        private string locNpcOnly;
-        private string locNotOwnedOnly;
-        private string locFilterActive;
-        private string locHideBeatenNpc;
-        private string locHideCompletedNpc;
-        private string locTabCards;
-        private string locTabNpc;
-        private string locNpcReward;
-        private string locShowOnMap;
-        private string locNoAvail;
-        private string locNpcStats;
-        private string locEstMGP;
+        private string? locNpcOnly;
+        private string? locNotOwnedOnly;
+        private string? locFilterActive;
+        private string? locHideBeatenNpc;
+        private string? locHideCompletedNpc;
+        private string? locTabCards;
+        private string? locTabNpc;
+        private string? locNpcReward;
+        private string? locShowOnMap;
+        private string? locNoAvail;
+        private string? locNpcStats;
+        private string? locEstMGP;
         private bool hasCachedLocStrings;
 
         public PluginWindowCardSearch(UIReaderTriadCardList uiReaderCardList, PluginWindowNpcStats statsWindow) : base("Card Search")
@@ -89,7 +89,10 @@ namespace TriadBuddyPlugin
                 ImGuiWindowFlags.NoFocusOnAppearing |
                 ImGuiWindowFlags.NoNav;
 
-            Plugin.CurrentLocManager.LocalizationChanged += (_) => { hasCachedLocStrings = false; };
+            if (Plugin.CurrentLocManager != null)
+            {
+                Plugin.CurrentLocManager.LocalizationChanged += (_) => { hasCachedLocStrings = false; };
+            }
         }
 
         public void Dispose()
@@ -329,7 +332,7 @@ namespace TriadBuddyPlugin
         private void DrawNpcDetails()
         {
             var npcData = (selectedNpcIdx < 0 || selectedNpcIdx >= listNpcs.Count) ? null : listNpcs[selectedNpcIdx];
-            if (npcData != null && npcData.Item2 != null)
+            if (npcData != null && npcData.Item2 != null && npcData.Item2.Location != null)
             {
                 var cursorY = ImGui.GetCursorPosY();
                 ImGui.SetCursorPosY(cursorY - ImGui.GetStyle().FramePadding.Y);
@@ -415,7 +418,12 @@ namespace TriadBuddyPlugin
 
         private void OnCardSelectionChanged()
         {
-            var (cardOb, cardInfo) = (selectedCardIdx >= 0) && (selectedCardIdx < listCards.Count) ? listCards[selectedCardIdx] : null;
+            if (selectedCardIdx < 0 || selectedCardIdx >= listCards.Count)
+            {
+                return;
+            }
+
+            var (cardOb, cardInfo) = listCards[selectedCardIdx];
             if (cardOb != null && cardInfo != null)
             {
                 var filterEnum = (filterMode == 1) ? GameCardCollectionFilter.OnlyOwned :

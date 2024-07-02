@@ -29,14 +29,18 @@ namespace TriadBuddyPlugin
             this.uiReaderGame = uiReaderGame;
             this.uiReaderPrep = uiReaderPrep;
 
-            SolverUtils.solverGame.OnMoveChanged += OnSolverMove;
+            if (SolverUtils.solverGame != null)
+            {
+                SolverUtils.solverGame.OnMoveChanged += OnSolverMove;
+            }
+            
             uiReaderPrep.OnDeckSelectionChanged += (active) => hasDeckSelection = active;
         }
 
         public void OnSolverMove(bool foundMove)
         {
             hasGameOverlay = foundMove;
-            if (foundMove)
+            if (foundMove && SolverUtils.solverGame != null)
             {
                 gameBoardIdx = SolverUtils.solverGame.moveBoardIdx;
                 gameCardIdx = SolverUtils.solverGame.moveCardIdx;
@@ -86,7 +90,7 @@ namespace TriadBuddyPlugin
 
         private void DrawDeckSelectionOverlay()
         {
-            if (uiReaderPrep == null || uiReaderPrep.cachedState == null)
+            if (uiReaderPrep == null || uiReaderPrep.cachedState == null || SolverUtils.solverPreGameDecks == null)
             {
                 hasDeckSelection = false;
                 return;
