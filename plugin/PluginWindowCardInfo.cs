@@ -7,6 +7,7 @@ using FFTriadBuddy;
 using ImGuiNET;
 using System;
 using System.Numerics;
+using TriadBuddy;
 
 namespace TriadBuddyPlugin
 {
@@ -126,7 +127,7 @@ namespace TriadBuddyPlugin
 
                 ImGui.TextColored(colorName, selectedCard.Name.GetLocalized());
 
-                ImGui.Text($"{(int)selectedCard.Rarity + 1}★");
+                ImGui.Text(CardUtils.GetRarityDesc(selectedCard));
                 ImGui.SameLine();
                 ImGui.Text($"{selectedCard.Sides[(int)ETriadGameSide.Up]:X}-{selectedCard.Sides[(int)ETriadGameSide.Left]:X}-{selectedCard.Sides[(int)ETriadGameSide.Down]:X}-{selectedCard.Sides[(int)ETriadGameSide.Right]:X}");
                 if (selectedCard.Type != ETriadCardType.None)

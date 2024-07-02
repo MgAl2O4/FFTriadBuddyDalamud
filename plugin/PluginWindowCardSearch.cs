@@ -8,6 +8,7 @@ using ImGuiNET;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using TriadBuddy;
 
 namespace TriadBuddyPlugin
 {
@@ -173,7 +174,7 @@ namespace TriadBuddyPlugin
 
                 if (listCards.Count > 1)
                 {
-                    listCards.Sort((a, b) => a.Item1.Name.GetLocalized().CompareTo(b.Item1.Name.GetLocalized()));
+                    listCards.Sort((a, b) => a.Item1.SortOrder.CompareTo(b.Item1.SortOrder));
                 }
 
                 selectedCardIdx = -1;
@@ -223,11 +224,11 @@ namespace TriadBuddyPlugin
                         continue;
                     }
 
-                    var itemDesc = cardOb.Name.GetLocalized();
+                    var itemDesc = $"[{CardUtils.GetOrderDesc(cardOb)}] {CardUtils.GetRarityDesc(cardOb)} {CardUtils.GetUIDesc(cardOb)}";
                     if (searchFilterCard.PassFilter(itemDesc))
                     {
                         bool isSelected = selectedCardIdx == idx;
-                        if (ImGui.Selectable($"{(int)cardOb.Rarity + 1}★   {itemDesc}", isSelected))
+                        if (ImGui.Selectable(itemDesc, isSelected))
                         {
                             selectedCardIdx = idx;
                             OnCardSelectionChanged();
@@ -382,7 +383,7 @@ namespace TriadBuddyPlugin
                         var (cardOb, cardListIdx) = listNpcReward[idx];
                         bool isCardOwned = settingsDB.ownedCards.Contains(cardOb);
 
-                        var itemDesc = cardOb.Name.GetLocalized();
+                        var itemDesc = $"{CardUtils.GetOrderDesc(cardOb)} {CardUtils.GetUIDesc(cardOb)}";
                         bool isSelected = selectedCardIdx == cardListIdx;
 
                         if (isCardOwned)
@@ -390,7 +391,7 @@ namespace TriadBuddyPlugin
                             ImGui.PushStyleColor(ImGuiCol.Text, 0xffa8a8a8);
                         }
 
-                        if (ImGui.Selectable($"{(int)cardOb.Rarity + 1}★   {itemDesc}", isSelected))
+                        if (ImGui.Selectable($"{CardUtils.GetRarityDesc(cardOb)}  {itemDesc}", isSelected))
                         {
                             selectedCardIdx = cardListIdx;
                             OnCardSelectionChanged();

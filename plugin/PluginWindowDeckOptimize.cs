@@ -10,6 +10,7 @@ using ImGuiNET;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using TriadBuddy;
 
 namespace TriadBuddyPlugin
 {
@@ -447,7 +448,7 @@ namespace TriadBuddyPlugin
                         var cardOb = TriadCardDB.Get().FindById(shownCardIds[idx]);
                         if (cardOb != null)
                         {
-                            var tooltip = $"{(int)cardOb.Rarity + 1}★  {cardOb.Name.GetLocalized()}";
+                            var tooltip = $"[{CardUtils.GetOrderDesc(cardOb)}] {CardUtils.GetRarityDesc(cardOb)} {CardUtils.GetUIDesc(cardOb)}";
                             shownCardTooltipsCollection[idx] = tooltip;
                             shownCardTooltipsDeckEdit[idx] = tooltip;
 
