@@ -83,7 +83,10 @@ namespace TriadBuddyPlugin
             cardImageBox.Y = cardImagePos[4].Y + cardImageSize.Y;
 
             SizeCondition = ImGuiCond.None;
-            Flags = ImGuiWindowFlags.AlwaysAutoResize;
+            SizeConstraints = new WindowSizeConstraints
+            {
+                MinimumSize = new Vector2(cardImageSize.X * 4, (cardImageSize.Y * 2) + ImGui.GetTextLineHeight() * 8),
+            };
 
             if (Plugin.CurrentLocManager != null)
             {
