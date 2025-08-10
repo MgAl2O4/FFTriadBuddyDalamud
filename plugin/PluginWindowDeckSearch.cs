@@ -1,7 +1,7 @@
-﻿using Dalamud.Interface.Utility;
+﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using FFTriadBuddy;
-using ImGuiNET;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -18,7 +18,7 @@ namespace TriadBuddyPlugin
         private List<Tuple<TriadCard, GameCardInfo>> listCards = new();
 
         private int selectedCardIdx;
-        private ImGuiTextFilterPtr searchFilter;
+        private ImGuiTextFilter searchFilter;
 
         private int prevNumFiltered;
         private int prevNumCards;
@@ -27,8 +27,8 @@ namespace TriadBuddyPlugin
         {
             this.uiReaderDeckEdit = uiReaderDeckEdit;
 
-            var searchFilterPtr = ImGuiNative.ImGuiTextFilter_ImGuiTextFilter(null);
-            searchFilter = new ImGuiTextFilterPtr(searchFilterPtr);
+            var searchFilter = new ImGuiTextFilter();
+            searchFilter.Build();
 
             uiReaderDeckEdit.OnVisibilityChanged += (_) => UpdateWindowData();
             UpdateWindowData();
@@ -54,7 +54,7 @@ namespace TriadBuddyPlugin
 
         public void Dispose()
         {
-            ImGuiNative.ImGuiTextFilter_destroy(searchFilter.NativePtr);
+            searchFilter.Destroy();
         }
 
         private void UpdateWindowData()
@@ -116,7 +116,7 @@ namespace TriadBuddyPlugin
                     var itemDesc = $"[{CardUtils.GetOrderDesc(cardOb)}] {CardUtils.GetRarityDesc(cardOb)} {CardUtils.GetUIDesc(cardOb)}";
                     if (searchFilter.PassFilter(itemDesc))
                     {
-                        bool isSelected = selectedCardIdx == idx;                       
+                        bool isSelected = selectedCardIdx == idx;
                         if (ImGui.Selectable(itemDesc, isSelected))
                         {
                             selectedCardIdx = idx;

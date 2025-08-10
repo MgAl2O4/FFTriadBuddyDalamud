@@ -1,5 +1,5 @@
-﻿using FFXIVClientStructs.FFXIV.Component.GUI;
-using ImGuiNET;
+﻿using Dalamud.Bindings.ImGui;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using MgAl2O4.Utils;
 using System;
 using System.Collections.Generic;
@@ -183,7 +183,7 @@ namespace TriadBuddyPlugin
                 agent->FilterMode = 0;
 
                 agent->PageIndex = (byte)pageIndex;
-                
+
                 unsafeDeck?.RefreshUI(agentPtr);
                 unsafeDeck?.SetSelectedCard(addonPtr, cellIndex);
 

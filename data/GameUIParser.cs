@@ -79,7 +79,7 @@ namespace TriadBuddyPlugin
                 {
                     return matchOb;
                 }
-                
+
                 if (markFailed)
                 {
                     OnFailedCard($"page:{pageIdx}, cell:{cellIdx}, mode:{filterMode}, id:{matchInfoOb.CardId}");

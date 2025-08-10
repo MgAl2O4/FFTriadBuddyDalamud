@@ -1,6 +1,6 @@
-﻿using Dalamud.Interface.Utility;
+﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility;
 using FFTriadBuddy;
-using ImGuiNET;
 using System.Numerics;
 
 namespace TriadBuddyPlugin
@@ -33,7 +33,7 @@ namespace TriadBuddyPlugin
             {
                 SolverUtils.solverGame.OnMoveChanged += OnSolverMove;
             }
-            
+
             uiReaderPrep.OnDeckSelectionChanged += (active) => hasDeckSelection = active;
         }
 

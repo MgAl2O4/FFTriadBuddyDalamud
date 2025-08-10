@@ -1,10 +1,10 @@
 ﻿using Dalamud;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using FFTriadBuddy;
-using ImGuiNET;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -27,8 +27,8 @@ namespace TriadBuddyPlugin
         private int selectedCardIdx;
         private int selectedNpcIdx;
         private int filterMode = -1;
-        private ImGuiTextFilterPtr searchFilterCard;
-        private ImGuiTextFilterPtr searchFilterNpc;
+        private ImGuiTextFilter searchFilterCard;
+        private ImGuiTextFilter searchFilterNpc;
 
         private bool showNpcMatchesOnly = false;
         private bool showNotOwnedOnly = false;
@@ -54,11 +54,11 @@ namespace TriadBuddyPlugin
             this.uiReaderCardList = uiReaderCardList;
             this.statsWindow = statsWindow;
 
-            var searchFilterCardPtr = ImGuiNative.ImGuiTextFilter_ImGuiTextFilter(null);
-            searchFilterCard = new ImGuiTextFilterPtr(searchFilterCardPtr);
-
-            var searchFilterNpcPtr = ImGuiNative.ImGuiTextFilter_ImGuiTextFilter(null);
-            searchFilterNpc = new ImGuiTextFilterPtr(searchFilterNpcPtr);
+            var searchFilterCard = new ImGuiTextFilter();
+            searchFilterCard.Build();
+            
+            var searchFilterNpc = new ImGuiTextFilter();
+            searchFilterNpc.Build();
 
             uiReaderCardList.OnVisibilityChanged += (_) => UpdateWindowData();
             uiReaderCardList.OnUIStateChanged += OnUIStateChanged;
@@ -98,8 +98,8 @@ namespace TriadBuddyPlugin
 
         public void Dispose()
         {
-            ImGuiNative.ImGuiTextFilter_destroy(searchFilterCard.NativePtr);
-            ImGuiNative.ImGuiTextFilter_destroy(searchFilterNpc.NativePtr);
+            searchFilterCard.Destroy();
+            searchFilterNpc.Destroy();
         }
 
         private void UpdateLocalizationCache()
