@@ -116,7 +116,7 @@ namespace TriadBuddyPlugin
                 ImGui.Text(string.Format(locGameLosses ?? "", savedStats.NumLosses));
                 if (numMatches > 0)
                 {
-                    string winPctDesc = (1.0f * savedStats.NumWins / numMatches).ToString("P1").Replace("%", "%%");
+                    string winPctDesc = (1.0f * savedStats.NumWins / numMatches).ToString("P1");
                     ImGui.TextColored(colorValue, string.Format(locGameWins ?? "", winPctDesc));
                 }
                 ImGui.Unindent();
@@ -144,7 +144,7 @@ namespace TriadBuddyPlugin
                                 float dropPct = 1.0f * kvp.Value / savedStats.NumWins;
 
                                 ImGui.SameLine();
-                                ImGui.TextColored(colorValue, dropPct.ToString("P1").Replace("%", "%%"));
+                                ImGui.TextColored(colorValue, dropPct.ToString("P1"));
                             }
                         }
                     }
