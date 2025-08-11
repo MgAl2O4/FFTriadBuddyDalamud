@@ -292,7 +292,7 @@ namespace TriadBuddyPlugin
                 if (hasDeckSolverResult)
                 {
                     ImGui.Text(locWinChance);
-                    ImGui.TextColored(colorResultData, deckWinChance.winChance.ToString("P0").Replace("%", "%%"));
+                    ImGui.TextColored(colorResultData, deckWinChance.winChance.ToString("P0"));
 
                     if (canUseBestDeck && !isOptimizerRunning)
                     {
@@ -310,7 +310,7 @@ namespace TriadBuddyPlugin
 
                         if (ImGui.IsItemHovered())
                         {
-                            ImGui.SetTooltip(bestWinChance.winChance.ToString("P0").Replace("%", "%%"));
+                            ImGui.SetTooltip(bestWinChance.winChance.ToString("P0"));
                         }
                     }
                 }
