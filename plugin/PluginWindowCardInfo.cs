@@ -55,6 +55,8 @@ namespace TriadBuddyPlugin
             {
                 Plugin.CurrentLocManager.LocalizationChanged += (_) => { hasCachedLocStrings = false; };
             }
+
+            DisableWindowSounds = true;
         }
 
         public void Dispose()
