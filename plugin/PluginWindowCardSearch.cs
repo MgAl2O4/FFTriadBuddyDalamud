@@ -211,7 +211,7 @@ namespace TriadBuddyPlugin
         private void DrawCardsTab()
         {
             bool showOwnedCheckbox = filterMode == 0;
-            searchFilterCard.Draw("", WindowContentWidth * ImGuiHelpers.GlobalScale);
+            searchFilterCard.Draw("##SearchFilterCard", WindowContentWidth * ImGuiHelpers.GlobalScale);
 
             if (ImGui.BeginListBox("##cards", new Vector2(WindowContentWidth * ImGuiHelpers.GlobalScale, ImGui.GetTextLineHeightWithSpacing() * 10)))
             {
@@ -272,7 +272,7 @@ namespace TriadBuddyPlugin
 
         private void DrawNpcTab()
         {
-            searchFilterNpc.Draw("", WindowContentWidth * ImGuiHelpers.GlobalScale);
+            searchFilterNpc.Draw("##SearchFilterNpc", WindowContentWidth * ImGuiHelpers.GlobalScale);
 
             if (ImGui.BeginListBox("##npcs", new Vector2(WindowContentWidth * ImGuiHelpers.GlobalScale, ImGui.GetTextLineHeightWithSpacing() * 10)))
             {
