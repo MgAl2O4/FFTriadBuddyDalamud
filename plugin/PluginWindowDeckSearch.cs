@@ -50,6 +50,8 @@ namespace TriadBuddyPlugin
                 ImGuiWindowFlags.NoDocking |
                 ImGuiWindowFlags.NoFocusOnAppearing |
                 ImGuiWindowFlags.NoNav;
+
+            DisableWindowSounds = true;
         }
 
         public void Dispose()
