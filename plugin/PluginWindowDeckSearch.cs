@@ -104,7 +104,7 @@ namespace TriadBuddyPlugin
 
         public override void Draw()
         {
-            searchFilter.Draw("", WindowContentWidth * ImGuiHelpers.GlobalScale);
+            searchFilter.Draw("##SearchFilter", WindowContentWidth * ImGuiHelpers.GlobalScale);
 
             var filteredCards = new List<int>();
             if (ImGui.BeginListBox("##cards", new Vector2(WindowContentWidth * ImGuiHelpers.GlobalScale, ImGui.GetTextLineHeightWithSpacing() * 10)))
